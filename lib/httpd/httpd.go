@@ -8,14 +8,14 @@ import (
     "github.com/satisfeet/hoopoe/lib/httpd/mux"
 )
 
-func Listen(c *conf.Conf) {
+func Init() error {
     m := mux.New()
 
     m.Use(logger)
 
     m.Get("/", handle)
 
-    http.ListenAndServe(c.Httpd["port"], m)
+    return http.ListenAndServe(conf.Get("httpd")["port"], m)
 }
 
 func logger(c *mux.Context) {

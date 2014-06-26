@@ -8,26 +8,17 @@ import (
     "github.com/satisfeet/hoopoe/lib/httpd"
 )
 
-const (
-  DEFAULT = "/etc/default.json"
-  DEVELOPMENT = "/etc/development.json"
-)
 
 func main() {
-    c := conf.New()
-
-    if err := c.LoadJSON(DEFAULT); err != nil {
-        log.Fatal(err)
-    }
-    if err := c.LoadJSON(DEVELOPMENT); err != nil {
+    if err := conf.Init(); err != nil {
         log.Fatal(err)
     }
 
-    s := store.New()
-
-    if err := s.Open(c); err != nil {
+    if err := store.Init(); err != nil {
         log.Fatal(err)
     }
 
-    httpd.Listen(c)
+    if err := httpd.Init(); err != nil {
+        log.Fatal(err)
+    }
 }

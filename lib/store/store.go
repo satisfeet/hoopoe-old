@@ -6,25 +6,21 @@ import (
     "github.com/satisfeet/hoopoe/lib/conf"
 )
 
-type Store struct {
+var store struct {
     session *mgo.Session
     db      *mgo.Database
 }
 
-func New() *Store {
-    return &Store{}
-}
-
-func (s *Store) Open(c *conf.Conf) error {
-    var err error
-
-    s.session, err = mgo.Dial(c.Store["host"])
+func Init() error {
+    s, err := mgo.Dial(conf.Get("store")["host"])
 
     if err != nil {
         return err
     }
 
-    s.db = s.session.DB(c.Store["name"])
+    store.session = s
+
+    store.db = s.DB(conf.Get("store")["name"])
 
     return nil
 }
