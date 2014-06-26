@@ -4,18 +4,17 @@ import (
     "log"
     "net/http"
 
-    "github.com/satisfeet/hoopoe/lib/conf"
     "github.com/satisfeet/hoopoe/lib/httpd/mux"
 )
 
-func Init() error {
+func Listen(c map[string]string) {
     m := mux.New()
 
     m.Use(logger)
 
     m.Get("/", handle)
 
-    return http.ListenAndServe(conf.Get("httpd")["port"], m)
+    http.ListenAndServe(c["port"], m)
 }
 
 func logger(c *mux.Context) {

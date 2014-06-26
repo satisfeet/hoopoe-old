@@ -7,43 +7,16 @@ import (
     "encoding/json"
 )
 
-var conf *Conf
-
-const (
-  DEFAULT = "/etc/default.json"
-  DEVELOPMENT = "/etc/development.json"
-)
-
 type Conf struct {
     Store   map[string]string   `json:"store"`
     Httpd   map[string]string   `json:"httpd"`
 }
 
-func Init() error {
-    conf = &Conf{}
-
-    if err := load(DEFAULT); err != nil {
-        return err
-    }
-    if err := load(DEVELOPMENT); err != nil {
-        return err
-    }
-
-    return nil
+func New() *Conf {
+    return &Conf{}
 }
 
-func Get(key string) map[string]string {
-    switch (key) {
-        case "store":
-            return conf.Store
-        case "httpd":
-            return conf.Httpd
-    }
-
-    return make(map[string]string)
-}
-
-func load(path string) error {
+func (c *Conf) Load(path string) error {
     wd, err := os.Getwd()
 
     if err != nil {
@@ -56,5 +29,5 @@ func load(path string) error {
         return err
     }
 
-    return json.Unmarshal(file, conf)
+    return json.Unmarshal(file, c)
 }

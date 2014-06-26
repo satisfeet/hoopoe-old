@@ -2,25 +2,23 @@ package store
 
 import (
     "labix.org/v2/mgo"
-
-    "github.com/satisfeet/hoopoe/lib/conf"
 )
 
-var store struct {
+var (
     session *mgo.Session
     db      *mgo.Database
-}
+)
 
-func Init() error {
-    s, err := mgo.Dial(conf.Get("store")["host"])
+func Open(c map[string]string) error {
+    var err error
+
+    session, err = mgo.Dial(c["host"])
 
     if err != nil {
         return err
     }
 
-    store.session = s
-
-    store.db = s.DB(conf.Get("store")["name"])
+    db = session.DB(c["name"])
 
     return nil
 }
