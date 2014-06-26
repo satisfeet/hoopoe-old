@@ -1,17 +1,27 @@
 package httpd
 
 import (
+  "log"
   "net/http"
 
   "github.com/satisfeet/hoopoe/lib/conf"
 )
 
 func Listen(c *conf.HttpdConfig) {
-  http.HandleFunc("/", handle)
-  http.ListenAndServe(c.Port, nil)
+  m := NewMux()
+
+  m.Use(logger)
+  m.Get("/", handle)
+
+  http.ListenAndServe(c.Port, m)
 }
 
-func handle(w http.ResponseWriter, r *http.Request) {
-  w.WriteHeader(200)
-  w.Write([]byte("Hello World"))
+func logger(c *Context) {
+  log.Printf("Request: %s %s", c.Method(), c.Path())
+
+  c.Next()
+}
+
+func handle(c *Context) {
+  c.Respond("Hello World", 200)
 }
