@@ -1,4 +1,4 @@
-package httpd
+package mux
 
 import (
     "net/http"
@@ -13,7 +13,7 @@ type Mux struct {
 
 type Handle func(*Context)
 
-func NewMux() *Mux {
+func New() *Mux {
     r := httprouter.New()
 
     return &Mux{r, []Handle{}}

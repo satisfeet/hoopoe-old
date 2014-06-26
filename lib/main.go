@@ -3,16 +3,24 @@ package main
 import (
     "log"
 
-    "github.com/satisfeet/hoopoe/lib/conf"
+    "github.com/satisfeet/hoopoe/lib/app"
     "github.com/satisfeet/hoopoe/lib/httpd"
 )
 
-func main() {
-    c, err := conf.New()
+const (
+  DEFAULT = "/etc/default.json"
+  DEVELOPMENT = "/etc/development.json"
+)
 
-    if err != nil {
+func main() {
+    a := app.New()
+
+    if err := a.Configure(DEFAULT); err != nil {
+        log.Fatal(err)
+    }
+    if err := a.Configure(DEVELOPMENT); err != nil {
         log.Fatal(err)
     }
 
-    httpd.Listen(&c.Httpd)
+    httpd.Listen(a)
 }
