@@ -4,18 +4,18 @@ import (
     "log"
     "net/http"
 
-    "github.com/satisfeet/hoopoe/lib/app"
+    "github.com/satisfeet/hoopoe/lib/conf"
     "github.com/satisfeet/hoopoe/lib/httpd/mux"
 )
 
-func Listen(a *app.App) {
+func Listen(c *conf.Conf) {
     m := mux.New()
 
     m.Use(logger)
 
     m.Get("/", handle)
 
-    http.ListenAndServe(a.Conf.Httpd["port"], m)
+    http.ListenAndServe(c.Httpd["port"], m)
 }
 
 func logger(c *mux.Context) {

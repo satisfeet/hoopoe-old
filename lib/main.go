@@ -3,7 +3,8 @@ package main
 import (
     "log"
 
-    "github.com/satisfeet/hoopoe/lib/app"
+    "github.com/satisfeet/hoopoe/lib/conf"
+    "github.com/satisfeet/hoopoe/lib/store"
     "github.com/satisfeet/hoopoe/lib/httpd"
 )
 
@@ -13,14 +14,20 @@ const (
 )
 
 func main() {
-    a := app.New()
+    c := conf.New()
 
-    if err := a.Configure(DEFAULT); err != nil {
+    if err := c.LoadJSON(DEFAULT); err != nil {
         log.Fatal(err)
     }
-    if err := a.Configure(DEVELOPMENT); err != nil {
+    if err := c.LoadJSON(DEVELOPMENT); err != nil {
         log.Fatal(err)
     }
 
-    httpd.Listen(a)
+    s := store.New()
+
+    if err := s.Open(c); err != nil {
+        log.Fatal(err)
+    }
+
+    httpd.Listen(c)
 }

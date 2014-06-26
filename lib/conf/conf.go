@@ -1,7 +1,9 @@
 package conf
 
 import (
+    "os"
     "io/ioutil"
+    "path/filepath"
     "encoding/json"
 )
 
@@ -16,7 +18,13 @@ func New() *Conf {
 }
 
 func (c *Conf) LoadJSON(path string) error {
-    file, err := ioutil.ReadFile(path)
+    wd, err := os.Getwd()
+
+    if err != nil {
+        return err
+    }
+
+    file, err := ioutil.ReadFile(filepath.Join(wd, path))
 
     if err != nil {
         return err
