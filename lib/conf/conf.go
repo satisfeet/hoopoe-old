@@ -15,11 +15,16 @@ const (
 type Config struct {
   Name    string          `json:"name"`
   Store   StoreConfig     `json:"store"`
+  Httpd   HttpdConfig     `json:"httpd"`
 }
 
 type StoreConfig struct {
   Name    string          `json:"name"`
   Host    string          `json:"host"`
+}
+
+type HttpdConfig struct {
+  Port    string          `json:"port"`
 }
 
 func New() (*Config, error) {

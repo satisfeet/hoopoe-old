@@ -2,9 +2,9 @@ package main
 
 import (
   "log"
-  "fmt"
 
   "github.com/satisfeet/hoopoe/lib/conf"
+  "github.com/satisfeet/hoopoe/lib/httpd"
 )
 
 func main() {
@@ -14,5 +14,5 @@ func main() {
     log.Fatal(err)
   }
 
-  fmt.Printf("%#v", c)
+  httpd.Listen(&c.Httpd)
 }

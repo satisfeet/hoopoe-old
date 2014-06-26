@@ -3,6 +3,10 @@
   "store": {
     "name": "satisfeet",
     "host": "localhost"
+  },
+
+  "httpd": {
+    "port": ":3001"
   }
 
 }
