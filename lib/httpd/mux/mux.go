@@ -31,11 +31,11 @@ func (m *Mux) Put(p string, h Handle) {
     m.router.PUT(p, mediate(m, h))
 }
 
-func (m *Mux) Post(p string, h Handle) {
+func (m *Mux) Pos(p string, h Handle) {
     m.router.POST(p, mediate(m, h))
 }
 
-func (m *Mux) Delete(p string, h Handle) {
+func (m *Mux) Del(p string, h Handle) {
     m.router.DELETE(p, mediate(m, h))
 }
 
