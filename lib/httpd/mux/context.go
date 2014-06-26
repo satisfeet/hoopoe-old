@@ -15,6 +15,10 @@ type Context struct {
     index     int
 }
 
+func (c *Context) Get(header string) string {
+    return c.request.Header.Get(header)
+}
+
 func (c *Context) Path() string {
     return c.request.URL.Path
 }
