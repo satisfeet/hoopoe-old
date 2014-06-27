@@ -1,6 +1,7 @@
 package router
 
 import (
+    "net/url"
     "net/http"
     "encoding/json"
 
@@ -23,12 +24,16 @@ func (c *Context) Path() string {
     return c.request.URL.Path
 }
 
-func (c *Context) Method() string {
-    return c.request.Method
+func (c *Context) Param(p string) string {
+    return c.params.ByName(p)
 }
 
-func (c *Context) Params(p string) string {
-    return c.params.ByName(p)
+func (c *Context) Query() url.Values {
+    return c.request.URL.Query()
+}
+
+func (c *Context) Method() string {
+    return c.request.Method
 }
 
 func (c *Context) Respond(b string, s int) {

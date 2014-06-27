@@ -4,6 +4,17 @@ import (
     "labix.org/v2/mgo/bson"
 )
 
+// TODO: define this as tags
+var config = map[string][]string {
+    "searchable": []string{
+        "name",
+        "email",
+        "company",
+        "address.city",
+        "address.street",
+    },
+}
+
 type Customer struct {
     Id          bson.ObjectId `bson:"_id"         json:"id"`
     Name        string        `bson:"name"        json:"name"`
@@ -18,22 +29,14 @@ type Address struct {
     Zip         uint16        `bson:"zip"         json:"zip,omitempty"`
 }
 
-func CustomersFind() ([]Customer, error) {
+func CustomersFind(query *Query) ([]Customer, error) {
     result := []Customer{}
 
-    err := db.C("customers").Find(bson.M{}).All(&result)
-
-    return result, err
+    return result, db.C("customers").Find(query.Bson(config)).All(&result)
 }
 
-func CustomersFindOne(param string) (Customer, error) {
+func CustomersFindOne(query *Query) (Customer, error) {
     result := Customer{}
 
-    query := bson.M{
-        "_id": bson.ObjectIdHex(param),
-    }
-
-    err := db.C("customers").Find(query).One(&result)
-
-    return result, err
+    return result, db.C("customers").Find(query.Bson(config)).One(&result)
 }

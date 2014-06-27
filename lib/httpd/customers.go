@@ -8,7 +8,10 @@ import (
 )
 
 func CustomersList(c *router.Context) {
-    result, err := store.CustomersFind()
+    result, err := store.CustomersFind(&store.Query{
+        "search": c.Query().Get("search"),
+        "filter": c.Query().Get("filter"),
+    })
 
     if err != nil {
         c.RespondError(err, 500)
@@ -18,7 +21,9 @@ func CustomersList(c *router.Context) {
 }
 
 func CustomersShow(c *router.Context) {
-    result, err := store.CustomersFindOne(c.Params("customer"))
+    result, err := store.CustomersFindOne(&store.Query{
+        "id": c.Param("customer"),
+    })
 
     if err != nil {
         c.RespondError(err, 500)
