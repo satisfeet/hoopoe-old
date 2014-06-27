@@ -4,10 +4,10 @@ import (
     "errors"
 
     "github.com/satisfeet/hoopoe/lib/store"
-    "github.com/satisfeet/hoopoe/lib/httpd/mux"
+    "github.com/satisfeet/hoopoe/lib/httpd/router"
 )
 
-func CustomersList(c *mux.Context) {
+func CustomersList(c *router.Context) {
     result, err := store.CustomersFind()
 
     if err != nil {
@@ -17,7 +17,7 @@ func CustomersList(c *mux.Context) {
     }
 }
 
-func CustomersShow(c *mux.Context) {
+func CustomersShow(c *router.Context) {
     result, err := store.CustomersFindOne(c.Params("customer"))
 
     if err != nil {
@@ -27,14 +27,14 @@ func CustomersShow(c *mux.Context) {
     }
 }
 
-func CustomersCreate(c *mux.Context) {
+func CustomersCreate(c *router.Context) {
     c.RespondError(errors.New("Not implemented yet."), 406)
 }
 
-func CustomersUpdate(c *mux.Context) {
+func CustomersUpdate(c *router.Context) {
     c.RespondError(errors.New("Not implemented yet."), 406)
 }
 
-func CustomersDestroy(c *mux.Context) {
+func CustomersDestroy(c *router.Context) {
     c.RespondError(errors.New("Not implemented yet."), 406)
 }

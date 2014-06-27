@@ -3,20 +3,20 @@ package httpd
 import (
     "net/http"
 
-    "github.com/satisfeet/hoopoe/lib/httpd/mux"
+    "github.com/satisfeet/hoopoe/lib/httpd/router"
 )
 
-func Listen(c map[string]string) {
-    m := mux.New()
+func Listen(config map[string]string) {
+    r := router.New()
 
-    m.Use(mux.Auth)
-    m.Use(mux.Logger)
+    r.Use(router.Auth)
+    r.Use(router.Logger)
 
-    m.Get("/customers", CustomersList)
-    m.Pos("/customers", CustomersCreate)
-    m.Get("/customers/:customer", CustomersShow)
-    m.Put("/customers/:customer", CustomersUpdate)
-    m.Del("/customers/:customer", CustomersDestroy)
+    r.Get("/customers", CustomersList)
+    r.Pos("/customers", CustomersCreate)
+    r.Get("/customers/:customer", CustomersShow)
+    r.Put("/customers/:customer", CustomersUpdate)
+    r.Del("/customers/:customer", CustomersDestroy)
 
-    http.ListenAndServe(c["port"], m)
+    http.ListenAndServe(config["port"], r)
 }
