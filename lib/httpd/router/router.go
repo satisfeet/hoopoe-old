@@ -24,19 +24,19 @@ func (r *Router) Use(handle Handle) {
 }
 
 func (r *Router) Get(pattern string, handle Handle) {
-    r.router.GET(pattern, mediate(r, handle))
+    r.router.Handle("GET", pattern, mediate(r, handle))
 }
 
 func (r *Router) Put(pattern string, handle Handle) {
-    r.router.PUT(pattern, mediate(r, handle))
+    r.router.Handle("PUT", pattern, mediate(r, handle))
 }
 
 func (r *Router) Pos(pattern string, handle Handle) {
-    r.router.POST(pattern, mediate(r, handle))
+    r.router.Handle("POST", pattern, mediate(r, handle))
 }
 
 func (r *Router) Del(pattern string, handle Handle) {
-    r.router.DELETE(pattern, mediate(r, handle))
+    r.router.Handle("DELETE", pattern, mediate(r, handle))
 }
 
 func (r *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
