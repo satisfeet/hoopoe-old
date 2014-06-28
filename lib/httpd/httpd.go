@@ -18,5 +18,5 @@ func Listen(config map[string]string) {
     r.Put("/customers/:customer", CustomersUpdate)
     r.Del("/customers/:customer", CustomersDestroy)
 
-    http.ListenAndServe(config["port"], r)
+    http.ListenAndServe(config["addr"], r)
 }

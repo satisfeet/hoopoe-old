@@ -8,18 +8,10 @@ import (
     "github.com/satisfeet/hoopoe/lib/httpd"
 )
 
-const (
-  DEFAULT = "/etc/default.json"
-  DEVELOPMENT = "/etc/development.json"
-)
-
 func main() {
     c := conf.New()
 
-    if err := c.Load(DEFAULT); err != nil {
-        log.Fatal(err)
-    }
-    if err := c.Load(DEVELOPMENT); err != nil {
+    if err := c.FromFlags(); err != nil {
         log.Fatal(err)
     }
 

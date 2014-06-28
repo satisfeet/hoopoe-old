@@ -9,16 +9,16 @@ var (
     db      *mgo.Database
 )
 
-func Open(c map[string]string) error {
+func Open(config map[string]string) error {
     var err error
 
-    session, err = mgo.Dial(c["host"])
+    session, err = mgo.Dial(config["mongo"])
 
     if err != nil {
         return err
     }
 
-    db = session.DB(c["name"])
+    db = session.DB("")
 
     return nil
 }

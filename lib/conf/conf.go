@@ -1,33 +1,27 @@
 package conf
 
 import (
-    "os"
-    "io/ioutil"
-    "path/filepath"
-    "encoding/json"
+    "flag"
 )
 
 type Conf struct {
-    Store   map[string]string   `json:"store"`
-    Httpd   map[string]string   `json:"httpd"`
+    Httpd map[string]string
+    Store map[string]string
 }
 
 func New() *Conf {
-    return &Conf{}
+    return &Conf{
+        map[string]string{},
+        map[string]string{},
+    }
 }
 
-func (c *Conf) Load(path string) error {
-    wd, err := os.Getwd()
+func (c *Conf) FromFlags() error {
+    c.Httpd["addr"] = *flag.String("port", ":3000",
+        "Port to listen for incoming HTTP requests.")
 
-    if err != nil {
-        return err
-    }
+    c.Store["mongo"] = *flag.String("mongo", "mongodb://localhost/test",
+        "URL to connect to mongodb server.")
 
-    file, err := ioutil.ReadFile(filepath.Join(wd, path))
-
-    if err != nil {
-        return err
-    }
-
-    return json.Unmarshal(file, c)
+    return nil
 }
