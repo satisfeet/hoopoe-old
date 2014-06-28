@@ -3,9 +3,9 @@ package main
 import (
     "log"
 
-    "github.com/satisfeet/hoopoe/lib/conf"
-    "github.com/satisfeet/hoopoe/lib/store"
-    "github.com/satisfeet/hoopoe/lib/httpd"
+    "github.com/satisfeet/hoopoe/conf"
+    "github.com/satisfeet/hoopoe/store"
+    "github.com/satisfeet/hoopoe/httpd"
 )
 
 func main() {

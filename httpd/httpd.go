@@ -3,7 +3,7 @@ package httpd
 import (
     "net/http"
 
-    "github.com/satisfeet/hoopoe/lib/httpd/router"
+    "github.com/satisfeet/hoopoe/httpd/router"
 )
 
 func Listen(config map[string]string) {

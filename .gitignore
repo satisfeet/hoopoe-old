@@ -2,9 +2,7 @@
 *.log
 
 # builds
-srv/javascripts/build.js
-srv/stylesheets/build.css
-srv/stylesheets/bootstrap.css
+*-bin
 
 # temporary
 *.swp

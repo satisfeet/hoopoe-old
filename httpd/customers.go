@@ -3,8 +3,8 @@ package httpd
 import (
     "errors"
 
-    "github.com/satisfeet/hoopoe/lib/store"
-    "github.com/satisfeet/hoopoe/lib/httpd/router"
+    "github.com/satisfeet/hoopoe/store"
+    "github.com/satisfeet/hoopoe/httpd/router"
 )
 
 func CustomersList(c *router.Context) {
