@@ -1,4 +1,11 @@
 SHELL := /bin/bash
 
 boot:
-	@gin run
+	@go run
+
+test: test-store
+
+test-store:
+	@go test github.com/satisfeet/hoopoe/store/customers
+
+.PHONY: test

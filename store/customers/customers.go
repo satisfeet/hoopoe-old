@@ -27,14 +27,14 @@ func Setup(session *mgo.Session) {
 	})
 }
 
-func FindAll(query *Query) ([]Model, error) {
-    r := []Model{}
+func FindAll(query *Query) ([]Customer, error) {
+    r := []Customer{}
 
     return r, db.C("customers").Find(query).All(&r)
 }
 
-func  FindOne(query *Query) (Model, error) {
-    r := Model{}
+func  FindOne(query *Query) (Customer, error) {
+    r := Customer{}
 
     return r, db.C("customers").Find(query).One(&r)
 }
