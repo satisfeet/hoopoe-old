@@ -8,8 +8,23 @@ var (
 	db *mgo.Database
 )
 
-func Open(session *mgo.Session) {
+func Setup(session *mgo.Session) {
 	db = session.DB("")
+
+	db.C("customers").EnsureIndex(mgo.Index{
+		Key: []string{
+			"email",
+		},
+		Unique: true,
+	})
+	db.C("customers").EnsureIndex(mgo.Index{
+		Key: []string{
+			"name",
+			"company",
+			"address.city",
+			"address.street",
+		},
+	})
 }
 
 func FindAll(query *Query) ([]Model, error) {

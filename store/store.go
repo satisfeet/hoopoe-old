@@ -13,7 +13,7 @@ func Open(config map[string]string) (err error) {
         return
     }
 
-	customers.Open(s)
+	customers.Setup(s)
 
     return
 }
