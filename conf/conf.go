@@ -20,7 +20,7 @@ func (c *Conf) FromFlags() error {
     c.Httpd["addr"] = *flag.String("port", ":3001",
         "Port to listen for incoming HTTP requests.")
 
-    c.Store["mongo"] = *flag.String("mongo", "mongodb://localhost/test",
+    c.Store["mongo"] = *flag.String("mongo", "mongodb://localhost/satisfeet",
         "URL to connect to mongodb server.")
 
     return nil

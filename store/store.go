@@ -2,23 +2,18 @@ package store
 
 import (
     "labix.org/v2/mgo"
+	
+	"github.com/satisfeet/hoopoe/store/customers"
 )
 
-var (
-    session *mgo.Session
-    db      *mgo.Database
-)
-
-func Open(config map[string]string) error {
-    var err error
-
-    session, err = mgo.Dial(config["mongo"])
+func Open(config map[string]string) (err error) {
+	s, err := mgo.Dial(config["mongo"])
 
     if err != nil {
-        return err
+        return
     }
 
-    db = session.DB("")
+	customers.Open(s)
 
-    return nil
+    return
 }
