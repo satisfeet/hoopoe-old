@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
     "net/url"
     "net/http"
     "encoding/json"
@@ -54,8 +55,12 @@ func (c *Context) RespondJson(v interface{}, s int) {
     c.writer.Write(j)
 }
 
-func (c *Context) RespondError(e error, s int) {
-    c.Respond(e.Error(), s)
+func (c *Context) RespondError(err error, status int) {
+	if err == nil {
+		err = errors.New(http.StatusText(status))
+	}
+
+    c.Respond(err.Error(), status)
 }
 
 func (c *Context) Next() {

@@ -1,8 +1,6 @@
 package httpd
 
 import (
-    "errors"
-
     "github.com/satisfeet/hoopoe/httpd/router"
     "github.com/satisfeet/hoopoe/store/customers"
 )
@@ -37,13 +35,13 @@ func CustomersShow(c *router.Context) {
 }
 
 func CustomersCreate(c *router.Context) {
-    c.RespondError(errors.New("Not implemented yet."), 405)
+    c.RespondError(nil, 405)
 }
 
 func CustomersUpdate(c *router.Context) {
-    c.RespondError(errors.New("Not implemented yet."), 405)
+    c.RespondError(nil, 405)
 }
 
 func CustomersDestroy(c *router.Context) {
-    c.RespondError(errors.New("Not implemented yet."), 405)
+    c.RespondError(nil, 405)
 }
