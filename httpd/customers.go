@@ -6,10 +6,10 @@ import (
 )
 
 func CustomersList(c *router.Context) {
-	q := &customers.Query{}
+    q := &customers.Query{}
 
-	q.Search(c.Query().Get("search"))
-	q.Filter(c.Query().Get("filter"))
+    q.Search(c.Query().Get("search"))
+    q.Filter(c.Query().Get("filter"))
 
     r, err := customers.FindAll(q)
 
@@ -21,9 +21,9 @@ func CustomersList(c *router.Context) {
 }
 
 func CustomersShow(c *router.Context) {
-	q := &customers.Query{}
+    q := &customers.Query{}
 
-	q.Id(c.Param("customer"))
+    q.Id(c.Param("customer"))
 
     r, err := customers.FindOne(q)
 
