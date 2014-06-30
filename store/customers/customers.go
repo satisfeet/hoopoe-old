@@ -52,7 +52,7 @@ func Create(customer *Customer) error {
 }
 
 func Update(customer *Customer) error {
-	return db.C("customer").UpdateId(customer.Id, customer)
+	return db.C("customers").UpdateId(customer.Id, customer)
 }
 
 func Remove(customer *Customer) error {

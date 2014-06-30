@@ -10,8 +10,9 @@ import (
 )
 
 type Suite struct {
-	Models  []Customer
-	Session *mgo.Session
+	Customers  []Customer
+	Session    *mgo.Session
+	Collection *mgo.Collection
 }
 
 func (s *Suite) SetUp() {
@@ -19,38 +20,42 @@ func (s *Suite) SetUp() {
 
 	So(err, ShouldBeNil)
 
-	s.Models = append(s.Models, Customer{
-		Id:    bson.NewObjectId(),
-		Name:  "Haci Erdal",
-		Email: "haci95@hotmail.com",
-		Address: CustomerAddress{
-			City: "Berlin",
+	s.Customers = []Customer{
+		Customer{
+			Id:    bson.NewObjectId(),
+			Name:  "Haci Erdal",
+			Email: "haci95@hotmail.com",
+			Address: CustomerAddress{
+				City: "Berlin",
+			},
 		},
-	})
-	s.Models = append(s.Models, Customer{
-		Id:      bson.NewObjectId(),
-		Name:    "Bodo Kaiser",
-		Email:   "i@bodokaiser.io",
-		Company: "satisfeet",
-		Address: CustomerAddress{
-			Street: "Geiserichstraße 3",
-			City:   "Berlin",
-			Zip:    12105,
+		Customer{
+			Id:      bson.NewObjectId(),
+			Name:    "Bodo Kaiser",
+			Email:   "i@bodokaiser.io",
+			Company: "satisfeet",
+			Address: CustomerAddress{
+				Street: "Geiserichstraße 3",
+				City:   "Berlin",
+				Zip:    12105,
+			},
 		},
-	})
+	}
+
 	s.Session = sess
+	s.Collection = sess.DB("").C("customers")
 
 	Setup(sess)
 }
 
 func (s *Suite) Insert() {
-	err := s.Session.DB("").C("customers").Insert(s.Models[0], s.Models[1])
+	err := s.Collection.Insert(s.Customers[0], s.Customers[1])
 
 	So(err, ShouldBeNil)
 }
 
 func (s *Suite) Remove() {
-	_, err := s.Session.DB("").C("customers").RemoveAll([]bson.M{})
+	_, err := s.Collection.RemoveAll([]bson.M{})
 
 	So(err, ShouldBeNil)
 }
@@ -86,7 +91,7 @@ func TestCreate(test *testing.T) {
 			Convey(`Should be saved to "Collection"`, func() {
 				result := &Customer{}
 
-				err := s.Session.DB("").C("customers").FindId(c.Id).One(result)
+				err := s.Collection.FindId(c.Id).One(result)
 
 				So(err, ShouldBeNil)
 				So(result, ShouldResemble, c)
@@ -109,23 +114,20 @@ func TestUpdate(test *testing.T) {
 		s.Insert()
 
 		Convey(`With "Customer"`, func() {
-			s.Models[0].Address.City = "New City"
+			s.Customers[0].Address.City = "New City"
 
-			Update(&s.Models[0])
-			//err := Update(&s.Models[0])
+			err := Update(&s.Customers[0])
 
 			Convey(`Should have "err" equal "nil"`, func() {
-				//We are getting here some not found error
-				//which seems stupid as the rest runs fine...
-				//So(err, ShouldBeNil)
+				So(err, ShouldBeNil)
 			})
 			Convey(`Should be saved to "Collection"`, func() {
 				result := &Customer{}
 
-				err := s.Session.DB("").C("customers").FindId(s.Models[0].Id).One(result)
+				err := s.Collection.FindId(s.Customers[0].Id).One(result)
 
 				So(err, ShouldBeNil)
-				So(result, ShouldResemble, &s.Models[0])
+				So(result, ShouldResemble, &s.Customers[0])
 				So(result.Address.City, ShouldEqual, "New City")
 			})
 		})
@@ -146,13 +148,13 @@ func TestRemove(test *testing.T) {
 		s.Insert()
 
 		Convey(`With "Customer"`, func() {
-			err := Remove(&s.Models[0])
+			err := Remove(&s.Customers[0])
 
 			Convey(`Should have "err" equal "nil"`, func() {
 				So(err, ShouldBeNil)
 			})
 			Convey(`Should be removed from "Collection"`, func() {
-				result, err := s.Session.DB("").C("customers").FindId(s.Models[0].Id).Count()
+				result, err := s.Collection.FindId(s.Customers[0].Id).Count()
 
 				So(err, ShouldBeNil)
 				So(result, ShouldEqual, 0)
@@ -185,8 +187,8 @@ func TestFindAll(test *testing.T) {
 			Convey(`Should have "result" include all models`, func() {
 				So(len(result), ShouldEqual, 2)
 
-				So(result[0], ShouldResemble, s.Models[0])
-				So(result[1], ShouldResemble, s.Models[1])
+				So(result[0], ShouldResemble, s.Customers[0])
+				So(result[1], ShouldResemble, s.Customers[1])
 			})
 		})
 		Convey(`With a search "Query"`, func() {
@@ -201,7 +203,7 @@ func TestFindAll(test *testing.T) {
 			Convey(`Should have "result" include first model`, func() {
 				So(len(result), ShouldEqual, 1)
 
-				So(result[0], ShouldResemble, s.Models[0])
+				So(result[0], ShouldResemble, s.Customers[0])
 			})
 		})
 
@@ -222,7 +224,7 @@ func TestFindOne(test *testing.T) {
 
 		Convey(`With id "Query"`, func() {
 			q := &Query{}
-			q.Id(s.Models[1].Id.Hex())
+			q.Id(s.Customers[1].Id.Hex())
 
 			result, err := FindOne(q)
 
@@ -230,7 +232,7 @@ func TestFindOne(test *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey(`Should have "result" include second model`, func() {
-				So(result, ShouldResemble, s.Models[1])
+				So(result, ShouldResemble, s.Customers[1])
 			})
 		})
 
