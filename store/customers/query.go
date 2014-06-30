@@ -28,7 +28,7 @@ func (q *Query) Search(param string) {
 		o := []bson.M{}
 		r := bson.RegEx{param, "i"}
 
-		for _, value := range(searchable) {
+		for _, value := range searchable {
 			c := bson.M{}
 			c[value] = &r
 			o = append(o, c)
@@ -36,8 +36,4 @@ func (q *Query) Search(param string) {
 
 		(*q)["$or"] = o
 	}
-}
-
-func (q *Query) Filter(param string) {
-
 }

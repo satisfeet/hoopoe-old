@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 boot:
-	@go run
+	@go run main.go
 
 test: test-store
 
