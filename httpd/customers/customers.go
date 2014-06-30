@@ -5,40 +5,104 @@ import (
 	"github.com/satisfeet/hoopoe/store/customers"
 )
 
-func List(c *router.Context) {
+func List(context *router.Context) {
 	q := &customers.Query{}
-	q.Search(c.Query().Get("search"))
+	q.Search(context.Query().Get("search"))
 
 	r, err := customers.FindAll(q)
 
 	if err != nil {
-		c.RespondError(err, 500)
+		context.RespondError(err, 500)
 	} else {
-		c.RespondJson(r, 200)
+		context.RespondJson(r, 200)
 	}
 }
 
-func Show(c *router.Context) {
+func Show(context *router.Context) {
 	q := &customers.Query{}
-	q.Id(c.Param("customer"))
+	q.Id(context.Param("customer"))
 
 	r, err := customers.FindOne(q)
 
 	if err != nil {
-		c.RespondError(err, 500)
+		context.RespondError(err, 500)
 	} else {
-		c.RespondJson(r, 200)
+		context.RespondJson(r, 200)
 	}
 }
 
-func Create(c *router.Context) {
-	c.RespondError(nil, 405)
+func Create(context *router.Context) {
+	r := customers.Customer{}
+
+	err := context.ParseJson(&r)
+
+	if err != nil {
+		context.RespondError(err, 500)
+
+		return
+	}
+
+	err = customers.Create(&r)
+
+	if err != nil {
+		context.RespondError(err, 500)
+
+		return
+	}
+
+	context.RespondJson(&r, 200)
 }
 
-func Update(c *router.Context) {
-	c.RespondError(nil, 405)
+func Update(context *router.Context) {
+	q := &customers.Query{}
+	q.Id(context.Param("customer"))
+
+	r, err := customers.FindOne(q)
+
+	if err != nil {
+		context.RespondError(err, 500)
+
+		return
+	}
+
+	err = context.ParseJson(&r)
+
+	if err != nil {
+		context.RespondError(err, 500)
+
+		return
+	}
+
+	err = customers.Update(&r)
+
+	if err != nil {
+		context.RespondError(err, 500)
+
+		return
+	}
+
+	context.Respond("", 204)
 }
 
-func Destroy(c *router.Context) {
-	c.RespondError(nil, 405)
+func Destroy(context *router.Context) {
+	q := &customers.Query{}
+	q.Id(context.Param("customer"))
+
+	r, err := customers.FindOne(q)
+
+	if err != nil {
+		context.RespondError(err, 500)
+
+		return
+	}
+
+	err = customers.Remove(&r)
+
+	if err != nil {
+		context.RespondError(err, 500)
+
+		return
+	}
+
+	context.Respond("", 204)
 }

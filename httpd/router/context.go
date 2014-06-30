@@ -37,13 +37,12 @@ func (c *Context) Method() string {
 	return c.request.Method
 }
 
-func (c *Context) Respond(b string, s int) {
-	c.writer.WriteHeader(s)
-	c.writer.Write([]byte(b))
+func (c *Context) ParseJson(value interface{}) error {
+	return json.NewDecoder(c.request.Body).Decode(value)
 }
 
-func (c *Context) RespondJson(v interface{}, s int) {
-	j, err := json.Marshal(v)
+func (c *Context) RespondJson(value interface{}, status int) {
+	j, err := json.Marshal(value)
 
 	if err != nil {
 		c.RespondError(err, 500)
@@ -51,7 +50,7 @@ func (c *Context) RespondJson(v interface{}, s int) {
 		return
 	}
 
-	c.writer.WriteHeader(s)
+	c.writer.WriteHeader(status)
 	c.writer.Write(j)
 }
 
@@ -61,6 +60,11 @@ func (c *Context) RespondError(err error, status int) {
 	}
 
 	c.Respond(err.Error(), status)
+}
+
+func (c *Context) Respond(b string, s int) {
+	c.writer.WriteHeader(s)
+	c.writer.Write([]byte(b))
 }
 
 func (c *Context) Next() {
