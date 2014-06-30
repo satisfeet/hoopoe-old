@@ -1,11 +1,11 @@
-package httpd
+package customers
 
 import (
 	"github.com/satisfeet/hoopoe/httpd/router"
 	"github.com/satisfeet/hoopoe/store/customers"
 )
 
-func CustomersList(c *router.Context) {
+func List(c *router.Context) {
 	q := &customers.Query{}
 
 	q.Search(c.Query().Get("search"))
@@ -20,7 +20,7 @@ func CustomersList(c *router.Context) {
 	}
 }
 
-func CustomersShow(c *router.Context) {
+func Show(c *router.Context) {
 	q := &customers.Query{}
 
 	q.Id(c.Param("customer"))
@@ -34,14 +34,14 @@ func CustomersShow(c *router.Context) {
 	}
 }
 
-func CustomersCreate(c *router.Context) {
+func Create(c *router.Context) {
 	c.RespondError(nil, 405)
 }
 
-func CustomersUpdate(c *router.Context) {
+func Update(c *router.Context) {
 	c.RespondError(nil, 405)
 }
 
-func CustomersDestroy(c *router.Context) {
+func Destroy(c *router.Context) {
 	c.RespondError(nil, 405)
 }
