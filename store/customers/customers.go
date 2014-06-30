@@ -44,11 +44,15 @@ func Setup(session *mgo.Session) {
 }
 
 func Create(customer *Customer) error {
+	if !customer.Id.Valid() {
+		customer.Id = bson.NewObjectId()
+	}
+
 	return db.C("customers").Insert(customer)
 }
 
 func Update(customer *Customer) error {
-	return db.C("customer").UpdateId(customer.id, customer)
+	return db.C("customer").UpdateId(customer.Id, customer)
 }
 
 func Remove(customer *Customer) error {
