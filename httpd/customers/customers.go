@@ -6,8 +6,9 @@ import (
 )
 
 func List(context *router.Context) {
-	q := &customers.Query{}
-	q.Search(context.Query().Get("search"))
+	q := customers.Query{
+		"search": context.Query().Get("search"),
+	}
 
 	r, err := customers.FindAll(q)
 
@@ -19,8 +20,9 @@ func List(context *router.Context) {
 }
 
 func Show(context *router.Context) {
-	q := &customers.Query{}
-	q.Id(context.Param("customer"))
+	q := customers.Query{
+		"id": context.Param("customer"),
+	}
 
 	r, err := customers.FindOne(q)
 
@@ -54,8 +56,9 @@ func Create(context *router.Context) {
 }
 
 func Update(context *router.Context) {
-	q := &customers.Query{}
-	q.Id(context.Param("customer"))
+	q := customers.Query{
+		"id": context.Param("customer"),
+	}
 
 	r, err := customers.FindOne(q)
 
@@ -85,8 +88,9 @@ func Update(context *router.Context) {
 }
 
 func Destroy(context *router.Context) {
-	q := &customers.Query{}
-	q.Id(context.Param("customer"))
+	q := customers.Query{
+		"id": context.Param("customer"),
+	}
 
 	r, err := customers.FindOne(q)
 

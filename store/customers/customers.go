@@ -6,20 +6,20 @@ import (
 )
 
 var (
-	db *mgo.Database
+	collection *mgo.Collection
 )
 
-// Setup shared database instance and ensure collection indices.
-func Setup(session *mgo.Session) {
-	db = session.DB("")
+// Setup shared database instance and ensure collection index.
+func Setup(db *mgo.Database) {
+	collection = db.C("customers")
 
-	db.C("customers").EnsureIndex(mgo.Index{
+	collection.EnsureIndex(mgo.Index{
 		Key: []string{
 			"email",
 		},
 		Unique: true,
 	})
-	db.C("customers").EnsureIndex(mgo.Index{
+	collection.EnsureIndex(mgo.Index{
 		Key: []string{
 			"name",
 			"company",
@@ -28,6 +28,9 @@ func Setup(session *mgo.Session) {
 		},
 	})
 }
+
+// Alias to condition map.
+type Query map[string]string
 
 // Represents a Customer instance.
 type Customer struct {
@@ -45,69 +48,55 @@ type CustomerAddress struct {
 	Zip    uint16 `bson:"zip"     json:"zip,omitempty"`
 }
 
-// Represents a Customer specific database query.
-type Query bson.M
-
-// Appends an equals hex ObjectId condition to query.
-func (q *Query) Id(param string) {
-	if len(param) != 0 {
-		(*q)["_id"] = bson.ObjectIdHex(param)
-	}
-}
-
-// Appends a pseudo text search query to indexed fields.
-func (q *Query) Search(param string) {
-	searchable := []string{
-		"name",
-		"email",
-		"company",
-		"address.city",
-		"address.street",
-	}
-
-	if len(param) != 0 {
-		o := []bson.M{}
-		r := bson.RegEx{param, "i"}
-
-		for _, value := range searchable {
-			c := bson.M{}
-			c[value] = &r
-			o = append(o, c)
-		}
-
-		(*q)["$or"] = o
-	}
-}
-
 // Inserts a new Customer into collection.
 func Create(customer *Customer) error {
 	if !customer.Id.Valid() {
 		customer.Id = bson.NewObjectId()
 	}
 
-	return db.C("customers").Insert(customer)
+	return collection.Insert(customer)
 }
 
 // Updates an existing Customer to collection.
 func Update(customer *Customer) error {
-	return db.C("customers").UpdateId(customer.Id, customer)
+	return collection.UpdateId(customer.Id, customer)
 }
 
 // Removes an existing Customer from collection.
 func Remove(customer *Customer) error {
-	return db.C("customers").RemoveId(customer.Id)
+	return collection.RemoveId(customer.Id)
 }
 
-// Returns array of Customers matching Query conditions.
-func FindAll(query *Query) ([]Customer, error) {
-	r := []Customer{}
+// Returns array of Customers matching conditions where "conditions"
+// may have property "search" for pseudo text search accross index.
+func FindAll(query Query) ([]Customer, error) {
+	c := []Customer{}
 
-	return r, db.C("customers").Find(query).All(&r)
+	q := bson.M{}
+
+	if len(query["search"]) != 0 {
+		r := bson.RegEx{query["search"], "i"}
+
+		q["$or"] = []bson.M{
+			bson.M{"name": r},
+			bson.M{"email": r},
+			bson.M{"company": r},
+			bson.M{"address.city": r},
+			bson.M{"address.street": r},
+		}
+	}
+
+	return c, collection.Find(q).All(&c)
 }
 
-// Returns instance of Customer matching Query conditions.
-func FindOne(query *Query) (Customer, error) {
-	r := Customer{}
+// Returns instance of Customer matching conditions where "conditions"
+// should have property "id" for equals ObjectIdHex query.
+func FindOne(query Query) (Customer, error) {
+	c := Customer{}
 
-	return r, db.C("customers").Find(query).One(&r)
+	q := bson.M{
+		"_id": bson.ObjectIdHex(query["id"]),
+	}
+
+	return c, collection.Find(q).One(&c)
 }
