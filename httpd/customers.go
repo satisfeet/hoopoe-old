@@ -2,11 +2,21 @@ package httpd
 
 import (
 	"github.com/satisfeet/hoopoe/httpd/router"
-	. "github.com/satisfeet/hoopoe/store/customers"
+	"github.com/satisfeet/hoopoe/store"
 )
 
-func customersList(c *router.Context) {
-	r, err := FindAll(Query{"search": c.Query().Get("search")})
+func CustomersInit(r *router.Router) {
+	r.Get("/customers", CustomersList)
+	r.Pos("/customers", CustomersCreate)
+	r.Get("/customers/:customer", CustomersShow)
+	r.Put("/customers/:customer", CustomersUpdate)
+	r.Del("/customers/:customer", CustomersDestroy)
+}
+
+func CustomersList(c *router.Context) {
+	r, err := store.CustomersFindAll(store.Query{
+		"search": c.Query().Get("search"),
+	})
 
 	if err != nil {
 		c.RespondError(err, 500)
@@ -15,8 +25,10 @@ func customersList(c *router.Context) {
 	}
 }
 
-func customersShow(c *router.Context) {
-	r, err := FindOne(Query{"id": c.Param("customer")})
+func CustomersShow(c *router.Context) {
+	r, err := store.CustomersFindOne(store.Query{
+		"id": c.Param("customer"),
+	})
 
 	if err != nil {
 		c.RespondError(err, 500)
@@ -25,20 +37,16 @@ func customersShow(c *router.Context) {
 	}
 }
 
-func customersCreate(c *router.Context) {
-	r := Customer{}
+func CustomersCreate(c *router.Context) {
+	r := store.Customer{}
 
-	err := c.ParseJson(&r)
-
-	if err != nil {
+	if err := c.ParseJson(&r); err != nil {
 		c.RespondError(err, 500)
 
 		return
 	}
 
-	err = Create(&r)
-
-	if err != nil {
+	if err := store.CustomersCreate(&r); err != nil {
 		c.RespondError(err, 500)
 
 		return
@@ -47,8 +55,10 @@ func customersCreate(c *router.Context) {
 	c.RespondJson(&r, 200)
 }
 
-func customersUpdate(c *router.Context) {
-	r, err := FindOne(Query{"id": c.Param("customer")})
+func CustomersUpdate(c *router.Context) {
+	r, err := store.CustomersFindOne(store.Query{
+		"id": c.Param("customer"),
+	})
 
 	if err != nil {
 		c.RespondError(err, 500)
@@ -56,17 +66,13 @@ func customersUpdate(c *router.Context) {
 		return
 	}
 
-	err = c.ParseJson(&r)
-
-	if err != nil {
+	if err := c.ParseJson(&r); err != nil {
 		c.RespondError(err, 500)
 
 		return
 	}
 
-	err = Update(&r)
-
-	if err != nil {
+	if err := store.CustomersUpdate(&r); err != nil {
 		c.RespondError(err, 500)
 
 		return
@@ -75,8 +81,10 @@ func customersUpdate(c *router.Context) {
 	c.Respond("", 204)
 }
 
-func customersDestroy(c *router.Context) {
-	r, err := FindOne(Query{"id": c.Param("customer")})
+func CustomersDestroy(c *router.Context) {
+	r, err := store.CustomersFindOne(store.Query{
+		"id": c.Param("customer"),
+	})
 
 	if err != nil {
 		c.RespondError(err, 500)
@@ -84,9 +92,7 @@ func customersDestroy(c *router.Context) {
 		return
 	}
 
-	err = Remove(&r)
-
-	if err != nil {
+	if err := store.CustomersRemove(&r); err != nil {
 		c.RespondError(err, 500)
 
 		return

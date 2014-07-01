@@ -1,13 +1,15 @@
-package router
+package httpd
 
 import (
 	"encoding/base64"
 	"errors"
 	"log"
 	"strings"
+
+	"github.com/satisfeet/hoopoe/httpd/router"
 )
 
-func Auth(c *Context) {
+func Auth(c *router.Context) {
 	h := strings.Split(c.Get("Authorization"), " ")
 
 	if len(h) != 2 {
@@ -35,7 +37,7 @@ func Auth(c *Context) {
 	c.Next()
 }
 
-func Logger(c *Context) {
+func Logger(c *router.Context) {
 	log.Printf("Request: %s %s", c.Method(), c.Path())
 
 	c.Next()

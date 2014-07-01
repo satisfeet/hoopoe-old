@@ -1,36 +1,9 @@
-package customers
+package store
 
 import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 )
-
-var (
-	collection *mgo.Collection
-)
-
-// Setup shared database instance and ensure collection index.
-func Open(db *mgo.Database) {
-	collection = db.C("customers")
-
-	collection.EnsureIndex(mgo.Index{
-		Key: []string{
-			"email",
-		},
-		Unique: true,
-	})
-	collection.EnsureIndex(mgo.Index{
-		Key: []string{
-			"name",
-			"company",
-			"address.city",
-			"address.street",
-		},
-	})
-}
-
-// Alias to condition map.
-type Query map[string]string
 
 // Represents a Customer instance.
 type Customer struct {
@@ -48,28 +21,46 @@ type CustomerAddress struct {
 	Zip    uint16 `bson:"zip"     json:"zip,omitempty"`
 }
 
-// Inserts a new Customer into collection.
-func Create(customer *Customer) error {
+// Setup customers index.
+func CustomersIndex() {
+	db.C("customers").EnsureIndex(mgo.Index{
+		Key: []string{
+			"email",
+		},
+		Unique: true,
+	})
+	db.C("customers").EnsureIndex(mgo.Index{
+		Key: []string{
+			"name",
+			"company",
+			"address.city",
+			"address.street",
+		},
+	})
+}
+
+// Inserts a new Customer into db.C("customers").
+func CustomersCreate(customer *Customer) error {
 	if !customer.Id.Valid() {
 		customer.Id = bson.NewObjectId()
 	}
 
-	return collection.Insert(customer)
+	return db.C("customers").Insert(customer)
 }
 
-// Updates an existing Customer to collection.
-func Update(customer *Customer) error {
-	return collection.UpdateId(customer.Id, customer)
+// Updates an existing Customer to db.C("customers").
+func CustomersUpdate(customer *Customer) error {
+	return db.C("customers").UpdateId(customer.Id, customer)
 }
 
-// Removes an existing Customer from collection.
-func Remove(customer *Customer) error {
-	return collection.RemoveId(customer.Id)
+// Removes an existing Customer from db.C("customers").
+func CustomersRemove(customer *Customer) error {
+	return db.C("customers").RemoveId(customer.Id)
 }
 
 // Returns array of Customers matching conditions where "conditions"
 // may have property "search" for pseudo text search accross index.
-func FindAll(query Query) ([]Customer, error) {
+func CustomersFindAll(query Query) ([]Customer, error) {
 	c := []Customer{}
 
 	q := bson.M{}
@@ -86,17 +77,17 @@ func FindAll(query Query) ([]Customer, error) {
 		}
 	}
 
-	return c, collection.Find(q).All(&c)
+	return c, db.C("customers").Find(q).All(&c)
 }
 
 // Returns instance of Customer matching conditions where "conditions"
 // should have property "id" for equals ObjectIdHex query.
-func FindOne(query Query) (Customer, error) {
+func CustomersFindOne(query Query) (Customer, error) {
 	c := Customer{}
 
 	q := bson.M{
 		"_id": bson.ObjectIdHex(query["id"]),
 	}
 
-	return c, collection.Find(q).One(&c)
+	return c, db.C("customers").Find(q).One(&c)
 }

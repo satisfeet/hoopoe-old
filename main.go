@@ -11,9 +11,9 @@ import (
 func main() {
 	c := conf.New()
 
-	if err := store.Init(c.Store); err != nil {
+	if err := store.Open(c.Store); err != nil {
 		log.Fatal(err)
 	}
 
-	httpd.Init(c.Httpd)
+	httpd.Listen(c.Httpd)
 }
