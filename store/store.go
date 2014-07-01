@@ -6,17 +6,14 @@ import (
 	"github.com/satisfeet/hoopoe/store/customers"
 )
 
-// Opens a new connection session to mongodb and setups subpackages.
-func Open(config map[string]string) error {
-	s, err := mgo.Dial(config["mongo"])
+func Init(c map[string]string) error {
+	s, err := mgo.Dial(c["mongo"])
 
 	if err != nil {
 		return err
 	}
 
-	d := s.DB("")
+	customers.Open(s.DB(""))
 
-	customers.Setup(d)
-
-	return err
+	return nil
 }

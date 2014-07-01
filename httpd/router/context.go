@@ -25,8 +25,8 @@ func (c *Context) Path() string {
 	return c.request.URL.Path
 }
 
-func (c *Context) Param(p string) string {
-	return c.params.ByName(p)
+func (c *Context) Param(param string) string {
+	return c.params.ByName(param)
 }
 
 func (c *Context) Query() url.Values {
@@ -62,9 +62,9 @@ func (c *Context) RespondError(err error, status int) {
 	c.Respond(err.Error(), status)
 }
 
-func (c *Context) Respond(b string, s int) {
-	c.writer.WriteHeader(s)
-	c.writer.Write([]byte(b))
+func (c *Context) Respond(body string, status int) {
+	c.writer.WriteHeader(status)
+	c.writer.Write([]byte(body))
 }
 
 func (c *Context) Next() {

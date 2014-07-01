@@ -10,7 +10,7 @@ var (
 )
 
 // Setup shared database instance and ensure collection index.
-func Setup(db *mgo.Database) {
+func Open(db *mgo.Database) {
 	collection = db.C("customers")
 
 	collection.EnsureIndex(mgo.Index{
