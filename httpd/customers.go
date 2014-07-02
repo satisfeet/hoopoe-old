@@ -39,15 +39,67 @@ func (c *Customers) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Customers) Create(w http.ResponseWriter, r *http.Request) {
-	NewHandler(w, r).Error(nil, 406)
+	h := NewHandler(w, r)
+
+	res := Customer{}
+
+	if err := h.Parse(&res); err != nil {
+		h.Error(err, 500)
+
+		return
+	}
+
+	if err := CustomersCreate(&res); err != nil {
+		h.Error(err, 500)
+	} else {
+		h.Respond(res, 200)
+	}
 }
 
 func (c *Customers) Update(w http.ResponseWriter, r *http.Request) {
-	NewHandler(w, r).Error(nil, 406)
+	h := NewHandler(w, r)
+
+	res, err := CustomersFindOne(Query{
+		"id": mux.Vars(r)["customer"],
+	})
+
+	if err != nil {
+		h.Error(err, 500)
+
+		return
+	}
+
+	if err := h.Parse(&res); err != nil {
+		h.Error(err, 500)
+
+		return
+	}
+
+	if err := CustomersUpdate(&res); err != nil {
+		h.Error(err, 500)
+	} else {
+		h.Respond(nil, 204)
+	}
 }
 
 func (c *Customers) Destroy(w http.ResponseWriter, r *http.Request) {
-	NewHandler(w, r).Error(nil, 406)
+	h := NewHandler(w, r)
+
+	res, err := CustomersFindOne(Query{
+		"id": mux.Vars(r)["customer"],
+	})
+
+	if err != nil {
+		h.Error(err, 500)
+
+		return
+	}
+
+	if err := CustomersRemove(&res); err != nil {
+		h.Error(err, 500)
+	} else {
+		h.Respond(nil, 204)
+	}
 }
 
 func (c *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
