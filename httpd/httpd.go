@@ -2,17 +2,10 @@ package httpd
 
 import (
 	"net/http"
-
-	"github.com/satisfeet/hoopoe/httpd/router"
 )
 
 func Listen(c map[string]string) {
-	r := router.New()
+	http.Handle("/", &Customers{})
 
-	r.Use(Auth)
-	r.Use(Logger)
-
-	CustomersInit(r)
-
-	http.ListenAndServe(c["addr"], r)
+	http.ListenAndServe(c["addr"], nil)
 }

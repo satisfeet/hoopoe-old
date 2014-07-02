@@ -6,9 +6,9 @@ boot:
 test: test-store
 
 test-store:
-	@go test github.com/satisfeet/hoopoe/store
+	@go test -v github.com/satisfeet/hoopoe/store
 
 test-httpd:
-	@go test github.com/satisfeet/hoopoe/httpd
+	@go test -v github.com/satisfeet/hoopoe/httpd
 
 .PHONY: test
