@@ -1,102 +1,63 @@
 package httpd
 
 import (
-	"github.com/satisfeet/hoopoe/httpd/router"
-	"github.com/satisfeet/hoopoe/store"
+	"net/http"
+
+	"github.com/gorilla/mux"
+
+	. "github.com/satisfeet/hoopoe/store"
 )
 
-func CustomersInit(r *router.Router) {
-	r.Get("/customers", CustomersList)
-	r.Pos("/customers", CustomersCreate)
-	r.Get("/customers/:customer", CustomersShow)
-	r.Put("/customers/:customer", CustomersUpdate)
-	r.Del("/customers/:customer", CustomersDestroy)
-}
+type Customers struct{}
 
-func CustomersList(c *router.Context) {
-	r, err := store.CustomersFindAll(store.Query{
-		"search": c.Query().Get("search"),
+func (c *Customers) List(w http.ResponseWriter, r *http.Request) {
+	h := NewHandler(w, r)
+
+	res, err := CustomersFindAll(Query{
+		"search": r.URL.Query().Get("search"),
 	})
 
 	if err != nil {
-		c.RespondError(err, 500)
+		h.Error(err, 500)
 	} else {
-		c.RespondJson(r, 200)
+		h.Respond(res, 200)
 	}
 }
 
-func CustomersShow(c *router.Context) {
-	r, err := store.CustomersFindOne(store.Query{
-		"id": c.Param("customer"),
+func (c *Customers) Show(w http.ResponseWriter, r *http.Request) {
+	h := NewHandler(w, r)
+
+	res, err := CustomersFindOne(Query{
+		"id": mux.Vars(r)["customer"],
 	})
 
 	if err != nil {
-		c.RespondError(err, 500)
+		h.Error(err, 500)
 	} else {
-		c.RespondJson(r, 200)
+		h.Respond(res, 200)
 	}
 }
 
-func CustomersCreate(c *router.Context) {
-	r := store.Customer{}
-
-	if err := c.ParseJson(&r); err != nil {
-		c.RespondError(err, 500)
-
-		return
-	}
-
-	if err := store.CustomersCreate(&r); err != nil {
-		c.RespondError(err, 500)
-
-		return
-	}
-
-	c.RespondJson(&r, 200)
+func (c *Customers) Create(w http.ResponseWriter, r *http.Request) {
+	NewHandler(w, r).Error(nil, 406)
 }
 
-func CustomersUpdate(c *router.Context) {
-	r, err := store.CustomersFindOne(store.Query{
-		"id": c.Param("customer"),
-	})
-
-	if err != nil {
-		c.RespondError(err, 500)
-
-		return
-	}
-
-	if err := c.ParseJson(&r); err != nil {
-		c.RespondError(err, 500)
-
-		return
-	}
-
-	if err := store.CustomersUpdate(&r); err != nil {
-		c.RespondError(err, 500)
-
-		return
-	}
-
-	c.Respond("", 204)
+func (c *Customers) Update(w http.ResponseWriter, r *http.Request) {
+	NewHandler(w, r).Error(nil, 406)
 }
 
-func CustomersDestroy(c *router.Context) {
-	r, err := store.CustomersFindOne(store.Query{
-		"id": c.Param("customer"),
-	})
+func (c *Customers) Destroy(w http.ResponseWriter, r *http.Request) {
+	NewHandler(w, r).Error(nil, 406)
+}
 
-	if err != nil {
-		c.RespondError(err, 500)
+func (c *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	m := mux.NewRouter()
 
-		return
-	}
+	m.HandleFunc("/customers", c.List).Methods("GET")
+	m.HandleFunc("/customers", c.Create).Methods("POST")
+	m.HandleFunc("/customers/{customer}", c.Show).Methods("GET")
+	m.HandleFunc("/customers/{customer}", c.Update).Methods("PUT")
+	m.HandleFunc("/customers/{customer}", c.Destroy).Methods("DELETE")
 
-	if err := store.CustomersRemove(&r); err != nil {
-		c.RespondError(err, 500)
-
-		return
-	}
-
-	c.Respond("", 204)
+	m.ServeHTTP(w, r)
 }

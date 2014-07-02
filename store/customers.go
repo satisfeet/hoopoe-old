@@ -1,6 +1,8 @@
 package store
 
 import (
+	"errors"
+
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 )
@@ -85,8 +87,12 @@ func CustomersFindAll(query Query) ([]Customer, error) {
 func CustomersFindOne(query Query) (Customer, error) {
 	c := Customer{}
 
-	q := bson.M{
-		"_id": bson.ObjectIdHex(query["id"]),
+	q := bson.M{}
+
+	if bson.IsObjectIdHex(query["id"]) {
+		q["_id"] = bson.ObjectIdHex(query["id"])
+	} else {
+		return c, errors.New("Invalid customer id.")
 	}
 
 	return c, db.C("customers").Find(q).One(&c)
