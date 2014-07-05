@@ -9,6 +9,10 @@ func (q Query) Id(param string) {
 }
 
 func (q Query) Search(param string) {
+	if len(param) == 0 {
+		return
+	}
+
 	r := bson.RegEx{param, "i"}
 
 	q["$or"] = []bson.M{
