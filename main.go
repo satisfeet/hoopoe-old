@@ -13,6 +13,10 @@ func main() {
 	s := store.New()
 	h := httpd.New(s)
 
+	if err := c.ParseFlags(); err != nil {
+		log.Fatal(err)
+	}
+
 	if err := s.Open(c.Store); err != nil {
 		log.Fatal(err)
 	}

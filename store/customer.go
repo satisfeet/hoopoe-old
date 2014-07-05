@@ -19,3 +19,7 @@ type CustomerAddress struct {
 func (c *Customer) Id() bson.ObjectId {
 	return c.Oid
 }
+
+func (c *Customer) NewId() {
+	c.Oid = bson.NewObjectId()
+}

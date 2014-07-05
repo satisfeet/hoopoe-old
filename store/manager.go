@@ -14,6 +14,7 @@ type Manager struct {
 
 type Model interface {
 	Id() bson.ObjectId
+	NewId()
 }
 
 func (m *Manager) index(model Model) {
@@ -40,6 +41,10 @@ func (m *Manager) index(model Model) {
 
 func (m *Manager) Create(model Model) error {
 	m.index(model)
+
+	if !model.Id().Valid() {
+		model.NewId()
+	}
 
 	return m.collection.Insert(model)
 }
