@@ -10,10 +10,12 @@ import (
 
 func main() {
 	c := conf.New()
+	s := store.New()
+	h := httpd.New(s)
 
-	if err := store.Open(c.Store); err != nil {
+	if err := s.Open(c.Store); err != nil {
 		log.Fatal(err)
 	}
 
-	httpd.Listen(c.Httpd)
+	h.Listen(c.Httpd)
 }
