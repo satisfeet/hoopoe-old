@@ -32,6 +32,4 @@ func (s *Store) Manager(name string) *Manager {
 
 func (s *Store) Close() {
 	s.session.Close()
-
-	return
 }

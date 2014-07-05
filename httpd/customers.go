@@ -42,7 +42,25 @@ func (c *Customers) List(w http.ResponseWriter, r *http.Request, p httprouter.Pa
 }
 
 func (c *Customers) Show(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	result := store.Customer{}
 
+	q := store.Query{}
+
+	if param := p.ByName("customer"); len(param) != 0 {
+		q.Id(param)
+	}
+
+	if err := c.manager.FindOne(q, &result); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(&result); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
 }
 
 func (c *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
