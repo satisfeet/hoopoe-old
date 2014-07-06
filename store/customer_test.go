@@ -11,39 +11,28 @@ import (
 )
 
 var (
-	Id = bson.NewObjectId()
+	id      = bson.NewObjectid()
+	name    = "Bodo Kaiser"
+	email   = "bodo.kaiser@me.com"
+	company = "satisfeet"
+	street  = "Geiserichstr. 3"
+	city    = "Berlin"
+	zip     = 12105
 )
 
 const (
-	CITY    = "Berlin"
-	COMPANY = "satisfeet"
-	EMAIL   = "bodo.kaiser@me.com"
-	NAME    = "Bodo Kaiser"
-	STREET  = "Geiserichstr. 3"
-	ZIP     = 12105
-
 	BASIC    = `{"id":"%s","name":"%s","email":"%s","address":{"city":"%s"}}`
 	COMPLETE = `{"id":"%s","name":"%s","email":"%s","company":"%s","address":{"zip":%d,"city":"%s","street":"%s"}}`
 )
 
-func TestNew(t *testing.T) {
-	Convey("Given a new model", t, func() {
-		customer := NewCustomer()
-
-		Convey("The Id should be valid", func() {
-			So(customer.Id.Valid(), ShouldEqual, true)
-		})
-	})
-}
-
 func TestMarshalJSON(t *testing.T) {
 	Convey("Given a basic model", t, func() {
 		customer := Customer{
-			Id:    Id,
-			Name:  NAME,
-			Email: EMAIL,
+			id:    id,
+			Name:  name,
+			Email: email,
 			Address: CustomerAddress{
-				City: CITY,
+				City: city,
 			},
 		}
 
@@ -54,20 +43,21 @@ func TestMarshalJSON(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("The result should be json", func() {
-				So(string(json), ShouldEqual, fmt.Sprintf(BASIC, Id.Hex(), NAME, EMAIL, CITY))
+				So(string(json), ShouldEqual, fmt.Sprintf(BASIC,
+					id.Hex(), name, email, city))
 			})
 		})
 	})
 	Convey("Given a complete model", t, func() {
 		customer := Customer{
-			Id:      Id,
-			Name:    NAME,
-			Email:   EMAIL,
-			Company: COMPANY,
+			id:      id,
+			Name:    name,
+			Email:   email,
+			Company: company,
 			Address: CustomerAddress{
-				Zip:    ZIP,
-				City:   CITY,
-				Street: STREET,
+				Zip:    zip,
+				City:   city,
+				Street: street,
 			},
 		}
 
@@ -78,14 +68,16 @@ func TestMarshalJSON(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("The result should be json", func() {
-				So(string(json), ShouldEqual, fmt.Sprintf(COMPLETE, Id.Hex(), NAME, EMAIL, COMPANY, ZIP, CITY, STREET))
+				So(string(json), ShouldEqual, fmt.Sprintf(COMPLETE,
+					id.Hex(), name, email, company, zip, city, street))
 			})
 		})
 	})
 }
 
 func TestUnmarshalJSON(t *testing.T) {
-	j := fmt.Sprintf(COMPLETE, Id.Hex(), NAME, EMAIL, COMPANY, ZIP, CITY, STREET)
+	j := fmt.Sprintf(COMPLETE, id.Hex(),
+		name, email, company, zip, city, street)
 
 	Convey("Given a string", t, func() {
 		customer := Customer{}
@@ -97,13 +89,13 @@ func TestUnmarshalJSON(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 			Convey("The customer should be complete", func() {
-				So(customer.Id, ShouldEqual, Id)
-				So(customer.Name, ShouldEqual, NAME)
-				So(customer.Email, ShouldEqual, EMAIL)
-				So(customer.Company, ShouldEqual, COMPANY)
-				So(customer.Address.Zip, ShouldEqual, ZIP)
-				So(customer.Address.City, ShouldEqual, CITY)
-				So(customer.Address.Street, ShouldEqual, STREET)
+				So(customer.id, ShouldEqual, id)
+				So(customer.Name, ShouldEqual, name)
+				So(customer.Email, ShouldEqual, email)
+				So(customer.Company, ShouldEqual, company)
+				So(customer.Address.Zip, ShouldEqual, zip)
+				So(customer.Address.City, ShouldEqual, city)
+				So(customer.Address.Street, ShouldEqual, street)
 			})
 		})
 	})

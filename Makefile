@@ -11,6 +11,6 @@ test-store:
 	@go test github.com/satisfeet/hoopoe/store
 
 test-httpd:
-	@go test github.com/satisfeet/hoopoe/httpd
+	@go test github.com/satisfeet/hoopoe/httpd/context
 
 .PHONY: test

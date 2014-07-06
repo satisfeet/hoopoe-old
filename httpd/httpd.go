@@ -11,20 +11,14 @@ type Httpd struct {
 	store *store.Store
 }
 
-func New(store *store.Store) *Httpd {
-	return &Httpd{store}
+func New(s *store.Store) *Httpd {
+	return &Httpd{s}
 }
 
-func (h *Httpd) Listen(config conf.Map) {
-	h.Handle(NewCustomers(h.store))
+func (h *Httpd) Listen(c conf.Map) {
+	m := http.NewServeMux()
 
-	http.ListenAndServe(config["addr"], nil)
-}
+	m.Handle("/", NewCustomer(h.store))
 
-func (h *Httpd) Handle(handler http.Handler) {
-	handler = Logger(handler)
-	handler = Accept(handler)
-	handler = ContentType(handler)
-
-	http.Handle("/", handler)
+	http.ListenAndServe(c["addr"], Logger(m))
 }

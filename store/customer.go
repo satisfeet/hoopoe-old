@@ -1,33 +1,95 @@
 package store
 
-import "labix.org/v2/mgo/bson"
+import (
+	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
+)
 
 var (
-	CustomerIndex = []string{
-		"name",
-		"company",
-		"address.city",
-		"address.street",
-	}
 	CustomerUnique = []string{
 		"email",
+	}
+	CustomerIndices = []string{
+		"name",
+		"company",
+		"address.street",
+		"address.city",
 	}
 )
 
 type Customer struct {
-	Id      bson.ObjectId   `bson:"_id"     json:"id"`
-	Name    string          `bson:"name"    json:"name"              store:"index"`
-	Email   string          `bson:"email"   json:"email"             store:"unique"`
-	Company string          `bson:"company" json:"company,omitempty" store:"index"`
-	Address CustomerAddress `bson:"address" json:"address"`
+	Id      bson.ObjectId   `json:"id"     bson:"_id"`
+	Name    string          `json:"name"`
+	Email   string          `json:"email"`
+	Company string          `json:"company,omitempty"`
+	Address CustomerAddress `json:"address"`
 }
 
 type CustomerAddress struct {
-	Zip    uint16 `bson:"zip"     json:"zip,omitempty"`
-	City   string `bson:"city"    json:"city,omitempty"   store:"index"`
-	Street string `bson:"street"  json:"street,omitempty" store:"index"`
+	Zip    uint16 `json:"zip,omitempty"`
+	City   string `json:"city,omitempty"`
+	Street string `json:"street,omitempty"`
 }
 
-func NewCustomer() *Customer {
-	return &Customer{Id: bson.NewObjectId()}
+type CustomerHandler struct {
+	store *Store
+}
+
+func NewCustomerHandler(s *Store) *CustomerHandler {
+	return &CustomerHandler{s}
+}
+
+func (h *CustomerHandler) Index() {
+	s := h.store.Mongo().Clone()
+
+	defer s.Close()
+
+	c := s.DB("").C("customers")
+
+	c.EnsureIndex(mgo.Index{Key: CustomerIndices})
+	c.EnsureIndex(mgo.Index{Key: CustomerUnique, Unique: true})
+}
+
+func (h *CustomerHandler) Create(c *Customer) error {
+	s := h.store.Mongo().Clone()
+
+	defer s.Close()
+
+	if !c.Id.Valid() {
+		c.Id = bson.NewObjectId()
+	}
+
+	return s.DB("").C("customers").Insert(c)
+}
+
+func (h *CustomerHandler) Update(c *Customer) error {
+	s := h.store.Mongo().Clone()
+
+	defer s.Close()
+
+	return s.DB("").C("customers").UpdateId(c.Id, c)
+}
+
+func (h *CustomerHandler) Remove(q Query) error {
+	s := h.store.Mongo().Clone()
+
+	defer s.Close()
+
+	return s.DB("").C("customers").Remove(q)
+}
+
+func (h *CustomerHandler) FindAll(q Query, c *[]Customer) error {
+	s := h.store.Mongo().Clone()
+
+	defer s.Close()
+
+	return s.DB("").C("customers").Find(q).All(c)
+}
+
+func (h *CustomerHandler) FindOne(q Query, c *Customer) error {
+	s := h.store.Mongo().Clone()
+
+	defer s.Close()
+
+	return s.DB("").C("customers").Find(q).One(c)
 }

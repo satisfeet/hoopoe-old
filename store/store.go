@@ -1,11 +1,13 @@
 package store
 
-import "labix.org/v2/mgo"
+import (
+	"labix.org/v2/mgo"
 
-import "github.com/satisfeet/hoopoe/conf"
+	"github.com/satisfeet/hoopoe/conf"
+)
 
 type Store struct {
-	session *mgo.Session
+	mongo *mgo.Session
 }
 
 func New() *Store {
@@ -15,7 +17,7 @@ func New() *Store {
 func (s *Store) Open(c conf.Map) error {
 	var err error
 
-	s.session, err = mgo.Dial(c["mongo"])
+	s.mongo, err = mgo.Dial(c["mongo"])
 
 	if err != nil {
 		return err
@@ -24,10 +26,10 @@ func (s *Store) Open(c conf.Map) error {
 	return nil
 }
 
-func (s *Store) Collection(name string) *mgo.Collection {
-	return s.session.DB("").C(name)
+func (s *Store) Mongo() *mgo.Session {
+	return s.mongo
 }
 
 func (s *Store) Close() {
-	s.session.Close()
+	s.mongo.Close()
 }
