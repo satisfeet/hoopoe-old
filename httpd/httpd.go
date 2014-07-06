@@ -24,6 +24,7 @@ func (h *Httpd) Listen(config conf.Map) {
 func (h *Httpd) Handle(handler http.Handler) {
 	handler = Logger(handler)
 	handler = Accept(handler)
+	handler = ContentType(handler)
 
 	http.Handle("/", handler)
 }

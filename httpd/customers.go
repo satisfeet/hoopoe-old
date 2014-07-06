@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"labix.org/v2/mgo/bson"
+
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/satisfeet/hoopoe/store"
@@ -66,6 +68,10 @@ func (c *Customers) Create(w http.ResponseWriter, r *http.Request, p httprouter.
 		return
 	}
 
+	if !result.Id.Valid() {
+		result.Id = bson.NewObjectId()
+	}
+
 	if err := c.manager.Create(&result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
@@ -91,7 +97,7 @@ func (c *Customers) Update(w http.ResponseWriter, r *http.Request, p httprouter.
 		return
 	}
 
-	if err := c.manager.Update(&result); err != nil {
+	if err := c.manager.Update(q, &result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
@@ -101,18 +107,10 @@ func (c *Customers) Update(w http.ResponseWriter, r *http.Request, p httprouter.
 }
 
 func (c *Customers) Destroy(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	result := store.Customer{}
-
 	q := store.Query{}
 	q.Id(p.ByName("customer"))
 
-	if err := c.manager.FindOne(q, &result); err != nil {
-		Error(w, err, http.StatusNotFound)
-
-		return
-	}
-
-	if err := c.manager.Destroy(&result); err != nil {
+	if err := c.manager.Destroy(q); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
