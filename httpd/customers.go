@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"labix.org/v2/mgo/bson"
-
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/satisfeet/hoopoe/store"
@@ -24,15 +22,11 @@ func NewCustomers(s *store.Store) *Customers {
 func (c *Customers) List(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	result := []store.Customer{}
 
-	q := store.Query{}
-	q.Search(r.URL.Query().Get("search"))
-
-	if err := c.manager.Find(q, &result); err != nil {
+	if err := c.manager.Find(&result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
-
 	if err := json.NewEncoder(w).Encode(&result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
@@ -43,15 +37,11 @@ func (c *Customers) List(w http.ResponseWriter, r *http.Request, p httprouter.Pa
 func (c *Customers) Show(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	result := store.Customer{}
 
-	q := store.Query{}
-	q.Id(p.ByName("customer"))
-
-	if err := c.manager.FindOne(q, &result); err != nil {
+	if err := c.manager.FindById(p.ByName("customer"), &result); err != nil {
 		Error(w, err, http.StatusNotFound)
 
 		return
 	}
-
 	if err := json.NewEncoder(w).Encode(&result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
@@ -60,25 +50,19 @@ func (c *Customers) Show(w http.ResponseWriter, r *http.Request, p httprouter.Pa
 }
 
 func (c *Customers) Create(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	result := store.Customer{}
+	result := store.NewCustomer()
 
-	if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(result); err != nil {
 		Error(w, err, http.StatusBadRequest)
 
 		return
 	}
-
-	if !result.Id.Valid() {
-		result.Id = bson.NewObjectId()
-	}
-
-	if err := c.manager.Create(&result); err != nil {
+	if err := c.manager.Create(result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
-
-	if err := json.NewEncoder(w).Encode(&result); err != nil {
+	if err := json.NewEncoder(w).Encode(result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
@@ -88,16 +72,12 @@ func (c *Customers) Create(w http.ResponseWriter, r *http.Request, p httprouter.
 func (c *Customers) Update(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	result := store.Customer{}
 
-	q := store.Query{}
-	q.Id(p.ByName("customer"))
-
 	if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
 		Error(w, err, http.StatusBadRequest)
 
 		return
 	}
-
-	if err := c.manager.Update(q, &result); err != nil {
+	if err := c.manager.UpdateById(p.ByName("customer"), &result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
@@ -107,10 +87,7 @@ func (c *Customers) Update(w http.ResponseWriter, r *http.Request, p httprouter.
 }
 
 func (c *Customers) Destroy(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	q := store.Query{}
-	q.Id(p.ByName("customer"))
-
-	if err := c.manager.Destroy(q); err != nil {
+	if err := c.manager.DestroyById(p.ByName("customer")); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return

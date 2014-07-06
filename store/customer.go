@@ -15,3 +15,7 @@ type CustomerAddress struct {
 	City   string `bson:"city"    json:"city,omitempty"   store:"index"`
 	Street string `bson:"street"  json:"street,omitempty" store:"index"`
 }
+
+func NewCustomer() *Customer {
+	return &Customer{Id: bson.NewObjectId()}
+}

@@ -26,6 +26,16 @@ const (
 	COMPLETE = `{"id":"%s","name":"%s","email":"%s","company":"%s","address":{"zip":%d,"city":"%s","street":"%s"}}`
 )
 
+func TestNew(t *testing.T) {
+	Convey("Given a new model", t, func() {
+		customer := NewCustomer()
+
+		Convey("The Id should be valid", func() {
+			So(customer.Id.Valid(), ShouldEqual, true)
+		})
+	})
+}
+
 func TestMarshalJSON(t *testing.T) {
 	Convey("Given a basic model", t, func() {
 		customer := Customer{

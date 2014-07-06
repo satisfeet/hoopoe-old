@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 )
 
 type Manager struct {
@@ -33,28 +34,28 @@ func (m *Manager) index(model interface{}) {
 	m.collection.EnsureIndex(mgo.Index{Key: unique, Unique: true})
 }
 
+func (m *Manager) Find(models interface{}) error {
+	return m.collection.Find(nil).All(models)
+}
+
 func (m *Manager) Create(model interface{}) error {
 	m.index(model)
 
 	return m.collection.Insert(model)
 }
 
-func (m *Manager) Update(query Query, model interface{}) error {
+func (m *Manager) FindById(id string, model interface{}) error {
 	m.index(model)
 
-	return m.collection.Update(query, model)
+	return m.collection.FindId(bson.ObjectIdHex(id)).One(model)
 }
 
-func (m *Manager) Destroy(query Query) error {
-	return m.collection.Remove(query)
-}
-
-func (m *Manager) Find(query Query, models interface{}) error {
-	return m.collection.Find(query).All(models)
-}
-
-func (m *Manager) FindOne(query Query, model interface{}) error {
+func (m *Manager) UpdateById(id string, model interface{}) error {
 	m.index(model)
 
-	return m.collection.Find(query).One(model)
+	return m.collection.UpdateId(bson.ObjectIdHex(id), model)
+}
+
+func (m *Manager) DestroyById(id string) error {
+	return m.collection.RemoveId(bson.ObjectIdHex(id))
 }
