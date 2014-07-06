@@ -1,50 +1,42 @@
 package httpd
 
 import (
-	"encoding/json"
-	"errors"
+	"log"
 	"net/http"
 )
 
-type Handler struct {
-	response http.ResponseWriter
-	request  *http.Request
+const (
+	JSON = "application/json"
+)
+
+func Logger(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s", r.Method, r.URL.String())
+
+		h.ServeHTTP(w, r)
+	})
 }
 
-func NewHandler(w http.ResponseWriter, r *http.Request) *Handler {
-	return &Handler{w, r}
+func Accept(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if a := r.Header.Get("Accept"); len(a) != 0 && a != JSON {
+			Error(w, nil, http.StatusNotAcceptable)
+
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
 }
 
-func (h *Handler) Parse(v interface{}) error {
-	err := json.NewDecoder(h.request.Body).Decode(v)
+func ContentType(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if t := r.Header.Get("Content-Type"); len(t) != 0 && t != JSON {
+			Error(w, nil, http.StatusUnsupportedMediaType)
 
-	return err
-}
+			return
+		}
 
-func (h *Handler) Respond(v interface{}, s int) {
-	if v == nil {
-		h.response.WriteHeader(s)
-
-		return
-	}
-
-	j, err := json.Marshal(&v)
-
-	if err != nil {
-		h.Error(err, 500)
-
-		return
-	}
-
-	h.response.WriteHeader(s)
-	h.response.Write(j)
-}
-
-func (h *Handler) Error(e error, s int) {
-	if e == nil {
-		e = errors.New(http.StatusText(s))
-	}
-
-	h.response.WriteHeader(s)
-	h.response.Write([]byte(e.Error()))
+		h.ServeHTTP(w, r)
+	})
 }
