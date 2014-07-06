@@ -2,6 +2,18 @@ package store
 
 import "labix.org/v2/mgo/bson"
 
+var (
+	CustomerIndex = []string{
+		"name",
+		"company",
+		"address.city",
+		"address.street",
+	}
+	CustomerUnique = []string{
+		"email",
+	}
+)
+
 type Customer struct {
 	Id      bson.ObjectId   `bson:"_id"     json:"id"`
 	Name    string          `bson:"name"    json:"name"              store:"index"`

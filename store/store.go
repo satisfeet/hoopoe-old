@@ -24,10 +24,8 @@ func (s *Store) Open(c conf.Map) error {
 	return nil
 }
 
-func (s *Store) Manager(name string) *Manager {
-	c := s.session.DB("").C(name)
-
-	return &Manager{c}
+func (s *Store) Collection(name string) *mgo.Collection {
+	return s.session.DB("").C(name)
 }
 
 func (s *Store) Close() {

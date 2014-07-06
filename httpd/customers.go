@@ -4,25 +4,36 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"labix.org/v2/mgo"
+
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/satisfeet/hoopoe/store"
 )
 
 type Customers struct {
-	manager *store.Manager
+	store *mgo.Collection
 }
 
 func NewCustomers(s *store.Store) *Customers {
-	m := s.Manager("customers")
+	c := s.Collection("customers")
 
-	return &Customers{m}
+	c.EnsureIndex(mgo.Index{Key: store.CustomerIndex})
+	c.EnsureIndex(mgo.Index{Key: store.CustomerUnique, Unique: true})
+
+	return &Customers{s.Collection("customers")}
 }
 
 func (c *Customers) List(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	query := store.Query{}
+
+	if search := r.URL.Query().Get("search"); len(search) != 0 {
+		query.Search(search, append(store.CustomerIndex, store.CustomerUnique...))
+	}
+
 	result := []store.Customer{}
 
-	if err := c.manager.Find(&result); err != nil {
+	if err := c.store.Find(query).All(&result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
@@ -35,9 +46,17 @@ func (c *Customers) List(w http.ResponseWriter, r *http.Request, p httprouter.Pa
 }
 
 func (c *Customers) Show(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	query := store.Query{}
+
+	if err := query.IdHex(p.ByName("customer")); err != nil {
+		Error(w, err, http.StatusNotFound)
+
+		return
+	}
+
 	result := store.Customer{}
 
-	if err := c.manager.FindById(p.ByName("customer"), &result); err != nil {
+	if err := c.store.Find(query).One(&result); err != nil {
 		Error(w, err, http.StatusNotFound)
 
 		return
@@ -57,7 +76,7 @@ func (c *Customers) Create(w http.ResponseWriter, r *http.Request, p httprouter.
 
 		return
 	}
-	if err := c.manager.Create(result); err != nil {
+	if err := c.store.Insert(result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
@@ -70,6 +89,14 @@ func (c *Customers) Create(w http.ResponseWriter, r *http.Request, p httprouter.
 }
 
 func (c *Customers) Update(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	query := store.Query{}
+
+	if err := query.IdHex(p.ByName("customer")); err != nil {
+		Error(w, err, http.StatusNotFound)
+
+		return
+	}
+
 	result := store.Customer{}
 
 	if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
@@ -77,7 +104,7 @@ func (c *Customers) Update(w http.ResponseWriter, r *http.Request, p httprouter.
 
 		return
 	}
-	if err := c.manager.UpdateById(p.ByName("customer"), &result); err != nil {
+	if err := c.store.Update(query, &result); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
@@ -87,7 +114,15 @@ func (c *Customers) Update(w http.ResponseWriter, r *http.Request, p httprouter.
 }
 
 func (c *Customers) Destroy(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	if err := c.manager.DestroyById(p.ByName("customer")); err != nil {
+	query := store.Query{}
+
+	if err := query.IdHex(p.ByName("customer")); err != nil {
+		Error(w, err, http.StatusNotFound)
+
+		return
+	}
+
+	if err := c.store.Remove(query); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
