@@ -11,7 +11,7 @@ type Customer struct {
 }
 
 type CustomerAddress struct {
-	Street string `bson:"street"  json:"street,omitempty" store:"index"`
-	City   string `bson:"city"    json:"city,omitempty"   store:"index"`
 	Zip    uint16 `bson:"zip"     json:"zip,omitempty"`
+	City   string `bson:"city"    json:"city,omitempty"   store:"index"`
+	Street string `bson:"street"  json:"street,omitempty" store:"index"`
 }
