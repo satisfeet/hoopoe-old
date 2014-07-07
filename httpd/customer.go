@@ -5,7 +5,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/satisfeet/hoopoe/httpd/context"
+	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/hoopoe/store"
 )
 
