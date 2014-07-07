@@ -5,21 +5,13 @@ import (
 	"flag"
 )
 
-type Map map[string]string
+type Conf map[string]string
 
-type Conf struct {
-	Store Map
-	Httpd Map
+func New() Conf {
+	return Conf{}
 }
 
-func New() *Conf {
-	return &Conf{
-		Store: Map{},
-		Httpd: Map{},
-	}
-}
-
-func (c *Conf) ParseFlags() error {
+func (c Conf) ParseFlags() error {
 	a := flag.String("addr", "", "HTTP address to listen.")
 	m := flag.String("mongo", "", "MongoDB URL to connect.")
 
@@ -32,8 +24,8 @@ func (c *Conf) ParseFlags() error {
 		return errors.New(`"mongo" flag is required.`)
 	}
 
-	c.Store["mongo"] = *m
-	c.Httpd["addr"] = *a
+	c["mongo"] = *m
+	c["addr"] = *a
 
 	return nil
 }

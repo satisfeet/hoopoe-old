@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	id      = bson.NewObjectid()
+	id      = bson.NewObjectId()
 	name    = "Bodo Kaiser"
 	email   = "bodo.kaiser@me.com"
 	company = "satisfeet"
@@ -20,15 +20,10 @@ var (
 	zip     = 12105
 )
 
-const (
-	BASIC    = `{"id":"%s","name":"%s","email":"%s","address":{"city":"%s"}}`
-	COMPLETE = `{"id":"%s","name":"%s","email":"%s","company":"%s","address":{"zip":%d,"city":"%s","street":"%s"}}`
-)
-
-func TestMarshalJSON(t *testing.T) {
-	Convey("Given a basic model", t, func() {
+func TestCustomerMarshalJSON(t *testing.T) {
+	Convey("Given basic struct data", t, func() {
 		customer := Customer{
-			id:    id,
+			Id:    id,
 			Name:  name,
 			Email: email,
 			Address: CustomerAddress{
@@ -36,21 +31,20 @@ func TestMarshalJSON(t *testing.T) {
 			},
 		}
 
-		Convey("Which is marshaled as JSON", func() {
+		Convey("MarshalJSON()", func() {
 			json, err := json.Marshal(&customer)
 
-			Convey("The error should be nil", func() {
+			Convey("Should return no error", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("The result should be json", func() {
-				So(string(json), ShouldEqual, fmt.Sprintf(BASIC,
-					id.Hex(), name, email, city))
+			Convey("Should return struct as json", func() {
+				So(string(json), ShouldEqual, formatBasic())
 			})
 		})
 	})
-	Convey("Given a complete model", t, func() {
+	Convey("Given advanced struct data", t, func() {
 		customer := Customer{
-			id:      id,
+			Id:      id,
 			Name:    name,
 			Email:   email,
 			Company: company,
@@ -61,42 +55,64 @@ func TestMarshalJSON(t *testing.T) {
 			},
 		}
 
-		Convey("Which is marshaled as JSON", func() {
+		Convey("MarshalJSON()", func() {
 			json, err := json.Marshal(&customer)
 
-			Convey("The error should be nil", func() {
+			Convey("Should return no error", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("The result should be json", func() {
-				So(string(json), ShouldEqual, fmt.Sprintf(COMPLETE,
-					id.Hex(), name, email, company, zip, city, street))
+			Convey("Should return struct as json", func() {
+				So(string(json), ShouldEqual, formatAdvanced())
 			})
 		})
 	})
 }
 
-func TestUnmarshalJSON(t *testing.T) {
-	j := fmt.Sprintf(COMPLETE, id.Hex(),
-		name, email, company, zip, city, street)
+func TestCustomerUnmarshalJSON(t *testing.T) {
+	j := formatAdvanced()
 
-	Convey("Given a string", t, func() {
+	Convey("Given a json string", t, func() {
 		customer := Customer{}
 
-		Convey("Which is unmarshaled as JSON", func() {
+		Convey("UnmarshalJSON()", func() {
 			err := json.Unmarshal([]byte(j), &customer)
 
-			Convey("The error should be nil", func() {
+			Convey("Should return no error", func() {
 				So(err, ShouldBeNil)
 			})
-			Convey("The customer should be complete", func() {
-				So(customer.id, ShouldEqual, id)
+			Convey("Should set customer id", func() {
+				So(customer.Id, ShouldEqual, id)
+			})
+			Convey("Should set customer name", func() {
 				So(customer.Name, ShouldEqual, name)
+			})
+			Convey("Should set customer email", func() {
 				So(customer.Email, ShouldEqual, email)
+			})
+			Convey("Should set customer company", func() {
 				So(customer.Company, ShouldEqual, company)
+			})
+			Convey("Should set customer zip address", func() {
 				So(customer.Address.Zip, ShouldEqual, zip)
+			})
+			Convey("Should set customer city address", func() {
 				So(customer.Address.City, ShouldEqual, city)
+			})
+			Convey("Should set customer street address", func() {
 				So(customer.Address.Street, ShouldEqual, street)
 			})
 		})
 	})
+}
+
+func formatBasic() string {
+	s := `{"id":"%s","name":"%s","email":"%s","address":{"city":"%s"}}`
+
+	return fmt.Sprintf(s, id.Hex(), name, email, city)
+}
+
+func formatAdvanced() string {
+	s := `{"id":"%s","name":"%s","email":"%s","company":"%s","address":{"zip":%d,"city":"%s","street":"%s"}}`
+
+	return fmt.Sprintf(s, id.Hex(), name, email, company, zip, city, street)
 }

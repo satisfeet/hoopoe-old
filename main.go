@@ -17,9 +17,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := s.Open(c.Store); err != nil {
+	if err := s.Open(c["mongo"]); err != nil {
 		log.Fatal(err)
 	}
 
-	h.Listen(c.Httpd)
+	h.Listen(c["addr"])
 }

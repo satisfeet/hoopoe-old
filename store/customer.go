@@ -26,7 +26,7 @@ type Customer struct {
 }
 
 type CustomerAddress struct {
-	Zip    uint16 `json:"zip,omitempty"`
+	Zip    int    `json:"zip,omitempty"`
 	City   string `json:"city,omitempty"`
 	Street string `json:"street,omitempty"`
 }

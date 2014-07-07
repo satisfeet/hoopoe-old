@@ -3,7 +3,6 @@ package httpd
 import (
 	"net/http"
 
-	"github.com/satisfeet/hoopoe/conf"
 	"github.com/satisfeet/hoopoe/store"
 )
 
@@ -15,10 +14,10 @@ func New(s *store.Store) *Httpd {
 	return &Httpd{s}
 }
 
-func (h *Httpd) Listen(c conf.Map) {
+func (h *Httpd) Listen(addr string) {
 	m := http.NewServeMux()
 
 	m.Handle("/", NewCustomer(h.store))
 
-	http.ListenAndServe(c["addr"], Logger(m))
+	http.ListenAndServe(addr, Logger(m))
 }

@@ -24,6 +24,7 @@ func (q Query) Search(param string, fields []string) {
 	o := make([]bson.M, len(fields))
 
 	for i := 0; i < len(fields); i++ {
+		o[i] = make(bson.M, 1)
 		o[i][fields[i]] = r
 	}
 
