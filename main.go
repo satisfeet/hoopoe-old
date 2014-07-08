@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/satisfeet/hoopoe/conf"
 	"github.com/satisfeet/hoopoe/httpd"
@@ -9,9 +10,9 @@ import (
 )
 
 func main() {
-	c := conf.New()
-	s := store.New()
-	h := httpd.New(s)
+	c := conf.NewConf()
+	s := store.NewStore()
+	h := httpd.NewHttpd(s)
 
 	if err := c.ParseFlags(); err != nil {
 		log.Fatal(err)
@@ -21,5 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	h.Listen(c["addr"])
+	http.ListenAndServe(c["addr"], h)
+
+	log.Printf("Hoopoe listening on %s", c["addr"])
 }

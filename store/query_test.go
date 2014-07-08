@@ -8,14 +8,14 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestQueryIdHex(t *testing.T) {
+func TestQueryId(t *testing.T) {
 	query := Query{}
 
 	Convey("Given a valid string", t, func() {
 		id := bson.NewObjectId()
 
 		Convey("IdHex()", func() {
-			err := query.IdHex(id.Hex())
+			err := query.Id(id.Hex())
 
 			Convey("Should return no error", func() {
 				So(err, ShouldBeNil)
@@ -29,7 +29,7 @@ func TestQueryIdHex(t *testing.T) {
 		id := "1234"
 
 		Convey("IdHex()", func() {
-			err := query.IdHex(id)
+			err := query.Id(id)
 
 			Convey("Should return error", func() {
 				So(err, ShouldNotBeNil)

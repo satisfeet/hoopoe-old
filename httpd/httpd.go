@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -11,23 +12,30 @@ type Httpd struct {
 	store *store.Store
 }
 
-func New(s *store.Store) *Httpd {
+func NewHttpd(s *store.Store) *Httpd {
 	return &Httpd{s}
 }
 
-func (h *Httpd) Listen(addr string) {
+func (h *Httpd) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m := http.NewServeMux()
 
-	m.Handle("/", NewCustomer(h.store))
+	m.Handle("/customers", &CustomerAPI{h.store})
 
-	http.ListenAndServe(addr, Logger(m))
+	m.HandleFunc("/", NotFound)
+
+	Logger(m).ServeHTTP(w, r)
 }
 
-// Logs method and url of each incoming request.
 func Logger(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL.String())
 
 		h.ServeHTTP(w, r)
 	})
+}
+
+func NotFound(w http.ResponseWriter, r *http.Request) {
+	m := http.StatusText(http.StatusNotFound)
+
+	http.Error(w, fmt.Sprintf("{\"error\":\"%s\"}", m), http.StatusNotFound)
 }

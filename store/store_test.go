@@ -9,7 +9,7 @@ import (
 )
 
 func TestStoreOpen(t *testing.T) {
-	store := New()
+	store := NewStore()
 
 	Convey("Given a valid url", t, func() {
 		url := "mongodb://localhost/test"
@@ -22,7 +22,10 @@ func TestStoreOpen(t *testing.T) {
 			})
 		})
 	})
-	Convey("Given a invalid url", t, func() {
+	// this test case slows takes up to 10s because
+	// mgo waits up its timeout for searching servers
+	// because of this we will skip this for now
+	SkipConvey("Given an invalid url", t, func() {
 		url := "http://localhost:2000"
 
 		Convey("Open()", func() {
@@ -36,7 +39,7 @@ func TestStoreOpen(t *testing.T) {
 }
 
 func TestStoreMongo(t *testing.T) {
-	store := New()
+	store := NewStore()
 
 	Convey("Given an opened store", t, func() {
 		store.Open("localhost/test")
@@ -44,8 +47,8 @@ func TestStoreMongo(t *testing.T) {
 		Convey("Mongo()", func() {
 			mongo := store.Mongo()
 
-			Convey("Should return mgo Session", func() {
-				So(mongo, ShouldHaveSameTypeAs, &mgo.Session{})
+			Convey("Should return mgo.Database", func() {
+				So(mongo, ShouldHaveSameTypeAs, &mgo.Database{})
 			})
 		})
 	})
@@ -61,7 +64,7 @@ func TestStoreMongo(t *testing.T) {
 }
 
 func TestStoreClose(t *testing.T) {
-	store := New()
+	store := NewStore()
 
 	Convey("Given an opened store", t, func() {
 		store.Open("localhost/test")

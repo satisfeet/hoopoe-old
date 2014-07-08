@@ -7,7 +7,7 @@ import (
 
 type Conf map[string]string
 
-func New() Conf {
+func NewConf() Conf {
 	return Conf{}
 }
 

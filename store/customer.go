@@ -32,50 +32,50 @@ type CustomerAddress struct {
 }
 
 func IndexCustomer(s *Store) {
-	m := s.Mongo()
-	defer m.Close()
+	db := s.Mongo()
+	defer db.Session.Close()
 
-	c := m.DB("").C("customers")
+	c := db.C("customers")
 
 	c.EnsureIndex(mgo.Index{Key: CustomerIndices})
 	c.EnsureIndex(mgo.Index{Key: CustomerUnique, Unique: true})
 }
 
 func InsertCustomer(s *Store, c *Customer) error {
-	m := s.Mongo()
-	defer m.Close()
+	db := s.Mongo()
+	defer db.Session.Close()
 
 	if !c.Id.Valid() {
 		c.Id = bson.NewObjectId()
 	}
 
-	return m.DB("").C("customers").Insert(c)
+	return db.C("customers").Insert(c)
 }
 
 func UpdateCustomer(s *Store, c *Customer) error {
-	m := s.Mongo()
-	defer m.Close()
+	db := s.Mongo()
+	defer db.Session.Close()
 
-	return m.DB("").C("customers").UpdateId(c.Id, c)
+	return db.C("customers").UpdateId(c.Id, c)
 }
 
 func RemoveCustomer(s *Store, q Query) error {
-	m := s.Mongo()
-	defer m.Close()
+	db := s.Mongo()
+	defer db.Session.Close()
 
-	return m.DB("").C("customers").Remove(q)
+	return db.C("customers").Remove(q)
 }
 
 func FindAllCustomer(s *Store, q Query, c *[]Customer) error {
-	m := s.Mongo()
-	defer m.Close()
+	db := s.Mongo()
+	defer db.Session.Close()
 
-	return m.DB("").C("customers").Find(q).All(c)
+	return db.C("customers").Find(q).All(c)
 }
 
 func FindOneCustomer(s *Store, q Query, c *Customer) error {
-	m := s.Mongo()
-	defer m.Close()
+	db := s.Mongo()
+	defer db.Session.Close()
 
-	return m.DB("").C("customers").Find(q).One(c)
+	return db.C("customers").Find(q).One(c)
 }

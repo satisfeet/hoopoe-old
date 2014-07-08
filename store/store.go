@@ -6,7 +6,7 @@ type Store struct {
 	mongo *mgo.Session
 }
 
-func New() *Store {
+func NewStore() *Store {
 	return &Store{}
 }
 
@@ -22,12 +22,12 @@ func (s *Store) Open(url string) error {
 	return nil
 }
 
-func (s *Store) Mongo() *mgo.Session {
+func (s *Store) Mongo() *mgo.Database {
 	if s.mongo == nil {
 		panic("You need open store before!")
 	}
 
-	return s.mongo.Clone()
+	return s.mongo.Clone().DB("")
 }
 
 func (s *Store) Close() {

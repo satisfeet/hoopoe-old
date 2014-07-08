@@ -8,7 +8,7 @@ import (
 
 type Query bson.M
 
-func (q Query) IdHex(hex string) error {
+func (q Query) Id(hex string) error {
 	if !bson.IsObjectIdHex(hex) {
 		return errors.New("Invalid ObjectId.")
 	}
