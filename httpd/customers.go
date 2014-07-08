@@ -1,144 +1,116 @@
 package httpd
 
 import (
-	"encoding/json"
 	"net/http"
-
-	"labix.org/v2/mgo"
 
 	"github.com/julienschmidt/httprouter"
 
+	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/hoopoe/store"
 )
 
-type Customers struct {
-	store *mgo.Collection
+type CustomerAPI struct {
+	store *store.Store
 }
 
-func NewCustomers(s *store.Store) *Customers {
-	c := s.Collection("customers")
-
-	c.EnsureIndex(mgo.Index{Key: store.CustomerIndex})
-	c.EnsureIndex(mgo.Index{Key: store.CustomerUnique, Unique: true})
-
-	return &Customers{s.Collection("customers")}
-}
-
-func (c *Customers) List(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (ca *CustomerAPI) list(c *context.Context) {
 	query := store.Query{}
-
-	if search := r.URL.Query().Get("search"); len(search) != 0 {
-		query.Search(search, append(store.CustomerIndex, store.CustomerUnique...))
-	}
-
 	result := []store.Customer{}
 
-	if err := c.store.Find(query).All(&result); err != nil {
-		Error(w, err, http.StatusInternalServerError)
-
-		return
+	if key := c.Query("search"); len(key) != 0 {
+		query.Search(key, append(store.CustomerIndices, store.CustomerUnique...))
 	}
-	if err := json.NewEncoder(w).Encode(&result); err != nil {
-		Error(w, err, http.StatusInternalServerError)
 
-		return
+	if err := store.FindAllCustomer(ca.store, query, &result); err == nil {
+		if err := c.Respond(result, 200); err != nil {
+			c.Error(err, 500)
+		}
+	} else {
+		c.Error(err, 500)
 	}
 }
 
-func (c *Customers) Show(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (ca *CustomerAPI) show(c *context.Context) {
 	query := store.Query{}
-
-	if err := query.IdHex(p.ByName("customer")); err != nil {
-		Error(w, err, http.StatusNotFound)
-
-		return
-	}
-
 	result := store.Customer{}
 
-	if err := c.store.Find(query).One(&result); err != nil {
-		Error(w, err, http.StatusNotFound)
+	if err := query.Id(c.Param("id")); err != nil {
+		c.Error(err, 404)
 
 		return
 	}
-	if err := json.NewEncoder(w).Encode(&result); err != nil {
-		Error(w, err, http.StatusInternalServerError)
 
-		return
-	}
-}
-
-func (c *Customers) Create(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	result := store.NewCustomer()
-
-	if err := json.NewDecoder(r.Body).Decode(result); err != nil {
-		Error(w, err, http.StatusBadRequest)
-
-		return
-	}
-	if err := c.store.Insert(result); err != nil {
-		Error(w, err, http.StatusInternalServerError)
-
-		return
-	}
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		Error(w, err, http.StatusInternalServerError)
-
-		return
+	if err := store.FindOneCustomer(ca.store, query, &result); err == nil {
+		if err := c.Respond(result, 200); err != nil {
+			c.Error(err, 500)
+		}
+	} else {
+		c.Error(err, 500)
 	}
 }
 
-func (c *Customers) Update(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	query := store.Query{}
-
-	if err := query.IdHex(p.ByName("customer")); err != nil {
-		Error(w, err, http.StatusNotFound)
-
-		return
-	}
-
+func (ca *CustomerAPI) create(c *context.Context) {
 	result := store.Customer{}
 
-	if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
-		Error(w, err, http.StatusBadRequest)
-
-		return
-	}
-	if err := c.store.Update(query, &result); err != nil {
-		Error(w, err, http.StatusInternalServerError)
+	if err := c.Parse(&result); err != nil {
+		c.Error(err, 400)
 
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	if err := store.InsertCustomer(ca.store, &result); err == nil {
+		if err := c.Respond(result, 200); err != nil {
+			c.Error(err, 500)
+		}
+	} else {
+		c.Error(err, 500)
+	}
 }
 
-func (c *Customers) Destroy(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (ca *CustomerAPI) update(c *context.Context) {
+	result := store.Customer{}
+
+	if err := c.Parse(&result); err != nil {
+		c.Error(err, 400)
+
+		return
+	}
+
+	if err := store.UpdateCustomer(ca.store, &result); err == nil {
+		if err := c.Respond(nil, 204); err != nil {
+			c.Error(err, 500)
+		}
+	} else {
+		c.Error(err, 500)
+	}
+}
+
+func (ca *CustomerAPI) destroy(c *context.Context) {
 	query := store.Query{}
 
-	if err := query.IdHex(p.ByName("customer")); err != nil {
-		Error(w, err, http.StatusNotFound)
+	if err := query.Id(c.Param("id")); err != nil {
+		c.Error(err, 404)
 
 		return
 	}
 
-	if err := c.store.Remove(query); err != nil {
-		Error(w, err, http.StatusInternalServerError)
-
-		return
+	if err := store.RemoveCustomer(ca.store, query); err == nil {
+		if err := c.Respond(nil, 204); err != nil {
+			c.Error(err, 500)
+		}
+	} else {
+		c.Error(err, 404)
 	}
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
-func (c *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (ca *CustomerAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m := httprouter.New()
 
-	m.Handle("GET", "/customers", c.List)
-	m.Handle("POST", "/customers", c.Create)
-	m.Handle("GET", "/customers/:customer", c.Show)
-	m.Handle("PUT", "/customers/:customer", c.Update)
-	m.Handle("DELETE", "/customers/:customer", c.Destroy)
+	m.Handle("GET", "/customers", context.HandleFunc(ca.list))
+	m.Handle("POST", "/customers", context.HandleFunc(ca.create))
+	m.Handle("GET", "/customers/:id", context.HandleFunc(ca.show))
+	m.Handle("PUT", "/customers/:id", context.HandleFunc(ca.update))
+	m.Handle("DELETE", "/customers/:id", context.HandleFunc(ca.destroy))
 
 	m.ServeHTTP(w, r)
 }

@@ -5,12 +5,16 @@ boot:
 		--addr localhost:3000 \
 		--mongo localhost/satisfeet
 
-test: test-store
+test:
+	@go test ./...
+
+test-conf:
+	@go test -v ./conf
 
 test-store:
-	@go test github.com/satisfeet/hoopoe/store
+	@go test -v ./store
 
 test-httpd:
-	@go test github.com/satisfeet/hoopoe/httpd
+	@go test -v ./httpd
 
-.PHONY: test
+.PHONY: test test-conf test-store test-httpd

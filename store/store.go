@@ -2,20 +2,18 @@ package store
 
 import "labix.org/v2/mgo"
 
-import "github.com/satisfeet/hoopoe/conf"
-
 type Store struct {
-	session *mgo.Session
+	mongo *mgo.Session
 }
 
-func New() *Store {
+func NewStore() *Store {
 	return &Store{}
 }
 
-func (s *Store) Open(c conf.Map) error {
+func (s *Store) Open(url string) error {
 	var err error
 
-	s.session, err = mgo.Dial(c["mongo"])
+	s.mongo, err = mgo.Dial(url)
 
 	if err != nil {
 		return err
@@ -24,10 +22,16 @@ func (s *Store) Open(c conf.Map) error {
 	return nil
 }
 
-func (s *Store) Collection(name string) *mgo.Collection {
-	return s.session.DB("").C(name)
+func (s *Store) Mongo() *mgo.Database {
+	if s.mongo == nil {
+		panic("You need open store before!")
+	}
+
+	return s.mongo.Clone().DB("")
 }
 
 func (s *Store) Close() {
-	s.session.Close()
+	s.mongo.Close()
+
+	s.mongo = nil
 }

@@ -1,33 +1,81 @@
 package store
 
-import "labix.org/v2/mgo/bson"
+import (
+	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
+)
 
 var (
-	CustomerIndex = []string{
-		"name",
-		"company",
-		"address.city",
-		"address.street",
-	}
 	CustomerUnique = []string{
 		"email",
+	}
+	CustomerIndices = []string{
+		"name",
+		"company",
+		"address.street",
+		"address.city",
 	}
 )
 
 type Customer struct {
-	Id      bson.ObjectId   `bson:"_id"     json:"id"`
-	Name    string          `bson:"name"    json:"name"              store:"index"`
-	Email   string          `bson:"email"   json:"email"             store:"unique"`
-	Company string          `bson:"company" json:"company,omitempty" store:"index"`
-	Address CustomerAddress `bson:"address" json:"address"`
+	Id      bson.ObjectId   `json:"id"     bson:"_id"`
+	Name    string          `json:"name"`
+	Email   string          `json:"email"`
+	Company string          `json:"company,omitempty"`
+	Address CustomerAddress `json:"address"`
 }
 
 type CustomerAddress struct {
-	Zip    uint16 `bson:"zip"     json:"zip,omitempty"`
-	City   string `bson:"city"    json:"city,omitempty"   store:"index"`
-	Street string `bson:"street"  json:"street,omitempty" store:"index"`
+	Zip    int    `json:"zip,omitempty"`
+	City   string `json:"city,omitempty"`
+	Street string `json:"street,omitempty"`
 }
 
-func NewCustomer() *Customer {
-	return &Customer{Id: bson.NewObjectId()}
+func IndexCustomer(s *Store) {
+	db := s.Mongo()
+	defer db.Session.Close()
+
+	c := db.C("customers")
+
+	c.EnsureIndex(mgo.Index{Key: CustomerIndices})
+	c.EnsureIndex(mgo.Index{Key: CustomerUnique, Unique: true})
+}
+
+func InsertCustomer(s *Store, c *Customer) error {
+	db := s.Mongo()
+	defer db.Session.Close()
+
+	if !c.Id.Valid() {
+		c.Id = bson.NewObjectId()
+	}
+
+	return db.C("customers").Insert(c)
+}
+
+func UpdateCustomer(s *Store, c *Customer) error {
+	db := s.Mongo()
+	defer db.Session.Close()
+
+	return db.C("customers").UpdateId(c.Id, c)
+}
+
+func RemoveCustomer(s *Store, q Query) error {
+	db := s.Mongo()
+	defer db.Session.Close()
+
+	return db.C("customers").Remove(q)
+}
+
+func FindAllCustomer(s *Store, q Query, c *[]Customer) error {
+	db := s.Mongo()
+	defer db.Session.Close()
+
+	return db.C("customers").Find(q).All(c)
+}
+
+func FindOneCustomer(s *Store, q Query, c *Customer) error {
+	db := s.Mongo()
+	defer db.Session.Close()
+
+	return db.C("customers").Find(q).One(c)
 }

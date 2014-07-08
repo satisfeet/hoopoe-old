@@ -1,9 +1,10 @@
 package httpd
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 
-	"github.com/satisfeet/hoopoe/conf"
 	"github.com/satisfeet/hoopoe/store"
 )
 
@@ -11,20 +12,30 @@ type Httpd struct {
 	store *store.Store
 }
 
-func New(store *store.Store) *Httpd {
-	return &Httpd{store}
+func NewHttpd(s *store.Store) *Httpd {
+	return &Httpd{s}
 }
 
-func (h *Httpd) Listen(config conf.Map) {
-	h.Handle(NewCustomers(h.store))
+func (h *Httpd) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	m := http.NewServeMux()
 
-	http.ListenAndServe(config["addr"], nil)
+	m.Handle("/customers", &CustomerAPI{h.store})
+
+	m.HandleFunc("/", NotFound)
+
+	Logger(m).ServeHTTP(w, r)
 }
 
-func (h *Httpd) Handle(handler http.Handler) {
-	handler = Logger(handler)
-	handler = Accept(handler)
-	handler = ContentType(handler)
+func Logger(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s", r.Method, r.URL.String())
 
-	http.Handle("/", handler)
+		h.ServeHTTP(w, r)
+	})
+}
+
+func NotFound(w http.ResponseWriter, r *http.Request) {
+	m := http.StatusText(http.StatusNotFound)
+
+	http.Error(w, fmt.Sprintf("{\"error\":\"%s\"}", m), http.StatusNotFound)
 }
