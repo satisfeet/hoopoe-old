@@ -27,7 +27,7 @@ func (s *Store) Mongo() *mgo.Session {
 		panic("You need open store before!")
 	}
 
-	return s.mongo
+	return s.mongo.Clone()
 }
 
 func (s *Store) Close() {

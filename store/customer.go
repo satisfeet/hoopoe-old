@@ -31,65 +31,51 @@ type CustomerAddress struct {
 	Street string `json:"street,omitempty"`
 }
 
-type CustomerHandler struct {
-	store *Store
-}
+func IndexCustomer(s *Store) {
+	m := s.Mongo()
+	defer m.Close()
 
-func NewCustomerHandler(s *Store) *CustomerHandler {
-	return &CustomerHandler{s}
-}
-
-func (h *CustomerHandler) Index() {
-	s := h.store.Mongo().Clone()
-
-	defer s.Close()
-
-	c := s.DB("").C("customers")
+	c := m.DB("").C("customers")
 
 	c.EnsureIndex(mgo.Index{Key: CustomerIndices})
 	c.EnsureIndex(mgo.Index{Key: CustomerUnique, Unique: true})
 }
 
-func (h *CustomerHandler) Create(c *Customer) error {
-	s := h.store.Mongo().Clone()
-
-	defer s.Close()
+func InsertCustomer(s *Store, c *Customer) error {
+	m := s.Mongo()
+	defer m.Close()
 
 	if !c.Id.Valid() {
 		c.Id = bson.NewObjectId()
 	}
 
-	return s.DB("").C("customers").Insert(c)
+	return m.DB("").C("customers").Insert(c)
 }
 
-func (h *CustomerHandler) Update(c *Customer) error {
-	s := h.store.Mongo().Clone()
+func UpdateCustomer(s *Store, c *Customer) error {
+	m := s.Mongo()
+	defer m.Close()
 
-	defer s.Close()
-
-	return s.DB("").C("customers").UpdateId(c.Id, c)
+	return m.DB("").C("customers").UpdateId(c.Id, c)
 }
 
-func (h *CustomerHandler) Remove(q Query) error {
-	s := h.store.Mongo().Clone()
+func RemoveCustomer(s *Store, q Query) error {
+	m := s.Mongo()
+	defer m.Close()
 
-	defer s.Close()
-
-	return s.DB("").C("customers").Remove(q)
+	return m.DB("").C("customers").Remove(q)
 }
 
-func (h *CustomerHandler) FindAll(q Query, c *[]Customer) error {
-	s := h.store.Mongo().Clone()
+func FindAllCustomer(s *Store, q Query, c *[]Customer) error {
+	m := s.Mongo()
+	defer m.Close()
 
-	defer s.Close()
-
-	return s.DB("").C("customers").Find(q).All(c)
+	return m.DB("").C("customers").Find(q).All(c)
 }
 
-func (h *CustomerHandler) FindOne(q Query, c *Customer) error {
-	s := h.store.Mongo().Clone()
+func FindOneCustomer(s *Store, q Query, c *Customer) error {
+	m := s.Mongo()
+	defer m.Close()
 
-	defer s.Close()
-
-	return s.DB("").C("customers").Find(q).One(c)
+	return m.DB("").C("customers").Find(q).One(c)
 }
