@@ -1,20 +1,16 @@
 SHELL := /bin/bash
 
 boot:
-	@go run main.go \
-		--addr localhost:3000 \
-		--mongo localhost/satisfeet
+	@go run cmd/main.go \
+		--host :3000 --mongo mongodb://localhost/satisfeet
 
 test:
 	@go test ./...
 
-test-conf:
-	@go test -v ./conf
+test-net:
+	@go test -v ./net/...
 
 test-store:
-	@go test -v ./store
+	@go test -v ./store/...
 
-test-httpd:
-	@go test -v ./httpd
-
-.PHONY: test test-conf test-store test-httpd
+.PHONY: test test-net test-store
