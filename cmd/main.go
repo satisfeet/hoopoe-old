@@ -1,10 +1,11 @@
 package main
 
 import (
-	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	. "github.com/satisfeet/hoopoe/net/http"
 	. "github.com/satisfeet/hoopoe/store"
@@ -23,18 +24,30 @@ func main() {
 	flag.Parse()
 
 	if len(conf.Host) == 0 {
-		log.Fatal(errors.New("The host argument is required."))
+		fmt.Print("The host argument is required.\n")
+
+		os.Exit(1)
 	}
 	if len(conf.Mongo) == 0 {
-		log.Fatal(errors.New("The mongo argument is required."))
+		fmt.Print("The mongo argument is required.\n")
+
+		os.Exit(1)
 	}
 
 	s := NewStore()
 
 	if err := s.Open(conf.Mongo); err != nil {
-		log.Fatal(err)
+		fmt.Print("Connection to mongodb failed.\n")
+
+		os.Exit(1)
 	}
 
-	http.Handle("/customers", NewCustomersHandler(s))
-	http.ListenAndServe(conf.Host, nil)
+	http.Handle("/customers", Auth(NewCustomersHandler(s)))
+	http.Handle("/", Auth(http.HandlerFunc(NotFound)))
+
+	log.Fatal(http.ListenAndServe(conf.Host, nil))
+}
+
+func NotFound(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "Not Found", http.StatusNotFound)
 }

@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 boot:
 	@go run cmd/main.go \
-		--host :3000 --mongo mongodb://localhost/satisfeet
+		--host :3000 --mongo localhost/satisfeet
 
 test:
 	@go test ./...
