@@ -3,7 +3,7 @@ package store
 import (
 	"testing"
 
-	"labix.org/v2/mgo/bson"
+	"gopkg.in/mgo.v2/bson"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
