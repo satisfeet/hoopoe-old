@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	. "github.com/satisfeet/hoopoe/net/http"
-	. "github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/httpd"
+	"github.com/satisfeet/hoopoe/store"
 )
 
 var (
@@ -34,7 +34,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	s := NewStore()
+	s := store.NewStore()
 
 	if err := s.Open(conf.Mongo); err != nil {
 		fmt.Print("Connection to mongodb failed.\n")
@@ -42,12 +42,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	http.Handle("/customers", Auth(NewCustomersHandler(s)))
-	http.Handle("/", Auth(http.HandlerFunc(NotFound)))
+	http.Handle("/customers", httpd.Auth(httpd.NewCustomersHandler(s)))
+	http.Handle("/", httpd.Auth(NotFound()))
 
 	log.Fatal(http.ListenAndServe(conf.Host, nil))
 }
 
-func NotFound(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Not Found", http.StatusNotFound)
+func NotFound() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Not Found", http.StatusNotFound)
+	})
 }
