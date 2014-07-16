@@ -19,7 +19,7 @@ func TestAuth(t *testing.T) {
 				So(res.Code, ShouldEqual, http.StatusUnauthorized)
 			})
 			Convey("Should set response body", func() {
-				So(res.Body.String(), ShouldEqual, http.StatusText(401))
+				So(res.Body.String(), ShouldContainSubstring, http.StatusText(401))
 			})
 		})
 	})
@@ -34,7 +34,7 @@ func TestAuth(t *testing.T) {
 				So(res.Code, ShouldEqual, http.StatusUnauthorized)
 			})
 			Convey("Should set response body", func() {
-				So(res.Body.String(), ShouldEqual, http.StatusText(401))
+				So(res.Body.String(), ShouldContainSubstring, http.StatusText(401))
 			})
 		})
 	})
@@ -49,7 +49,7 @@ func TestAuth(t *testing.T) {
 				So(res.Code, ShouldEqual, http.StatusUnauthorized)
 			})
 			Convey("Should set response body", func() {
-				So(res.Body.String(), ShouldEqual, http.StatusText(401))
+				So(res.Body.String(), ShouldContainSubstring, http.StatusText(401))
 			})
 		})
 	})
@@ -64,7 +64,7 @@ func TestAuth(t *testing.T) {
 				So(res.Code, ShouldEqual, http.StatusOK)
 			})
 			Convey("Should set response body", func() {
-				So(res.Body.String(), ShouldEqual, "Hello World\n")
+				So(res.Body.String(), ShouldContainSubstring, "Hello World\n")
 			})
 		})
 	})

@@ -38,12 +38,12 @@ func (h *CustomersHandler) list(w http.ResponseWriter, r *http.Request) {
 		))
 	}
 	if err := h.store.FindAllCustomer(q, &c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
 	if err := json.NewEncoder(w).Encode(c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
@@ -55,17 +55,17 @@ func (h *CustomersHandler) show(w http.ResponseWriter, r *http.Request) {
 	c := store.Customer{}
 
 	if err := q.Id(p["id"]); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		Error(w, err, http.StatusBadRequest)
 
 		return
 	}
 	if err := h.store.FindOneCustomer(q, &c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
 	if err := json.NewEncoder(w).Encode(c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
@@ -75,17 +75,17 @@ func (h *CustomersHandler) create(w http.ResponseWriter, r *http.Request) {
 	c := store.Customer{}
 
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		Error(w, err, http.StatusNotFound)
 
 		return
 	}
 	if err := h.store.InsertCustomer(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusNotFound)
 
 		return
 	}
 	if err := json.NewEncoder(w).Encode(c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusNotFound)
 
 		return
 	}
@@ -95,12 +95,12 @@ func (h *CustomersHandler) update(w http.ResponseWriter, r *http.Request) {
 	c := store.Customer{}
 
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		Error(w, err, http.StatusNotFound)
 
 		return
 	}
 	if err := h.store.UpdateCustomer(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		Error(w, err, http.StatusNotFound)
 
 		return
 	}
@@ -113,12 +113,12 @@ func (h *CustomersHandler) destroy(w http.ResponseWriter, r *http.Request) {
 	q := store.Query{}
 
 	if err := q.Id(p["id"]); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		Error(w, err, http.StatusBadRequest)
 
 		return
 	}
 	if err := h.store.RemoveCustomer(q); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		Error(w, err, http.StatusNotFound)
 
 		return
 	}

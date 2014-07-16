@@ -32,12 +32,12 @@ func (h *ProductsHandler) list(w http.ResponseWriter, r *http.Request) {
 	c := []store.Product{}
 
 	if err := h.store.FindAllProduct(q, &c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
 	if err := json.NewEncoder(w).Encode(c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
@@ -49,17 +49,17 @@ func (h *ProductsHandler) show(w http.ResponseWriter, r *http.Request) {
 	c := store.Product{}
 
 	if err := q.Id(p["id"]); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		Error(w, err, http.StatusBadRequest)
 
 		return
 	}
 	if err := h.store.FindOneProduct(q, &c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
 	if err := json.NewEncoder(w).Encode(c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
@@ -69,17 +69,17 @@ func (h *ProductsHandler) create(w http.ResponseWriter, r *http.Request) {
 	c := store.Product{}
 
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		Error(w, err, http.StatusBadRequest)
 
 		return
 	}
 	if err := h.store.InsertProduct(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
 	if err := json.NewEncoder(w).Encode(c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
@@ -89,12 +89,12 @@ func (h *ProductsHandler) update(w http.ResponseWriter, r *http.Request) {
 	c := store.Product{}
 
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		Error(w, err, http.StatusBadRequest)
 
 		return
 	}
 	if err := h.store.UpdateProduct(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		Error(w, err, http.StatusNotFound)
 
 		return
 	}
@@ -107,12 +107,12 @@ func (h *ProductsHandler) destroy(w http.ResponseWriter, r *http.Request) {
 	q := store.Query{}
 
 	if err := q.Id(p["id"]); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		Error(w, err, http.StatusBadRequest)
 
 		return
 	}
 	if err := h.store.RemoveProduct(q); err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		Error(w, err, http.StatusNotFound)
 
 		return
 	}

@@ -29,7 +29,6 @@ func Auth(h http.Handler) http.Handler {
 		}
 
 		w.Header().Set("WWW-Authenticate", "Basic realm=hoopoe")
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(http.StatusText(http.StatusUnauthorized)))
+		Error(w, nil, http.StatusUnauthorized)
 	})
 }
