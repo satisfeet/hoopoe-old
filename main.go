@@ -12,7 +12,6 @@ import (
 func main() {
 	c := conf.NewConf()
 	s := store.NewStore()
-	h := httpd.NewHttpd(s)
 
 	if err := c.ParseFlags(); err != nil {
 		log.Fatal(err)
@@ -22,7 +21,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.ListenAndServe(c["addr"], h)
-
-	log.Printf("Hoopoe listening on %s", c["addr"])
+	http.Handle("/customers", httpd.NewCustomersHandler(s))
+	http.ListenAndServe(c["addr"], nil)
 }

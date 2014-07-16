@@ -7,14 +7,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"github.com/satisfeet/hoopoe/store"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
+	session *mgo.Session
+
 	bob = store.Customer{
 		Id:    bson.NewObjectId(),
 		Name:  "Bob Jersey",
@@ -25,12 +27,17 @@ var (
 	}
 )
 
-func TestCustomersAPIServeHTTP(t *testing.T) {
+func TestCustomers(t *testing.T) {
+	s := store.NewStore()
+	s.Open("localhost/test")
+
+	session, _ = mgo.Dial("localhost/test")
+
 	Convey("Given a GET request to /customers", t, func() {
-		req, res, ca := requestCA("GET", "/customers", "")
+		req, res := NewCustomersRequestResponse("GET", "/customers", "")
 
 		Convey("ServeHTTP()", func() {
-			ca.ServeHTTP(res, req)
+			NewCustomersHandler(s).ServeHTTP(res, req)
 
 			Convey("Should respond OK", func() {
 				So(res.Code, ShouldEqual, http.StatusOK)
@@ -46,10 +53,10 @@ func TestCustomersAPIServeHTTP(t *testing.T) {
 		})
 	})
 	Convey("Given a GET request to /customers?search=Berl", t, func() {
-		req, res, ca := requestCA("GET", "/customers?search=Berl", "")
+		req, res := NewCustomersRequestResponse("GET", "/customers?search=Berl", "")
 
 		Convey("ServeHTTP()", func() {
-			ca.ServeHTTP(res, req)
+			NewCustomersHandler(s).ServeHTTP(res, req)
 
 			Convey("Should respond OK", func() {
 				So(res.Code, ShouldEqual, http.StatusOK)
@@ -65,10 +72,10 @@ func TestCustomersAPIServeHTTP(t *testing.T) {
 		})
 	})
 	Convey("Given a GET request to /customers?search=New", t, func() {
-		req, res, ca := requestCA("GET", "/customers?search=New", "")
+		req, res := NewCustomersRequestResponse("GET", "/customers?search=New", "")
 
 		Convey("ServeHTTP()", func() {
-			ca.ServeHTTP(res, req)
+			NewCustomersHandler(s).ServeHTTP(res, req)
 
 			Convey("Should respond OK", func() {
 				So(res.Code, ShouldEqual, http.StatusOK)
@@ -85,13 +92,13 @@ func TestCustomersAPIServeHTTP(t *testing.T) {
 	})
 
 	Convey("Given a POST request to /customers", t, func() {
-		req, res, ca := requestCA("POST", "/customers", `
+		req, res := NewCustomersRequestResponse("POST", "/customers", `
 			{"name":"Sandra","email":"sandra@yahoo.uk","address":{"city":"Leeds"}}
 		`)
 		req.Header.Add("Content-Type", "application/json")
 
 		Convey("ServeHTTP()", func() {
-			ca.ServeHTTP(res, req)
+			NewCustomersHandler(s).ServeHTTP(res, req)
 
 			Convey("Should respond OK", func() {
 				So(res.Code, ShouldEqual, http.StatusOK)
@@ -111,10 +118,10 @@ func TestCustomersAPIServeHTTP(t *testing.T) {
 	})
 
 	Convey("Given a GET request to /customers/<customer>", t, func() {
-		req, res, ca := requestCA("GET", "/customers/"+bob.Id.Hex(), "")
+		req, res := NewCustomersRequestResponse("GET", "/customers/"+bob.Id.Hex(), "")
 
 		Convey("ServeHTTP()", func() {
-			ca.ServeHTTP(res, req)
+			NewCustomersHandler(s).ServeHTTP(res, req)
 
 			Convey("Should respond OK", func() {
 				So(res.Code, ShouldEqual, http.StatusOK)
@@ -134,11 +141,11 @@ func TestCustomersAPIServeHTTP(t *testing.T) {
 		bob.Email = "bob@gmail.com"
 		body, _ := json.Marshal(bob)
 
-		req, res, ca := requestCA("PUT", "/customers/"+bob.Id.Hex(), string(body))
+		req, res := NewCustomersRequestResponse("PUT", "/customers/"+bob.Id.Hex(), string(body))
 		req.Header.Add("Content-Type", "application/json")
 
 		Convey("ServeHTTP()", func() {
-			ca.ServeHTTP(res, req)
+			NewCustomersHandler(s).ServeHTTP(res, req)
 
 			Convey("Should respond No Content", func() {
 				So(res.Code, ShouldEqual, http.StatusNoContent)
@@ -150,10 +157,10 @@ func TestCustomersAPIServeHTTP(t *testing.T) {
 	})
 
 	Convey("Given a DELETE request to /customers/<customer>", t, func() {
-		req, res, ca := requestCA("DELETE", "/customers/"+bob.Id.Hex(), "")
+		req, res := NewCustomersRequestResponse("DELETE", "/customers/"+bob.Id.Hex(), "")
 
 		Convey("ServeHTTP()", func() {
-			ca.ServeHTTP(res, req)
+			NewCustomersHandler(s).ServeHTTP(res, req)
 
 			Convey("Should respond No Content", func() {
 				So(res.Code, ShouldEqual, http.StatusNoContent)
@@ -163,15 +170,15 @@ func TestCustomersAPIServeHTTP(t *testing.T) {
 			})
 		})
 	})
+
+	session.Close()
 }
 
-func requestCA(m string, p string, b string) (*http.Request, *httptest.ResponseRecorder, *CustomerAPI) {
+func NewCustomersRequestResponse(m string, p string, b string) (*http.Request, *httptest.ResponseRecorder) {
 	req, _ := http.NewRequest(m, p, bytes.NewBufferString(b))
 
-	s := store.NewStore()
-	s.Open("localhost/test")
-	s.Mongo().C("customers").DropCollection()
-	s.Mongo().C("customers").Insert(bob)
+	session.DB("").C("customers").DropCollection()
+	session.DB("").C("customers").Insert(bob)
 
-	return req, httptest.NewRecorder(), &CustomerAPI{s}
+	return req, httptest.NewRecorder()
 }

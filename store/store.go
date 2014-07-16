@@ -22,14 +22,6 @@ func (s *Store) Open(url string) error {
 	return nil
 }
 
-func (s *Store) Mongo() *mgo.Database {
-	if s.mongo == nil {
-		panic("You need open store before!")
-	}
-
-	return s.mongo.Clone().DB("")
-}
-
 func (s *Store) Close() {
 	s.mongo.Close()
 

@@ -3,8 +3,6 @@ package store
 import (
 	"testing"
 
-	"labix.org/v2/mgo"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -33,31 +31,6 @@ func TestStoreOpen(t *testing.T) {
 
 			Convey("Should return error", func() {
 				So(err, ShouldNotBeNil)
-			})
-		})
-	})
-}
-
-func TestStoreMongo(t *testing.T) {
-	store := NewStore()
-
-	Convey("Given an opened store", t, func() {
-		store.Open("localhost/test")
-
-		Convey("Mongo()", func() {
-			mongo := store.Mongo()
-
-			Convey("Should return mgo.Database", func() {
-				So(mongo, ShouldHaveSameTypeAs, &mgo.Database{})
-			})
-		})
-	})
-	Convey("Given an unopened store", t, func() {
-		store.Close()
-
-		Convey("Mongo()", func() {
-			Convey("Should panic", func() {
-				So(func() { store.Mongo() }, ShouldPanic)
 			})
 		})
 	})

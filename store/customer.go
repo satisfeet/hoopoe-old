@@ -9,6 +9,7 @@ var (
 	CustomerUnique = []string{
 		"email",
 	}
+
 	CustomerIndices = []string{
 		"name",
 		"company",
@@ -31,51 +32,48 @@ type CustomerAddress struct {
 	Street string `json:"street,omitempty"`
 }
 
-func IndexCustomer(s *Store) {
-	db := s.Mongo()
-	defer db.Session.Close()
-
-	c := db.C("customers")
+func (s *Store) IndexCustomer() {
+	c := s.mongo.DB("").C("customers")
 
 	c.EnsureIndex(mgo.Index{Key: CustomerIndices})
 	c.EnsureIndex(mgo.Index{Key: CustomerUnique, Unique: true})
 }
 
-func InsertCustomer(s *Store, c *Customer) error {
-	db := s.Mongo()
-	defer db.Session.Close()
+func (s *Store) InsertCustomer(c *Customer) error {
+	m := s.mongo.Clone()
+	defer m.Close()
 
 	if !c.Id.Valid() {
 		c.Id = bson.NewObjectId()
 	}
 
-	return db.C("customers").Insert(c)
+	return m.DB("").C("customers").Insert(c)
 }
 
-func UpdateCustomer(s *Store, c *Customer) error {
-	db := s.Mongo()
-	defer db.Session.Close()
+func (s *Store) UpdateCustomer(c *Customer) error {
+	m := s.mongo.Clone()
+	defer m.Close()
 
-	return db.C("customers").UpdateId(c.Id, c)
+	return m.DB("").C("customers").UpdateId(c.Id, c)
 }
 
-func RemoveCustomer(s *Store, q Query) error {
-	db := s.Mongo()
-	defer db.Session.Close()
+func (s *Store) RemoveCustomer(q Query) error {
+	m := s.mongo.Clone()
+	defer m.Close()
 
-	return db.C("customers").Remove(q)
+	return m.DB("").C("customers").Remove(q)
 }
 
-func FindAllCustomer(s *Store, q Query, c *[]Customer) error {
-	db := s.Mongo()
-	defer db.Session.Close()
+func (s *Store) FindAllCustomer(q Query, c *[]Customer) error {
+	m := s.mongo.Clone()
+	defer m.Close()
 
-	return db.C("customers").Find(q).All(c)
+	return m.DB("").C("customers").Find(q).All(c)
 }
 
-func FindOneCustomer(s *Store, q Query, c *Customer) error {
-	db := s.Mongo()
-	defer db.Session.Close()
+func (s *Store) FindOneCustomer(q Query, c *Customer) error {
+	m := s.mongo.Clone()
+	defer m.Close()
 
-	return db.C("customers").Find(q).One(c)
+	return m.DB("").C("customers").Find(q).One(c)
 }
