@@ -15,8 +15,6 @@ import (
 )
 
 var (
-	session *mgo.Session
-
 	bob = store.Customer{
 		Id:    bson.NewObjectId(),
 		Name:  "Bob Jersey",
@@ -30,8 +28,6 @@ var (
 func TestCustomers(t *testing.T) {
 	s := store.NewStore()
 	s.Open("localhost/test")
-
-	session, _ = mgo.Dial("localhost/test")
 
 	Convey("Given a GET request to /customers", t, func() {
 		req, res := NewCustomersRequestResponse("GET", "/customers", "")
@@ -170,15 +166,15 @@ func TestCustomers(t *testing.T) {
 			})
 		})
 	})
-
-	session.Close()
 }
 
 func NewCustomersRequestResponse(m string, p string, b string) (*http.Request, *httptest.ResponseRecorder) {
 	req, _ := http.NewRequest(m, p, bytes.NewBufferString(b))
 
+	session, _ := mgo.Dial("localhost/test")
 	session.DB("").C("customers").DropCollection()
 	session.DB("").C("customers").Insert(bob)
+	session.Close()
 
 	return req, httptest.NewRecorder()
 }
