@@ -23,6 +23,11 @@ type ProductPricing struct {
 	Retail float32 `json:"retail"`
 }
 
+type ProductVariation struct {
+	Size  string `json:"size"`
+	Color string `json:"color"`
+}
+
 type ProductVariations struct {
 	Sizes  []string `json:"sizes"`
 	Colors []string `json:"colors"`
