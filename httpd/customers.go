@@ -4,134 +4,120 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
+	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
 
-var (
-	CustomersPolyPath = "/customers"
-	CustomersMonoPath = "/customers/{id}"
-)
-
 type CustomersHandler struct {
-	mux   *mux.Router
-	store *store.Store
+	store  *store.Store
+	router *httprouter.Router
 }
 
-func NewCustomersHandler(s *store.Store) *CustomersHandler {
-	m := mux.NewRouter()
-
+func NewCustomersHandler(n string) *CustomersHandler {
 	return &CustomersHandler{
-		mux:   m,
-		store: s,
+		store:  store.NewStore(n),
+		router: httprouter.New(),
 	}
 }
 
-func (h *CustomersHandler) list(w http.ResponseWriter, r *http.Request) {
+func (h *CustomersHandler) list(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	q := store.Query{}
-	c := []store.Customer{}
+	m := []model.Customer{}
 
 	if s := r.URL.Query().Get("search"); len(s) != 0 {
-		q.Search(s, append(
-			store.CustomerIndices,
-			store.CustomerUnique...,
-		))
+		q.Search(s, model.CustomerIndex)
 	}
-	if err := h.store.FindAllCustomer(q, &c); err != nil {
+	if err := h.store.FindAll(q, &m); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
-	if err := json.NewEncoder(w).Encode(c); err != nil {
-		Error(w, err, http.StatusInternalServerError)
 
-		return
-	}
+	Respond(w, m, http.StatusOK)
 }
 
-func (h *CustomersHandler) show(w http.ResponseWriter, r *http.Request) {
-	p := mux.Vars(r)
+func (h *CustomersHandler) show(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	q := store.Query{}
-	c := store.Customer{}
+	m := model.Customer{}
 
-	if err := q.Id(p["id"]); err != nil {
+	if err := q.Id(p.ByName("id")); err != nil {
 		Error(w, err, http.StatusBadRequest)
 
 		return
 	}
-	if err := h.store.FindOneCustomer(q, &c); err != nil {
+	if err := h.store.FindOne(q, &m); err != nil {
 		Error(w, err, http.StatusInternalServerError)
 
 		return
 	}
-	if err := json.NewEncoder(w).Encode(c); err != nil {
-		Error(w, err, http.StatusInternalServerError)
 
-		return
-	}
+	Respond(w, m, http.StatusOK)
 }
 
-func (h *CustomersHandler) create(w http.ResponseWriter, r *http.Request) {
-	c := store.Customer{}
+func (h *CustomersHandler) create(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	m := model.Customer{}
 
-	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 		Error(w, err, http.StatusNotFound)
 
 		return
 	}
-	if err := h.store.InsertCustomer(&c); err != nil {
+	if err := h.store.Insert(&m); err != nil {
 		Error(w, err, http.StatusNotFound)
 
 		return
 	}
-	if err := json.NewEncoder(w).Encode(c); err != nil {
-		Error(w, err, http.StatusNotFound)
 
-		return
-	}
+	Respond(w, m, http.StatusOK)
 }
 
-func (h *CustomersHandler) update(w http.ResponseWriter, r *http.Request) {
-	c := store.Customer{}
-
-	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
-		Error(w, err, http.StatusNotFound)
-
-		return
-	}
-	if err := h.store.UpdateCustomer(&c); err != nil {
-		Error(w, err, http.StatusNotFound)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *CustomersHandler) destroy(w http.ResponseWriter, r *http.Request) {
-	p := mux.Vars(r)
+func (h *CustomersHandler) update(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	q := store.Query{}
+	m := model.Customer{}
 
-	if err := q.Id(p["id"]); err != nil {
+	if err := q.Id(p.ByName("id")); err != nil {
 		Error(w, err, http.StatusBadRequest)
 
 		return
 	}
-	if err := h.store.RemoveCustomer(q); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+		Error(w, err, http.StatusNotFound)
+
+		return
+	}
+	if err := h.store.Update(q, &m); err != nil {
 		Error(w, err, http.StatusNotFound)
 
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	Respond(w, nil, http.StatusNoContent)
+}
+
+func (h *CustomersHandler) destroy(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	q := store.Query{}
+
+	if err := q.Id(p.ByName("id")); err != nil {
+		Error(w, err, http.StatusBadRequest)
+
+		return
+	}
+	if err := h.store.Remove(q); err != nil {
+		Error(w, err, http.StatusNotFound)
+
+		return
+	}
+
+	Respond(w, nil, http.StatusNoContent)
 }
 
 func (h *CustomersHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.mux.Path(CustomersPolyPath).HandlerFunc(h.list).Methods("GET")
-	h.mux.Path(CustomersMonoPath).HandlerFunc(h.show).Methods("GET")
-	h.mux.Path(CustomersPolyPath).HandlerFunc(h.create).Methods("POST")
-	h.mux.Path(CustomersMonoPath).HandlerFunc(h.update).Methods("PUT")
-	h.mux.Path(CustomersMonoPath).HandlerFunc(h.destroy).Methods("DELETE")
+	h.router.Handle("POST", "/customers", h.create)
+	h.router.Handle("GET", "/customers", h.list)
+	h.router.Handle("GET", "/customers/:id", h.show)
+	h.router.Handle("PUT", "/customers/:id", h.update)
+	h.router.Handle("DELETE", "/customers/:id", h.destroy)
 
-	h.mux.ServeHTTP(w, r)
+	h.router.ServeHTTP(w, r)
 }

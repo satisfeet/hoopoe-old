@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/satisfeet/hoopoe/httpd"
+	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
 
@@ -34,15 +35,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	s := store.NewStore()
-
-	if err := s.Open(conf.Mongo); err != nil {
+	if err := store.Open(conf.Mongo); err != nil {
 		fmt.Print("Connection to mongodb failed.\n")
 
 		os.Exit(1)
 	}
 
-	http.Handle("/customers", httpd.Auth(httpd.NewCustomersHandler(s)))
+	http.Handle("/customers", httpd.Auth(httpd.NewCustomersHandler(model.CustomerName)))
 	http.Handle("/", httpd.Auth(NotFound()))
 
 	log.Fatal(http.ListenAndServe(conf.Host, nil))

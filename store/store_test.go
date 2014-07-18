@@ -4,46 +4,86 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"gopkg.in/mgo.v2/bson"
 )
 
-func TestStoreOpen(t *testing.T) {
-	store := NewStore()
+var (
+	// Our test url.
+	url = "localhost/test"
+	// Our test name.
+	name = "testers"
+)
 
-	Convey("Given a valid url", t, func() {
-		url := "mongodb://localhost/test"
+type (
+	// Our test model.
+	model struct {
+		Id   bson.ObjectId `bson:"_id"`
+		Text string
+	}
+)
 
-		Convey("Open()", func() {
-			err := store.Open(url)
+func TestStore(t *testing.T) {
+	Open(url)
+	defer Close()
+
+	Convey("Given a value and a store", t, func() {
+		value := model{bson.NewObjectId(), "I am a tester!"}
+
+		Convey("Insert()", func() {
+			err := NewStore(name).Insert(&value)
 
 			Convey("Should return no error", func() {
 				So(err, ShouldBeNil)
 			})
-		})
-	})
-	// this test case slows takes up to 10s because
-	// mgo waits up its timeout for searching servers
-	// because of this we will skip this for now
-	SkipConvey("Given an invalid url", t, func() {
-		url := "http://localhost:2000"
+			Convey("Should save value", func() {
+				count, _ := mongo.DB(Database).C(name).Find(nil).Count()
 
-		Convey("Open()", func() {
-			err := store.Open(url)
-
-			Convey("Should return error", func() {
-				So(err, ShouldNotBeNil)
+				So(count, ShouldEqual, 1)
+			})
+			Reset(func() {
+				mongo.DB(Database).C(name).DropCollection()
 			})
 		})
 	})
-}
+	Convey("Given a stored value", t, func() {
+		value := model{bson.NewObjectId(), "Hey ho!"}
+		mongo.DB(Database).C(name).Insert(&value)
+		value.Text += "?"
 
-func TestStoreClose(t *testing.T) {
-	store := NewStore()
+		Convey("Update()", func() {
+			err := NewStore(name).Update(Query{"_id": value.Id}, &value)
 
-	Convey("Given an opened store", t, func() {
-		store.Open("localhost/test")
+			Convey("Should return no error", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("Should save value", func() {
+				mongo.DB(Database).C(name).FindId(value.Id).One(&value)
 
-		Convey("Close()", func() {
-			So(store.Close, ShouldNotPanic)
+				So(value.Text, ShouldEqual, "Hey ho!?")
+			})
+			Reset(func() {
+				mongo.DB(Database).C(name).DropCollection()
+			})
+		})
+	})
+	Convey("Given a stored value", t, func() {
+		value := model{bson.NewObjectId(), "Foobar"}
+		mongo.DB(Database).C(name).Insert(&value)
+
+		Convey("Remove()", func() {
+			err := NewStore(name).Remove(Query{"_id": value.Id})
+
+			Convey("Should return no error", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("Should remove value", func() {
+				count, _ := mongo.DB(Database).C(name).Find(nil).Count()
+
+				So(count, ShouldEqual, 0)
+			})
+			Reset(func() {
+				mongo.DB(Database).C(name).DropCollection()
+			})
 		})
 	})
 }

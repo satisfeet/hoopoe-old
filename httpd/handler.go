@@ -29,6 +29,14 @@ func Auth(h http.Handler) http.Handler {
 		}
 
 		w.Header().Set("WWW-Authenticate", "Basic realm=hoopoe")
+
 		Error(w, nil, http.StatusUnauthorized)
+	})
+}
+
+// Responds 404.
+func NotFound() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Error(w, nil, http.StatusNotFound)
 	})
 }

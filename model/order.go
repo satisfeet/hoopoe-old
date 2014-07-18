@@ -1,15 +1,10 @@
-package store
+package model
 
 import (
 	"time"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-)
-
-var (
-	OrderIndices    = []string{}
-	OrderCollection = "orders"
 )
 
 type Order struct {
@@ -26,8 +21,13 @@ type OrderState struct {
 }
 
 type OrderItem struct {
-	Product   mgo.DBRef        `json:"product"`
-	Price     float32          `json:"price"`
-	Quantity  int              `json:"quantity"`
-	Variation ProductVariation `json:"variation"`
+	Product   mgo.DBRef      `json:"product"`
+	Pricing   Pricing        `json:"price"`
+	Quantity  int            `json:"quantity"`
+	Variation OrderVariation `json:"variation"`
+}
+
+type OrderVariation struct {
+	Size  string `json:"size"`
+	Color string `json:"color"`
 }
