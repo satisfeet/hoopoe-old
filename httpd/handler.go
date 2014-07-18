@@ -14,7 +14,7 @@ var (
 // Responds 401 if HTTP Basic authentication fails against
 // HttpUsername and HttpPassword else it calls the wrapped
 // http.Handler.
-func Auth(h http.Handler) http.Handler {
+func AuthHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if v := strings.Split(r.Header.Get("Authorization"), " "); len(v) == 2 {
 			if v, err := base64.StdEncoding.DecodeString(v[1]); err == nil {
@@ -35,7 +35,7 @@ func Auth(h http.Handler) http.Handler {
 }
 
 // Responds 404.
-func NotFound() http.Handler {
+func NotFoundHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		Error(w, nil, http.StatusNotFound)
 	})

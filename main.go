@@ -41,8 +41,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	http.Handle("/customers", httpd.Auth(httpd.NewCustomersHandler(model.CustomerName)))
-	http.Handle("/", httpd.Auth(NotFound()))
+	http.Handle("/customers", httpd.AuthHandler(httpd.NewCustomersHandler(model.CustomerName)))
+	http.Handle("/", httpd.NotFoundHandler())
 
 	log.Fatal(http.ListenAndServe(conf.Host, nil))
 }

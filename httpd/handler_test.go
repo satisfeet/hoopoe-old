@@ -15,12 +15,12 @@ func HelloHandler() http.Handler {
 	})
 }
 
-func TestAuth(t *testing.T) {
+func TestAuthHandler(t *testing.T) {
 	Convey("Given a request without authorization header", t, func() {
 		req, res := NewRequestResponse()
 
-		Convey("Auth()", func() {
-			Auth(HelloHandler()).ServeHTTP(res, req)
+		Convey("AuthHandler()", func() {
+			AuthHandler(HelloHandler()).ServeHTTP(res, req)
 
 			Convey("Should set response status", func() {
 				So(res.Code, ShouldEqual, http.StatusUnauthorized)
@@ -34,8 +34,8 @@ func TestAuth(t *testing.T) {
 		req, res := NewRequestResponse()
 		req.Header.Set("Authorization", "Basic")
 
-		Convey("Auth()", func() {
-			Auth(HelloHandler()).ServeHTTP(res, req)
+		Convey("AuthHandler()", func() {
+			AuthHandler(HelloHandler()).ServeHTTP(res, req)
 
 			Convey("Should set response Unauthorized", func() {
 				So(res.Code, ShouldEqual, http.StatusUnauthorized)
@@ -49,8 +49,8 @@ func TestAuth(t *testing.T) {
 		req, res := NewRequestResponse()
 		req.SetBasicAuth("foo", "bar")
 
-		Convey("Auth()", func() {
-			Auth(HelloHandler()).ServeHTTP(res, req)
+		Convey("AuthHandler()", func() {
+			AuthHandler(HelloHandler()).ServeHTTP(res, req)
 
 			Convey("Should set response Unauthorized", func() {
 				So(res.Code, ShouldEqual, http.StatusUnauthorized)
@@ -64,8 +64,8 @@ func TestAuth(t *testing.T) {
 		req, res := NewRequestResponse()
 		req.SetBasicAuth(HttpUsername, HttpPassword)
 
-		Convey("Auth()", func() {
-			Auth(HelloHandler()).ServeHTTP(res, req)
+		Convey("AuthHandler()", func() {
+			AuthHandler(HelloHandler()).ServeHTTP(res, req)
 
 			Convey("Should set response OK", func() {
 				So(res.Code, ShouldEqual, http.StatusOK)
@@ -77,12 +77,12 @@ func TestAuth(t *testing.T) {
 	})
 }
 
-func TestNotFound(t *testing.T) {
+func TestNotFoundHandler(t *testing.T) {
 	Convey("Given a response", t, func() {
 		req, res := NewRequestResponse()
 
-		Convey("NotFound()", func() {
-			NotFound().ServeHTTP(res, req)
+		Convey("NotFoundHandler()", func() {
+			NotFoundHandler().ServeHTTP(res, req)
 
 			Convey("Should set response status", func() {
 				So(res.Code, ShouldEqual, http.StatusNotFound)
