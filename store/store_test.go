@@ -26,8 +26,27 @@ func TestStore(t *testing.T) {
 	Open(url)
 	defer Close()
 
-	Convey("Given a value and a store", t, func() {
+	Convey("Given a value with id and a store", t, func() {
 		value := model{bson.NewObjectId(), "I am a tester!"}
+
+		Convey("Insert()", func() {
+			err := NewStore(name).Insert(&value)
+
+			Convey("Should return no error", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("Should save value", func() {
+				count, _ := mongo.DB(Database).C(name).Find(nil).Count()
+
+				So(count, ShouldEqual, 1)
+			})
+			Reset(func() {
+				mongo.DB(Database).C(name).DropCollection()
+			})
+		})
+	})
+	Convey("Given a value without id and a store", t, func() {
+		value := model{Text: "I am a tester?"}
 
 		Convey("Insert()", func() {
 			err := NewStore(name).Insert(&value)

@@ -14,9 +14,9 @@ type OrdersHandler struct {
 	router *httprouter.Router
 }
 
-func NewOrdersHandler(n string) *OrdersHandler {
+func NewOrdersHandler() *OrdersHandler {
 	return &OrdersHandler{
-		store:  store.NewStore(n),
+		store:  store.NewStore(model.OrderName),
 		router: httprouter.New(),
 	}
 }

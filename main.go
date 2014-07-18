@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/satisfeet/hoopoe/httpd"
-	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
 
@@ -41,9 +40,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	http.Handle("/customers", httpd.AuthHandler(httpd.NewCustomersHandler(model.CustomerName)))
-	http.Handle("/products", httpd.AuthHandler(httpd.NewCustomersHandler(model.ProductName)))
-	http.Handle("/orders", httpd.AuthHandler(httpd.NewCustomersHandler(model.OrderName)))
+	http.Handle("/customers", httpd.AuthHandler(httpd.NewCustomersHandler()))
+	http.Handle("/products", httpd.AuthHandler(httpd.NewCustomersHandler()))
+	http.Handle("/orders", httpd.AuthHandler(httpd.NewCustomersHandler()))
 	http.Handle("/", httpd.AuthHandler(httpd.NotFoundHandler()))
 
 	log.Fatal(http.ListenAndServe(conf.Host, nil))

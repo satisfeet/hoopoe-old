@@ -14,9 +14,9 @@ type ProductsHandler struct {
 	router *httprouter.Router
 }
 
-func NewProductsHandler(n string) *ProductsHandler {
+func NewProductsHandler() *ProductsHandler {
 	return &ProductsHandler{
-		store:  store.NewStore(n),
+		store:  store.NewStore(model.ProductName),
 		router: httprouter.New(),
 	}
 }

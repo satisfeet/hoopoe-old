@@ -1,11 +1,21 @@
 package store
 
-import "gopkg.in/mgo.v2"
+import (
+	"errors"
+	"reflect"
+
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+)
 
 type Store struct {
 	// The mongo collection to operate on.
 	mongo *mgo.Collection
 }
+
+var (
+	InvalidTypeError = errors.New("Invalid type error.")
+)
 
 func NewStore(n string) *Store {
 	m := mongo.DB(Database).C(n)
@@ -18,6 +28,16 @@ func NewStore(n string) *Store {
 func (s *Store) Insert(v interface{}) error {
 	m := mongo.Clone()
 	defer m.Close()
+
+	// set a bson object id
+	if v := reflect.ValueOf(v).Elem().FieldByName("Id"); true {
+		// check if id was not initialized so far
+		if !v.Interface().(bson.ObjectId).Valid() {
+			v.Set(reflect.ValueOf(bson.NewObjectId()))
+		}
+	} else {
+		return InvalidTypeError
+	}
 
 	return s.mongo.With(m).Insert(v)
 }

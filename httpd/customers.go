@@ -2,6 +2,7 @@ package httpd
 
 import (
 	"encoding/json"
+
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -14,9 +15,9 @@ type CustomersHandler struct {
 	router *httprouter.Router
 }
 
-func NewCustomersHandler(n string) *CustomersHandler {
+func NewCustomersHandler() *CustomersHandler {
 	return &CustomersHandler{
-		store:  store.NewStore(n),
+		store:  store.NewStore(model.CustomerName),
 		router: httprouter.New(),
 	}
 }
