@@ -26,6 +26,16 @@ func NewRouter() *Router {
 	}
 }
 
+type Handler interface {
+	ServeHTTP(*context.Context)
+}
+
+type HandlerFunc func(*context.Context)
+
+func (handler HandlerFunc) ServeHTTP(c *context.Context) {
+	handler(c)
+}
+
 func (router *Router) Handle(m, p string, h Handler) {
 	router.router.Handle(m, p, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		c := context.NewContext(w, r)
