@@ -14,7 +14,8 @@ type Store struct {
 }
 
 var (
-	InvalidTypeError = errors.New("Invalid type error.")
+	InvalidTypeError  = errors.New("Invalid type error.")
+	InvalidQueryError = errors.New("Invalid query error.")
 )
 
 func NewStore(n string) *Store {
@@ -46,12 +47,20 @@ func (s *Store) Update(q Query, v interface{}) error {
 	m := mongo.Clone()
 	defer m.Close()
 
+	if !q.Valid() {
+		return InvalidQueryError
+	}
+
 	return s.mongo.With(m).Update(q, v)
 }
 
 func (s *Store) Remove(q Query) error {
 	m := mongo.Clone()
 	defer m.Close()
+
+	if !q.Valid() {
+		return InvalidQueryError
+	}
 
 	return s.mongo.With(m).Remove(q)
 }
@@ -66,6 +75,10 @@ func (s *Store) FindAll(q Query, v interface{}) error {
 func (s *Store) FindOne(q Query, v interface{}) error {
 	m := mongo.Clone()
 	defer m.Close()
+
+	if !q.Valid() {
+		return InvalidQueryError
+	}
 
 	return s.mongo.With(m).Find(q).One(v)
 }

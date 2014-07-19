@@ -3,107 +3,98 @@ package httpd
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/satisfeet/hoopoe/httpd/context"
+	"github.com/satisfeet/hoopoe/httpd/router"
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
 
-type CustomersHandler struct {
+type Customers struct {
 	store  *store.Store
-	router *httprouter.Router
+	router *router.Router
 }
 
-func NewCustomersHandler() *CustomersHandler {
-	return &CustomersHandler{
-		store:  store.NewStore(model.CustomerName),
-		router: httprouter.New(),
+func NewCustomers() *Customers {
+	s := store.NewStore(model.CustomerName)
+
+	return &Customers{
+		store: s,
 	}
 }
 
-func (h *CustomersHandler) list(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	q := store.Query{}
+func (h *Customers) list(c *context.Context) {
 	m := []model.Customer{}
 
-	if s := r.URL.Query().Get("search"); len(s) != 0 {
-		q.Search(s, model.CustomerIndex)
-	}
+	q := store.Query{}
+	q.Search(c.Query("search"), model.CustomerIndex)
 
 	if err := h.store.FindAll(q, &m); err != nil {
-		Error(w, err, http.StatusInternalServerError)
+		c.Error(err, http.StatusInternalServerError)
 	} else {
-		Respond(w, m, http.StatusOK)
+		c.Respond(m, http.StatusOK)
 	}
 }
 
-func (h *CustomersHandler) show(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	q := store.Query{}
+func (h *Customers) show(c *context.Context) {
 	m := model.Customer{}
 
-	if err := q.Id(p.ByName("id")); err != nil {
-		Error(w, err, http.StatusBadRequest)
-
-		return
-	}
+	q := store.Query{}
+	q.Id(c.Param("id"))
 
 	if err := h.store.FindOne(q, &m); err != nil {
-		Error(w, err, http.StatusInternalServerError)
+		c.Error(err, http.StatusInternalServerError)
 	} else {
-		Respond(w, m, http.StatusOK)
+		c.Respond(m, http.StatusOK)
 	}
 }
 
-func (h *CustomersHandler) create(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (h *Customers) create(c *context.Context) {
 	m := model.Customer{}
 
-	if ok := Parse(w, r, &m); ok {
+	if c.Parse(&m) {
 		if err := h.store.Insert(&m); err != nil {
-			Error(w, err, http.StatusNotFound)
+			c.Error(err, http.StatusNotFound)
 		} else {
-			Respond(w, m, http.StatusOK)
+			c.Respond(m, http.StatusOK)
 		}
 	}
 }
 
-func (h *CustomersHandler) update(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	q := store.Query{}
+func (h *Customers) update(c *context.Context) {
 	m := model.Customer{}
 
-	if err := q.Id(p.ByName("id")); err != nil {
-		Error(w, err, http.StatusBadRequest)
+	q := store.Query{}
+	q.Id(c.Param("id"))
 
-		return
-	}
-
-	if ok := Parse(w, r, &m); ok {
+	if c.Parse(&m) {
 		if err := h.store.Update(q, &m); err != nil {
-			Error(w, err, http.StatusNotFound)
+			c.Error(err, http.StatusNotFound)
 		} else {
-			Respond(w, nil, http.StatusNoContent)
+			c.Respond(nil, http.StatusNoContent)
 		}
 	}
 }
 
-func (h *CustomersHandler) destroy(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (h *Customers) destroy(c *context.Context) {
 	q := store.Query{}
+	q.Id(c.Param("id"))
 
-	if err := q.Id(p.ByName("id")); err != nil {
-		Error(w, err, http.StatusBadRequest)
-
-		return
-	}
 	if err := h.store.Remove(q); err != nil {
-		Error(w, err, http.StatusNotFound)
+		c.Error(err, http.StatusNotFound)
 	} else {
-		Respond(w, nil, http.StatusNoContent)
+		c.Respond(nil, http.StatusNoContent)
 	}
 }
 
-func (h *CustomersHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.router.Handle("POST", "/customers", h.create)
-	h.router.Handle("GET", "/customers", h.list)
-	h.router.Handle("GET", "/customers/:id", h.show)
-	h.router.Handle("PUT", "/customers/:id", h.update)
-	h.router.Handle("DELETE", "/customers/:id", h.destroy)
+func (h *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if h.router == nil {
+		r := router.NewRouter()
+		r.HandleFunc(router.MethodShow, "/customers", h.list)
+		r.HandleFunc(router.MethodShow, "/customers/:id", h.show)
+		r.HandleFunc(router.MethodCreate, "/customers", h.create)
+		r.HandleFunc(router.MethodUpdate, "/customers/:id", h.update)
+		r.HandleFunc(router.MethodDelete, "/customers/:id", h.destroy)
+	}
 
 	h.router.ServeHTTP(w, r)
 }

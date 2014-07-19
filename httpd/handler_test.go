@@ -3,98 +3,73 @@ package httpd
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func HelloHandler() http.Handler {
+func Hello() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		w.Write([]byte("Hello World\n"))
+		w.Write([]byte("Hello World"))
 	})
 }
 
-func TestAuthHandler(t *testing.T) {
-	Convey("Given a request without authorization header", t, func() {
-		req, res := NewRequestResponse()
+func TestAuth(t *testing.T) {
+	req, res := NewAuthRequestResponse()
+	req.SetBasicAuth(Username, Password)
 
-		Convey("AuthHandler()", func() {
-			AuthHandler(HelloHandler()).ServeHTTP(res, req)
+	Auth(Hello()).ServeHTTP(res, req)
 
-			Convey("Should set response status", func() {
-				So(res.Code, ShouldEqual, http.StatusUnauthorized)
-			})
-			Convey("Should set response body", func() {
-				So(res.Body.String(), ShouldContainSubstring, http.StatusText(401))
-			})
-		})
-	})
-	Convey("Given a request with invalid authorization header", t, func() {
-		req, res := NewRequestResponse()
-		req.Header.Set("Authorization", "Basic")
-
-		Convey("AuthHandler()", func() {
-			AuthHandler(HelloHandler()).ServeHTTP(res, req)
-
-			Convey("Should set response Unauthorized", func() {
-				So(res.Code, ShouldEqual, http.StatusUnauthorized)
-			})
-			Convey("Should set response body", func() {
-				So(res.Body.String(), ShouldContainSubstring, http.StatusText(401))
-			})
-		})
-	})
-	Convey("Given a request with invalid authorization credentials", t, func() {
-		req, res := NewRequestResponse()
-		req.SetBasicAuth("foo", "bar")
-
-		Convey("AuthHandler()", func() {
-			AuthHandler(HelloHandler()).ServeHTTP(res, req)
-
-			Convey("Should set response Unauthorized", func() {
-				So(res.Code, ShouldEqual, http.StatusUnauthorized)
-			})
-			Convey("Should set response body", func() {
-				So(res.Body.String(), ShouldContainSubstring, http.StatusText(401))
-			})
-		})
-	})
-	Convey("Given a request with correct authorization credentials", t, func() {
-		req, res := NewRequestResponse()
-		req.SetBasicAuth(HttpUsername, HttpPassword)
-
-		Convey("AuthHandler()", func() {
-			AuthHandler(HelloHandler()).ServeHTTP(res, req)
-
-			Convey("Should set response OK", func() {
-				So(res.Code, ShouldEqual, http.StatusOK)
-			})
-			Convey("Should set response body", func() {
-				So(res.Body.String(), ShouldContainSubstring, "Hello World\n")
-			})
-		})
-	})
+	if res.Code != http.StatusOK {
+		t.Error("Expected status to be 200 but it was %d\n", res.Code)
+	}
+	if res.Body.String() != "Hello World" {
+		t.Error("Expected body to contain hello world but it had %s\n", res.Body.String())
+	}
 }
 
-func TestNotFoundHandler(t *testing.T) {
-	Convey("Given a response", t, func() {
-		req, res := NewRequestResponse()
+func TestAuthWithoutHeader(t *testing.T) {
+	req, res := NewAuthRequestResponse()
 
-		Convey("NotFoundHandler()", func() {
-			NotFoundHandler().ServeHTTP(res, req)
+	Auth(Hello()).ServeHTTP(res, req)
 
-			Convey("Should set response status", func() {
-				So(res.Code, ShouldEqual, http.StatusNotFound)
-			})
-			Convey("Should set response body", func() {
-				So(res.Body.String(), ShouldContainSubstring, `{"error":"Not Found"}`)
-			})
-		})
-	})
+	if res.Code != http.StatusUnauthorized {
+		t.Error("Expected status to be 401 but it was %d\n", res.Code)
+	}
+	if !strings.Contains(res.Body.String(), http.StatusText(http.StatusUnauthorized)) {
+		t.Error("Expected body to contain unauthorized but it had %s\n", res.Body.String())
+	}
 }
 
-func NewRequestResponse() (*http.Request, *httptest.ResponseRecorder) {
+func TestAuthWithInvalidHeader(t *testing.T) {
+	req, res := NewAuthRequestResponse()
+	req.Header.Set("Authorization", "Basic")
+
+	Auth(Hello()).ServeHTTP(res, req)
+
+	if res.Code != http.StatusUnauthorized {
+		t.Error("Expected status to be 401 but it was %d\n", res.Code)
+	}
+	if !strings.Contains(res.Body.String(), http.StatusText(http.StatusUnauthorized)) {
+		t.Error("Expected body to contain unauthorized but it had %s\n", res.Body.String())
+	}
+}
+
+func TestAuthWithInvalidCredentials(t *testing.T) {
+	req, res := NewAuthRequestResponse()
+	req.SetBasicAuth("foo", "foobar")
+
+	Auth(Hello()).ServeHTTP(res, req)
+
+	if res.Code != http.StatusUnauthorized {
+		t.Error("Expected status to be 401 but it was %d\n", res.Code)
+	}
+	if !strings.Contains(res.Body.String(), http.StatusText(http.StatusUnauthorized)) {
+		t.Error("Expected body to contain unauthorized but it had %s\n", res.Body.String())
+	}
+}
+
+func NewAuthRequestResponse() (*http.Request, *httptest.ResponseRecorder) {
 	req, _ := http.NewRequest("GET", "/", nil)
 
 	return req, httptest.NewRecorder()

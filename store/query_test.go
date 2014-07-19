@@ -9,17 +9,13 @@ import (
 )
 
 func TestQueryId(t *testing.T) {
-	query := Query{}
-
 	Convey("Given a valid string", t, func() {
 		id := bson.NewObjectId()
 
 		Convey("IdHex()", func() {
-			err := query.Id(id.Hex())
+			query := Query{}
+			query.Id(id.Hex())
 
-			Convey("Should return no error", func() {
-				So(err, ShouldBeNil)
-			})
 			Convey("Should set _id", func() {
 				So(query["_id"], ShouldEqual, id)
 			})
@@ -29,10 +25,11 @@ func TestQueryId(t *testing.T) {
 		id := "1234"
 
 		Convey("IdHex()", func() {
-			err := query.Id(id)
+			query := Query{}
+			query.Id(id)
 
-			Convey("Should return error", func() {
-				So(err, ShouldNotBeNil)
+			Convey("Should not set _id", func() {
+				So(query["_id"], ShouldBeNil)
 			})
 		})
 	})

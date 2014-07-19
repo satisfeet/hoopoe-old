@@ -4,39 +4,30 @@ import (
 	"encoding/base64"
 	"net/http"
 	"strings"
+
+	"github.com/satisfeet/hoopoe/httpd/context"
 )
 
 var (
-	HttpUsername = "bodokaiser"
-	HttpPassword = "secret"
+	Username = "bodokaiser"
+	Password = "secret"
 )
 
-// Responds 401 if HTTP Basic authentication fails against
-// HttpUsername and HttpPassword else it calls the wrapped
-// http.Handler.
-func AuthHandler(h http.Handler) http.Handler {
+func Auth(h http.Handler) http.Handler {
+	b := base64.StdEncoding.EncodeToString([]byte(Username + ":" + Password))
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if v := strings.Split(r.Header.Get("Authorization"), " "); len(v) == 2 {
-			if v, err := base64.StdEncoding.DecodeString(v[1]); err == nil {
-				a := strings.Split(string(v), ":")
+		c := context.NewContext(w, r)
+		a := c.Get("Authorization")
 
-				if HttpUsername == a[0] && HttpPassword == a[1] {
-					h.ServeHTTP(w, r)
-
-					return
-				}
+		if i := strings.IndexRune(a, ' '); i != -1 {
+			if b == a[i+1:] {
+				h.ServeHTTP(w, r)
+				return
 			}
 		}
 
-		w.Header().Set("WWW-Authenticate", "Basic realm=hoopoe")
-
-		Error(w, nil, http.StatusUnauthorized)
-	})
-}
-
-// Responds 404.
-func NotFoundHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		Error(w, nil, http.StatusNotFound)
+		c.Set("WWW-Authenticate", "Basic realm=hoopoe")
+		c.Error(nil, http.StatusUnauthorized)
 	})
 }
