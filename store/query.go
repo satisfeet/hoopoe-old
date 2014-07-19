@@ -1,8 +1,16 @@
 package store
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	"errors"
+
+	"gopkg.in/mgo.v2/bson"
+)
 
 type Query bson.M
+
+var (
+	ErrInvalidQuery = errors.New("Invalid query id.")
+)
 
 func (q Query) Id(s string) {
 	if bson.IsObjectIdHex(s) {

@@ -14,11 +14,15 @@ type Store struct {
 }
 
 var (
-	InvalidTypeError  = errors.New("Invalid type error.")
-	InvalidQueryError = errors.New("Invalid query error.")
+	ErrConnection  = errors.New("Connection error.")
+	ErrInvalidType = errors.New("Invalid type error.")
 )
 
 func NewStore(n string) *Store {
+	if mongo == nil {
+		panic(ErrConnection)
+	}
+
 	m := mongo.DB(Database).C(n)
 
 	return &Store{
@@ -37,7 +41,7 @@ func (s *Store) Insert(v interface{}) error {
 			v.Set(reflect.ValueOf(bson.NewObjectId()))
 		}
 	} else {
-		return InvalidTypeError
+		return ErrInvalidType
 	}
 
 	return s.mongo.With(m).Insert(v)
@@ -48,7 +52,7 @@ func (s *Store) Update(q Query, v interface{}) error {
 	defer m.Close()
 
 	if !q.Valid() {
-		return InvalidQueryError
+		return ErrInvalidQuery
 	}
 
 	return s.mongo.With(m).Update(q, v)
@@ -59,7 +63,7 @@ func (s *Store) Remove(q Query) error {
 	defer m.Close()
 
 	if !q.Valid() {
-		return InvalidQueryError
+		return ErrInvalidQuery
 	}
 
 	return s.mongo.With(m).Remove(q)
@@ -77,7 +81,7 @@ func (s *Store) FindOne(q Query, v interface{}) error {
 	defer m.Close()
 
 	if !q.Valid() {
-		return InvalidQueryError
+		return ErrInvalidQuery
 	}
 
 	return s.mongo.With(m).Find(q).One(v)

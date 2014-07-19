@@ -29,7 +29,7 @@ func (h *Customers) list(c *context.Context) {
 	q.Search(c.Query("search"), model.CustomerIndex)
 
 	if err := h.store.FindAll(q, &m); err != nil {
-		c.Error(err, http.StatusInternalServerError)
+		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
@@ -42,7 +42,7 @@ func (h *Customers) show(c *context.Context) {
 	q.Id(c.Param("id"))
 
 	if err := h.store.FindOne(q, &m); err != nil {
-		c.Error(err, http.StatusInternalServerError)
+		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
@@ -53,7 +53,7 @@ func (h *Customers) create(c *context.Context) {
 
 	if c.Parse(&m) {
 		if err := h.store.Insert(&m); err != nil {
-			c.Error(err, http.StatusNotFound)
+			c.Error(err, ErrorCode(err))
 		} else {
 			c.Respond(m, http.StatusOK)
 		}
@@ -68,7 +68,7 @@ func (h *Customers) update(c *context.Context) {
 
 	if c.Parse(&m) {
 		if err := h.store.Update(q, &m); err != nil {
-			c.Error(err, http.StatusNotFound)
+			c.Error(err, ErrorCode(err))
 		} else {
 			c.Respond(nil, http.StatusNoContent)
 		}
@@ -80,7 +80,7 @@ func (h *Customers) destroy(c *context.Context) {
 	q.Id(c.Param("id"))
 
 	if err := h.store.Remove(q); err != nil {
-		c.Error(err, http.StatusNotFound)
+		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)
 	}
