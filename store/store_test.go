@@ -1,108 +1,106 @@
 package store
 
 import (
+	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
 var (
-	// Our test url.
-	url = "localhost/test"
-	// Our test name.
 	name = "testers"
+
+	modelsWithId = []model{
+		model{
+			Id:   bson.NewObjectId(),
+			Text: "I have an id",
+		},
+		model{
+			Id:   bson.NewObjectId(),
+			Text: "I also have an id",
+		},
+	}
+	modelsWithoutId = []model{
+		model{
+			Text: "I have no id",
+		},
+		model{
+			Text: "I also have no id",
+		},
+	}
 )
 
 type (
-	// Our test model.
 	model struct {
 		Id   bson.ObjectId `bson:"_id"`
 		Text string
 	}
 )
 
-func TestStore(t *testing.T) {
-	Open(url)
-	defer Close()
+func TestStoreInsert(t *testing.T) {
+	for _, v := range modelsWithoutId {
+		setup(nil)
 
-	Convey("Given a value with id and a store", t, func() {
-		value := model{bson.NewObjectId(), "I am a tester!"}
+		if err := NewStore(name).Insert(&v); err != nil {
+			t.Error(err)
+		}
+		if i := count(); i != 1 {
+			t.Errorf("Expected to find one document but found %d.\n", i)
+		}
 
-		Convey("Insert()", func() {
-			err := NewStore(name).Insert(&value)
+		teardown()
+	}
+}
 
-			Convey("Should return no error", func() {
-				So(err, ShouldBeNil)
-			})
-			Convey("Should save value", func() {
-				count, _ := mongo.DB(Database).C(name).Find(nil).Count()
+func TestStoreUpdate(t *testing.T) {
+	for _, v := range modelsWithId {
+		setup(&v)
+		v.Text += "1234?"
 
-				So(count, ShouldEqual, 1)
-			})
-			Reset(func() {
-				mongo.DB(Database).C(name).DropCollection()
-			})
-		})
-	})
-	Convey("Given a value without id and a store", t, func() {
-		value := model{Text: "I am a tester?"}
+		if err := NewStore(name).Update(Query{"_id": v.Id}, &v); err != nil {
+			t.Error(err)
+		}
+		mongo.DB(Database).C(name).FindId(v.Id).One(&v)
+		if !strings.HasSuffix(v.Text, "1234?") {
+			t.Error("Expected document to be updated.\n")
+		}
 
-		Convey("Insert()", func() {
-			err := NewStore(name).Insert(&value)
+		teardown()
+	}
+}
 
-			Convey("Should return no error", func() {
-				So(err, ShouldBeNil)
-			})
-			Convey("Should save value", func() {
-				count, _ := mongo.DB(Database).C(name).Find(nil).Count()
+func TestStoreRemove(t *testing.T) {
+	for _, v := range modelsWithId {
+		setup(v)
 
-				So(count, ShouldEqual, 1)
-			})
-			Reset(func() {
-				mongo.DB(Database).C(name).DropCollection()
-			})
-		})
-	})
-	Convey("Given a stored value", t, func() {
-		value := model{bson.NewObjectId(), "Hey ho!"}
-		mongo.DB(Database).C(name).Insert(&value)
-		value.Text += "?"
+		if err := NewStore(name).Remove(Query{"_id": v.Id}); err != nil {
+			t.Error(err)
+		}
+		if i := count(); i != 0 {
+			t.Errorf("Expected to have no documents but found %d.\n", i)
+		}
 
-		Convey("Update()", func() {
-			err := NewStore(name).Update(Query{"_id": value.Id}, &value)
+		teardown()
+	}
+}
 
-			Convey("Should return no error", func() {
-				So(err, ShouldBeNil)
-			})
-			Convey("Should save value", func() {
-				mongo.DB(Database).C(name).FindId(value.Id).One(&value)
+func count() int {
+	i, _ := mongo.DB("").C(name).Find(nil).Count()
 
-				So(value.Text, ShouldEqual, "Hey ho!?")
-			})
-			Reset(func() {
-				mongo.DB(Database).C(name).DropCollection()
-			})
-		})
-	})
-	Convey("Given a stored value", t, func() {
-		value := model{bson.NewObjectId(), "Foobar"}
-		mongo.DB(Database).C(name).Insert(&value)
+	return i
+}
 
-		Convey("Remove()", func() {
-			err := NewStore(name).Remove(Query{"_id": value.Id})
+func setup(v interface{}) {
+	mongo, _ = mgo.Dial("localhost/test")
+	mongo.DB("").C(name).DropCollection()
 
-			Convey("Should return no error", func() {
-				So(err, ShouldBeNil)
-			})
-			Convey("Should remove value", func() {
-				count, _ := mongo.DB(Database).C(name).Find(nil).Count()
+	if v != nil {
+		mongo.DB("").C(name).Insert(v)
+	}
+}
 
-				So(count, ShouldEqual, 0)
-			})
-			Reset(func() {
-				mongo.DB(Database).C(name).DropCollection()
-			})
-		})
-	})
+func teardown() {
+	mongo.DB("").C(name).DropCollection()
+	mongo.Close()
 }

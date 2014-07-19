@@ -1,55 +1,57 @@
 package store
 
 import (
+	"reflect"
 	"testing"
 
 	"gopkg.in/mgo.v2/bson"
+)
 
-	. "github.com/smartystreets/goconvey/convey"
+var (
+	queryIds = []string{
+		bson.NewObjectId().Hex(),
+		bson.NewObjectId().Hex(),
+		bson.NewObjectId().Hex(),
+		"1234567890123456789",
+		"abcd",
+		"",
+	}
+	querySearch = Query{
+		"$or": []bson.M{
+			bson.M{"foo": bson.RegEx{"bar", "i"}},
+			bson.M{"baz": bson.RegEx{"bar", "i"}},
+		},
+	}
 )
 
 func TestQueryId(t *testing.T) {
-	Convey("Given a valid string", t, func() {
-		id := bson.NewObjectId()
+	for _, v := range queryIds {
+		q := Query{}
+		q.Id(v)
 
-		Convey("IdHex()", func() {
-			query := Query{}
-			query.Id(id.Hex())
-
-			Convey("Should set _id", func() {
-				So(query["_id"], ShouldEqual, id)
-			})
-		})
-	})
-	Convey("Given an invalid string", t, func() {
-		id := "1234"
-
-		Convey("IdHex()", func() {
-			query := Query{}
-			query.Id(id)
-
-			Convey("Should not set _id", func() {
-				So(query["_id"], ShouldBeNil)
-			})
-		})
-	})
+		if bson.IsObjectIdHex(v) {
+			if q["_id"] == nil {
+				t.Error("Expected id to get set but was nil.\n")
+			}
+		} else {
+			if q["_id"] != nil {
+				t.Error("Expected id to not get set.\n")
+			}
+		}
+	}
 }
 
 func TestQuerySearch(t *testing.T) {
-	query := Query{}
+	q1 := Query{}
+	q2 := Query{}
 
-	Convey("Given a string", t, func() {
-		param := "Berlin"
+	q1.Search("", []string{"foo", "baz"})
+	q2.Search("bar", []string{"foo", "baz"})
 
-		Convey("Search()", func() {
-			query.Search(param, []string{"name", "email"})
-
-			Convey("Should set or with regex", func() {
-				r := bson.RegEx{"Berlin", "i"}
-
-				So(query["$or"].([]bson.M)[0], ShouldResemble, bson.M{"name": r})
-				So(query["$or"].([]bson.M)[1], ShouldResemble, bson.M{"email": r})
-			})
-		})
-	})
+	if q1["$or"] != nil {
+		t.Errorf("Expect query to be empty but it was %v.\n", q1)
+	}
+	if !reflect.DeepEqual(q2, querySearch) {
+		t.Errorf("Expected query to equal search query but it was %v.\n", q2)
+	}
 }
