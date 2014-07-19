@@ -25,7 +25,7 @@ func NewContext(w http.ResponseWriter, r *http.Request) *Context {
 }
 
 func (c *Context) Set(k, v string) {
-	c.request.Header.Set(k, v)
+	c.writer.Header().Set(k, v)
 }
 
 func (c *Context) Get(k string) string {
