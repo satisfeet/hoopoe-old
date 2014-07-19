@@ -1,8 +1,6 @@
 package httpd
 
 import (
-	"encoding/json"
-
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -29,13 +27,12 @@ func (h *CustomersHandler) list(w http.ResponseWriter, r *http.Request, _ httpro
 	if s := r.URL.Query().Get("search"); len(s) != 0 {
 		q.Search(s, model.CustomerIndex)
 	}
+
 	if err := h.store.FindAll(q, &m); err != nil {
 		Error(w, err, http.StatusInternalServerError)
-
-		return
+	} else {
+		Respond(w, m, http.StatusOK)
 	}
-
-	Respond(w, m, http.StatusOK)
 }
 
 func (h *CustomersHandler) show(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -47,30 +44,24 @@ func (h *CustomersHandler) show(w http.ResponseWriter, r *http.Request, p httpro
 
 		return
 	}
+
 	if err := h.store.FindOne(q, &m); err != nil {
 		Error(w, err, http.StatusInternalServerError)
-
-		return
+	} else {
+		Respond(w, m, http.StatusOK)
 	}
-
-	Respond(w, m, http.StatusOK)
 }
 
 func (h *CustomersHandler) create(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	m := model.Customer{}
 
-	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-		Error(w, err, http.StatusNotFound)
-
-		return
+	if ok := Parse(w, r, &m); ok {
+		if err := h.store.Insert(&m); err != nil {
+			Error(w, err, http.StatusNotFound)
+		} else {
+			Respond(w, m, http.StatusOK)
+		}
 	}
-	if err := h.store.Insert(&m); err != nil {
-		Error(w, err, http.StatusNotFound)
-
-		return
-	}
-
-	Respond(w, m, http.StatusOK)
 }
 
 func (h *CustomersHandler) update(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -82,18 +73,14 @@ func (h *CustomersHandler) update(w http.ResponseWriter, r *http.Request, p http
 
 		return
 	}
-	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-		Error(w, err, http.StatusNotFound)
 
-		return
+	if ok := Parse(w, r, &m); ok {
+		if err := h.store.Update(q, &m); err != nil {
+			Error(w, err, http.StatusNotFound)
+		} else {
+			Respond(w, nil, http.StatusNoContent)
+		}
 	}
-	if err := h.store.Update(q, &m); err != nil {
-		Error(w, err, http.StatusNotFound)
-
-		return
-	}
-
-	Respond(w, nil, http.StatusNoContent)
 }
 
 func (h *CustomersHandler) destroy(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -106,11 +93,9 @@ func (h *CustomersHandler) destroy(w http.ResponseWriter, r *http.Request, p htt
 	}
 	if err := h.store.Remove(q); err != nil {
 		Error(w, err, http.StatusNotFound)
-
-		return
+	} else {
+		Respond(w, nil, http.StatusNoContent)
 	}
-
-	Respond(w, nil, http.StatusNoContent)
 }
 
 func (h *CustomersHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

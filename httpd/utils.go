@@ -18,11 +18,25 @@ func Error(w http.ResponseWriter, err error, c int) {
 	http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), c)
 }
 
+// Parses a http request body to a value.
+//
+// If an error occurs it will be handled and returns false.
+func Parse(w http.ResponseWriter, r *http.Request, v interface{}) bool {
+	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+		Error(w, nil, http.StatusBadRequest)
+
+		return false
+	}
+
+	return true
+}
+
 // Responds value to a http request.
 //
 // If value is nil then we respond a json object which contains
 // the status text.
-func Respond(w http.ResponseWriter, v interface{}, c int) {
+// If an error occurs it returns false.
+func Respond(w http.ResponseWriter, v interface{}, c int) bool {
 	w.WriteHeader(c)
 
 	if v == nil {
@@ -33,5 +47,9 @@ func Respond(w http.ResponseWriter, v interface{}, c int) {
 
 	if err := json.NewEncoder(w).Encode(v); err != nil {
 		Error(w, err, http.StatusInternalServerError)
+
+		return false
 	}
+
+	return true
 }
