@@ -7,10 +7,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-var (
-	OrderName = "orders"
-)
-
 type Order struct {
 	Id       bson.ObjectId `json:"id"     bson:"_id"`
 	State    OrderState    `json:"state"`

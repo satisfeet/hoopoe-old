@@ -41,13 +41,7 @@ func main() {
 	}
 
 	http.Handle("/customers", httpd.Auth(httpd.NewCustomers()))
-	http.Handle("/", httpd.Auth(NotFound()))
+	http.Handle("/", httpd.Auth(httpd.NotFound()))
 
 	log.Fatal(http.ListenAndServe(conf.Host, nil))
-}
-
-func NotFound() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "Not Found", http.StatusNotFound)
-	})
 }

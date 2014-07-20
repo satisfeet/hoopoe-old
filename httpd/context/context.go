@@ -49,7 +49,9 @@ func (c *Context) Parse(v interface{}) bool {
 	var err error
 
 	switch c.request.Header.Get("Content-Type") {
-	case "application/json":
+	// lets just assume json in every case...
+	//case "application/json":
+	default:
 		err = json.NewDecoder(c.request.Body).Decode(v)
 	}
 

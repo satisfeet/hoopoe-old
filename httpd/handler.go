@@ -31,3 +31,9 @@ func Auth(h http.Handler) http.Handler {
 		c.Error(nil, http.StatusUnauthorized)
 	})
 }
+
+func NotFound() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		context.NewContext(w, r).Error(nil, http.StatusNotFound)
+	})
+}

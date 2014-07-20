@@ -32,5 +32,9 @@ func (q Query) Search(s string, f []string) {
 }
 
 func (q Query) Valid() bool {
+	if q["_id"] == nil {
+		return false
+	}
+
 	return q["_id"].(bson.ObjectId).Valid()
 }

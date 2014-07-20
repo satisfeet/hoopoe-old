@@ -3,9 +3,6 @@ package model
 import "gopkg.in/mgo.v2/bson"
 
 var (
-	// Name of the collection.
-	CustomerName = "customers"
-
 	// Fields which are on the index and searchable.
 	CustomerIndex = []string{
 		"name",

@@ -3,8 +3,15 @@ package httpd
 import (
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
+)
+
+var (
+	AuthArguments = []map[string]string{
+		map[string]string{},
+		map[string]string{"header": "Basic"},
+		map[string]string{"username": "foo", "password": "foobar"},
+	}
 )
 
 func Hello() http.Handler {
@@ -15,62 +22,54 @@ func Hello() http.Handler {
 }
 
 func TestAuth(t *testing.T) {
-	req, res := NewAuthRequestResponse()
-	req.SetBasicAuth(Username, Password)
+	req, res := NewAuthRequestResponse(Username, Password, "")
 
 	Auth(Hello()).ServeHTTP(res, req)
 
-	if res.Code != http.StatusOK {
-		t.Error("Expected status to be 200 but it was %d\n", res.Code)
+	if v := res.Code; v != http.StatusOK {
+		t.Errorf("Expected status to be 200 but it was %d\n", v)
 	}
-	if res.Body.String() != "Hello World" {
-		t.Error("Expected body to contain hello world but it had %s\n", res.Body.String())
+	if v := res.Body.String(); v != "Hello World" {
+		t.Errorf("Expected body to contain hello world but it had %s\n", v)
 	}
-}
 
-func TestAuthWithoutHeader(t *testing.T) {
-	req, res := NewAuthRequestResponse()
+	for _, v := range AuthArguments {
+		req, res := NewAuthRequestResponse(v["user"], v["pass"], v["header"])
 
-	Auth(Hello()).ServeHTTP(res, req)
+		Auth(Hello()).ServeHTTP(res, req)
 
-	if res.Code != http.StatusUnauthorized {
-		t.Error("Expected status to be 401 but it was %d\n", res.Code)
-	}
-	if !strings.Contains(res.Body.String(), http.StatusText(http.StatusUnauthorized)) {
-		t.Error("Expected body to contain unauthorized but it had %s\n", res.Body.String())
-	}
-}
-
-func TestAuthWithInvalidHeader(t *testing.T) {
-	req, res := NewAuthRequestResponse()
-	req.Header.Set("Authorization", "Basic")
-
-	Auth(Hello()).ServeHTTP(res, req)
-
-	if res.Code != http.StatusUnauthorized {
-		t.Error("Expected status to be 401 but it was %d\n", res.Code)
-	}
-	if !strings.Contains(res.Body.String(), http.StatusText(http.StatusUnauthorized)) {
-		t.Error("Expected body to contain unauthorized but it had %s\n", res.Body.String())
+		if v := res.Code; v != http.StatusUnauthorized {
+			t.Errorf("Expected status to be 401 but it was %d\n", v)
+		}
+		if v := res.Body.String(); v != "{\"error\":\"Unauthorized\"}\n" {
+			t.Errorf("Expected body to contain unauthorized but it had %s\n", v)
+		}
 	}
 }
 
-func TestAuthWithInvalidCredentials(t *testing.T) {
-	req, res := NewAuthRequestResponse()
-	req.SetBasicAuth("foo", "foobar")
-
-	Auth(Hello()).ServeHTTP(res, req)
-
-	if res.Code != http.StatusUnauthorized {
-		t.Error("Expected status to be 401 but it was %d\n", res.Code)
-	}
-	if !strings.Contains(res.Body.String(), http.StatusText(http.StatusUnauthorized)) {
-		t.Error("Expected body to contain unauthorized but it had %s\n", res.Body.String())
-	}
-}
-
-func NewAuthRequestResponse() (*http.Request, *httptest.ResponseRecorder) {
+func TestNotFound(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/", nil)
+	res := httptest.NewRecorder()
+
+	NotFound().ServeHTTP(res, req)
+
+	if v := res.Code; v != http.StatusNotFound {
+		t.Errorf("Expected status to be 404 but it was %d.\n", v)
+	}
+	if v := res.Body.String(); v != "{\"error\":\"Not Found\"}\n" {
+		t.Errorf("Expected body to contain error but it had %s.\n", v)
+	}
+}
+
+func NewAuthRequestResponse(u, p, h string) (*http.Request, *httptest.ResponseRecorder) {
+	req, _ := http.NewRequest("GET", "/", nil)
+
+	if len(h) != 0 {
+		req.Header.Set("Authorization", h)
+	}
+	if len(u) != 0 && len(p) != 0 {
+		req.SetBasicAuth(u, p)
+	}
 
 	return req, httptest.NewRecorder()
 }

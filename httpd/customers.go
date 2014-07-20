@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/satisfeet/hoopoe/httpd/context"
@@ -15,7 +16,7 @@ type Customers struct {
 }
 
 func NewCustomers() *Customers {
-	s := store.NewStore(model.CustomerName)
+	s := store.NewStore("customers")
 
 	return &Customers{
 		store: s,
@@ -67,6 +68,8 @@ func (h *Customers) update(c *context.Context) {
 	q.Id(c.Param("id"))
 
 	if c.Parse(&m) {
+		fmt.Printf("param id: %s and body id: %s\n", c.Param("id"), m.Id.Hex())
+
 		if err := h.store.Update(q, &m); err != nil {
 			c.Error(err, ErrorCode(err))
 		} else {
@@ -94,6 +97,8 @@ func (h *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		r.HandleFunc(router.MethodCreate, "/customers", h.create)
 		r.HandleFunc(router.MethodUpdate, "/customers/:id", h.update)
 		r.HandleFunc(router.MethodDelete, "/customers/:id", h.destroy)
+
+		h.router = r
 	}
 
 	h.router.ServeHTTP(w, r)
