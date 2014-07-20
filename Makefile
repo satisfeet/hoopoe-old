@@ -11,6 +11,9 @@ test:
 test-httpd:
 	@go test ./httpd/...
 
+test-model:
+	@go test ./model/...
+
 test-store:
 	@go test ./store/...
 
