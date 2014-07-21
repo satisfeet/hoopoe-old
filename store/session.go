@@ -7,8 +7,6 @@ import (
 )
 
 var (
-	DefaultSession = NewSession()
-
 	ErrNotConnected = errors.New("not connected")
 )
 
@@ -43,12 +41,4 @@ func (s *Session) Close() {
 
 	s.mongo.Close()
 	s.mongo = nil
-}
-
-func Open(u string) error {
-	return DefaultSession.Open(u)
-}
-
-func Close() {
-	DefaultSession.Close()
 }

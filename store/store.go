@@ -18,9 +18,6 @@ type Store struct {
 }
 
 func (s *Store) mongo() *mgo.Session {
-	if s.Session == nil {
-		return DefaultSession.Mongo()
-	}
 	return s.Session.Mongo()
 }
 

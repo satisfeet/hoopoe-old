@@ -19,6 +19,8 @@ var (
 )
 
 func main() {
+	s := &store.Session{}
+
 	flag.StringVar(&conf.Host, "host", "", "The http host to use.")
 	flag.StringVar(&conf.Mongo, "mongo", "", "The mongodb url to use.")
 	flag.Parse()
@@ -34,7 +36,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := store.Open(conf.Mongo); err != nil {
+	if err := s.Open(conf.Mongo); err != nil {
 		fmt.Print("Connection to mongodb failed.\n")
 
 		os.Exit(1)
@@ -43,7 +45,7 @@ func main() {
 	http.Handle("/customers", httpd.Auth(&httpd.Customers{
 		Store: &store.Store{
 			Name:    "customers",
-			Session: store.DefaultSession,
+			Session: s,
 		},
 	}))
 	http.Handle("/", httpd.Auth(httpd.NotFound()))
