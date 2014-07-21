@@ -93,7 +93,11 @@ func TestCustomers(t *testing.T) {
 	store.Open("localhost/test")
 	defer store.Close()
 
-	c := NewCustomers()
+	c := &Customers{
+		Store: &store.Store{
+			Name: "customers",
+		},
+	}
 
 	s, _ := mgo.Dial("localhost/test")
 	defer s.Close()

@@ -40,7 +40,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	http.Handle("/customers", httpd.Auth(httpd.NewCustomers()))
+	http.Handle("/customers", httpd.Auth(&httpd.Customers{
+		Store: &store.Store{
+			Name:    "customers",
+			Session: store.DefaultSession,
+		},
+	}))
 	http.Handle("/", httpd.Auth(httpd.NotFound()))
 
 	log.Fatal(http.ListenAndServe(conf.Host, nil))

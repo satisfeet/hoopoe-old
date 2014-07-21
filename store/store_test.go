@@ -9,14 +9,10 @@ import (
 )
 
 func TestStore(t *testing.T) {
-	m := StoreModel{
-		Id: bson.NewObjectId(),
-	}
-
 	check.Suite(&StoreSuite{
-		url:   "localhost/test",
-		name:  "testers",
-		model: m,
+		url:     "localhost/test",
+		name:    "testers",
+		session: &Session{},
 	})
 	check.TestingT(t)
 }
@@ -27,10 +23,12 @@ type StoreModel struct {
 }
 
 type StoreSuite struct {
-	url   string
-	name  string
-	mongo *mgo.Session
-	model StoreModel
+	url     string
+	name    string
+	store   *Store
+	model   StoreModel
+	session *Session
+	mongo   *mgo.Session
 }
 
 func (s *StoreSuite) TestInsert(c *check.C) {
@@ -38,7 +36,7 @@ func (s *StoreSuite) TestInsert(c *check.C) {
 		Text: "I am getting inserted!!",
 	}
 
-	c.Check(NewStore(s.name).Insert(&m), check.IsNil)
+	c.Check(s.store.Insert(&m), check.IsNil)
 
 	i, err := s.mongo.DB("").C(s.name).Find(nil).Count()
 
@@ -52,9 +50,9 @@ func (s *StoreSuite) TestUpdate(c *check.C) {
 
 	s.model.Text += "1234?"
 
-	c.Check(NewStore(s.name).Update(q, &s.model), check.IsNil)
+	c.Check(s.store.Update(q, &s.model), check.IsNil)
 
-	err := mongo.DB(Database).C(s.name).Find(q).One(&m)
+	err := s.mongo.DB(Database).C(s.name).Find(q).One(&m)
 
 	c.Check(err, check.IsNil)
 	c.Check(m, check.DeepEquals, s.model)
@@ -63,7 +61,7 @@ func (s *StoreSuite) TestUpdate(c *check.C) {
 func (s *StoreSuite) TestRemove(c *check.C) {
 	q := Query{"_id": s.model.Id}
 
-	c.Check(NewStore(s.name).Remove(q), check.IsNil)
+	c.Check(s.store.Remove(q), check.IsNil)
 
 	i, err := s.mongo.DB("").C(s.name).Find(q).Count()
 
@@ -75,21 +73,27 @@ func (s *StoreSuite) SetUpSuite(c *check.C) {
 	var err error
 	s.mongo, err = mgo.Dial(s.url)
 
+	s.model = StoreModel{
+		Id: bson.NewObjectId(),
+	}
+	s.store = &Store{
+		Name:    s.name,
+		Session: s.session,
+	}
+
 	c.Assert(err, check.IsNil)
 	c.Assert(s.mongo, check.NotNil)
-	c.Assert(Open(s.url), check.IsNil)
+	c.Assert(s.session.Open(s.url), check.IsNil)
 }
 
 func (s *StoreSuite) TearDownSuite(c *check.C) {
-	s.mongo.Close()
-
-	Close()
+	s.session.Close()
 }
 
 func (s *StoreSuite) SetUpTest(c *check.C) {
-	c.Assert(s.mongo.DB("").C(s.name).Insert(s.model), check.IsNil)
+	c.Assert(s.mongo.DB(Database).C(s.name).Insert(s.model), check.IsNil)
 }
 
 func (s *StoreSuite) TearDownTest(c *check.C) {
-	c.Assert(s.mongo.DB("").C(s.name).DropCollection(), check.IsNil)
+	c.Assert(s.mongo.DB(Database).C(s.name).DropCollection(), check.IsNil)
 }

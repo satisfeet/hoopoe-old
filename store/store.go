@@ -8,30 +8,24 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type Store struct {
-	// The mongo collection to operate on.
-	mongo *mgo.Collection
-}
-
 var (
-	ErrConnection  = errors.New("Connection error.")
 	ErrInvalidType = errors.New("Invalid type error.")
 )
 
-func NewStore(n string) *Store {
-	if mongo == nil {
-		panic(ErrConnection)
-	}
+type Store struct {
+	Name    string
+	Session *Session
+}
 
-	m := mongo.DB(Database).C(n)
-
-	return &Store{
-		mongo: m,
+func (s *Store) mongo() *mgo.Session {
+	if s.Session != nil {
+		return s.Session.Mongo()
 	}
+	return DefaultSession.Mongo()
 }
 
 func (s *Store) Insert(v interface{}) error {
-	m := mongo.Clone()
+	m := s.mongo()
 	defer m.Close()
 
 	// set a bson object id
@@ -44,45 +38,45 @@ func (s *Store) Insert(v interface{}) error {
 		return ErrInvalidType
 	}
 
-	return s.mongo.With(m).Insert(v)
+	return m.DB(Database).C(s.Name).Insert(v)
 }
 
 func (s *Store) Update(q Query, v interface{}) error {
-	m := mongo.Clone()
+	m := s.mongo()
 	defer m.Close()
 
 	if !q.Valid() {
 		return ErrInvalidQuery
 	}
 
-	return s.mongo.With(m).Update(q, v)
+	return m.DB(Database).C(s.Name).Update(q, v)
 }
 
 func (s *Store) Remove(q Query) error {
-	m := mongo.Clone()
+	m := s.mongo()
 	defer m.Close()
 
 	if !q.Valid() {
 		return ErrInvalidQuery
 	}
 
-	return s.mongo.With(m).Remove(q)
+	return m.DB(Database).C(s.Name).Remove(q)
 }
 
 func (s *Store) FindAll(q Query, v interface{}) error {
-	m := mongo.Clone()
+	m := s.mongo()
 	defer m.Close()
 
-	return s.mongo.With(m).Find(q).All(v)
+	return m.DB(Database).C(s.Name).Find(q).All(v)
 }
 
 func (s *Store) FindOne(q Query, v interface{}) error {
-	m := mongo.Clone()
+	m := s.mongo()
 	defer m.Close()
 
 	if !q.Valid() {
 		return ErrInvalidQuery
 	}
 
-	return s.mongo.With(m).Find(q).One(v)
+	return m.DB(Database).C(s.Name).Find(q).One(v)
 }

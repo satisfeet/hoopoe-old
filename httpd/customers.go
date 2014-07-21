@@ -11,16 +11,8 @@ import (
 )
 
 type Customers struct {
-	store  *store.Store
+	Store  *store.Store
 	router *router.Router
-}
-
-func NewCustomers() *Customers {
-	s := store.NewStore("customers")
-
-	return &Customers{
-		store: s,
-	}
 }
 
 func (h *Customers) list(c *context.Context) {
@@ -29,7 +21,7 @@ func (h *Customers) list(c *context.Context) {
 	q := store.Query{}
 	q.Search(c.Query("search"), model.CustomerIndex)
 
-	if err := h.store.FindAll(q, &m); err != nil {
+	if err := h.Store.FindAll(q, &m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
@@ -42,7 +34,7 @@ func (h *Customers) show(c *context.Context) {
 	q := store.Query{}
 	q.Id(c.Param("id"))
 
-	if err := h.store.FindOne(q, &m); err != nil {
+	if err := h.Store.FindOne(q, &m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
@@ -53,7 +45,7 @@ func (h *Customers) create(c *context.Context) {
 	m := model.Customer{}
 
 	if c.Parse(&m) {
-		if err := h.store.Insert(&m); err != nil {
+		if err := h.Store.Insert(&m); err != nil {
 			c.Error(err, ErrorCode(err))
 		} else {
 			c.Respond(m, http.StatusOK)
@@ -70,7 +62,7 @@ func (h *Customers) update(c *context.Context) {
 	if c.Parse(&m) {
 		fmt.Printf("param id: %s and body id: %s\n", c.Param("id"), m.Id.Hex())
 
-		if err := h.store.Update(q, &m); err != nil {
+		if err := h.Store.Update(q, &m); err != nil {
 			c.Error(err, ErrorCode(err))
 		} else {
 			c.Respond(nil, http.StatusNoContent)
@@ -82,7 +74,7 @@ func (h *Customers) destroy(c *context.Context) {
 	q := store.Query{}
 	q.Id(c.Param("id"))
 
-	if err := h.store.Remove(q); err != nil {
+	if err := h.Store.Remove(q); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)
