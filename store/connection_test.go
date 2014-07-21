@@ -1,13 +1,28 @@
 package store
 
-import "testing"
+import (
+	"testing"
+
+	"gopkg.in/check.v1"
+)
 
 func TestConnection(t *testing.T) {
-	if err := Open("localhost/test"); err != nil {
-		t.Errorf("Expected not to have error %s\n", err)
-	}
-	if mongo == nil {
-		t.Error("Expected to have mongo not nil")
-	}
+	check.Suite(&ConnectionSuite{
+		url: "localhost/test",
+	})
+	check.TestingT(t)
+}
+
+type ConnectionSuite struct {
+	url string
+}
+
+func (s *ConnectionSuite) TestOpen(c *check.C) {
+	c.Check(Open(s.url), check.IsNil)
+	c.Check(mongo, check.NotNil)
+}
+
+func (s *ConnectionSuite) TestClose(c *check.C) {
+	Open(s.url)
 	Close()
 }

@@ -1,57 +1,51 @@
 package store
 
 import (
-	"reflect"
 	"testing"
 
+	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2/bson"
 )
 
-var (
-	queryIds = []string{
-		bson.NewObjectId().Hex(),
-		bson.NewObjectId().Hex(),
-		bson.NewObjectId().Hex(),
-		"1234567890123456789",
-		"abcd",
-		"",
-	}
-	querySearch = Query{
+func TestQuery(t *testing.T) {
+	check.Suite(&QuerySuite{
+		id: bson.NewObjectId(),
+	})
+	check.TestingT(t)
+}
+
+type QuerySuite struct {
+	id bson.ObjectId
+}
+
+func (s *QuerySuite) TestId(c *check.C) {
+	q := Query{}
+	q.Id(s.id.Hex())
+	c.Check(q, check.DeepEquals, Query{"_id": s.id})
+
+	q = Query{}
+	q.Id("1234")
+	c.Check(q, check.DeepEquals, Query{})
+}
+
+func (s *QuerySuite) TestValid(c *check.C) {
+	c.Check(Query{"_id": s.id}.Valid(), check.Equals, true)
+	c.Check(Query{}.Valid(), check.Equals, false)
+}
+
+func (s *QuerySuite) TestSearch(c *check.C) {
+	f := []string{"foo", "baz"}
+
+	q := Query{}
+	q.Search("", f)
+	c.Check(q, check.DeepEquals, Query{})
+
+	q = Query{}
+	q.Search("bar", f)
+	c.Check(q, check.DeepEquals, Query{
 		"$or": []bson.M{
 			bson.M{"foo": bson.RegEx{"bar", "i"}},
 			bson.M{"baz": bson.RegEx{"bar", "i"}},
 		},
-	}
-)
-
-func TestQueryId(t *testing.T) {
-	for _, v := range queryIds {
-		q := Query{}
-		q.Id(v)
-
-		if bson.IsObjectIdHex(v) {
-			if q["_id"] == nil {
-				t.Error("Expected id to get set but was nil.\n")
-			}
-		} else {
-			if q["_id"] != nil {
-				t.Error("Expected id to not get set.\n")
-			}
-		}
-	}
-}
-
-func TestQuerySearch(t *testing.T) {
-	q1 := Query{}
-	q2 := Query{}
-
-	q1.Search("", []string{"foo", "baz"})
-	q2.Search("bar", []string{"foo", "baz"})
-
-	if q1["$or"] != nil {
-		t.Errorf("Expect query to be empty but it was %v.\n", q1)
-	}
-	if !reflect.DeepEqual(q2, querySearch) {
-		t.Errorf("Expected query to equal search query but it was %v.\n", q2)
-	}
+	})
 }

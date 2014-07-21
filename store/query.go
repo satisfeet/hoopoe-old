@@ -18,6 +18,14 @@ func (q Query) Id(s string) {
 	}
 }
 
+func (q Query) Valid() bool {
+	if q["_id"] == nil {
+		return false
+	}
+
+	return q["_id"].(bson.ObjectId).Valid()
+}
+
 func (q Query) Search(s string, f []string) {
 	if len(s) != 0 {
 		r := bson.RegEx{s, "i"}
@@ -29,12 +37,4 @@ func (q Query) Search(s string, f []string) {
 		}
 		q["$or"] = o
 	}
-}
-
-func (q Query) Valid() bool {
-	if q["_id"] == nil {
-		return false
-	}
-
-	return q["_id"].(bson.ObjectId).Valid()
 }

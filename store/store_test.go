@@ -1,106 +1,95 @@
 package store
 
 import (
-	"strings"
 	"testing"
 
+	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-var (
-	name = "testers"
-
-	modelsWithId = []model{
-		model{
-			Id:   bson.NewObjectId(),
-			Text: "I have an id",
-		},
-		model{
-			Id:   bson.NewObjectId(),
-			Text: "I also have an id",
-		},
+func TestStore(t *testing.T) {
+	m := StoreModel{
+		Id: bson.NewObjectId(),
 	}
-	modelsWithoutId = []model{
-		model{
-			Text: "I have no id",
-		},
-		model{
-			Text: "I also have no id",
-		},
-	}
-)
 
-type (
-	model struct {
-		Id   bson.ObjectId `bson:"_id"`
-		Text string
-	}
-)
-
-func TestStoreInsert(t *testing.T) {
-	for _, v := range modelsWithoutId {
-		setup(nil)
-
-		if err := NewStore(name).Insert(&v); err != nil {
-			t.Error(err)
-		}
-		if i := count(); i != 1 {
-			t.Errorf("Expected to find one document but found %d.\n", i)
-		}
-
-		teardown()
-	}
+	check.Suite(&StoreSuite{
+		url:   "localhost/test",
+		name:  "testers",
+		model: m,
+	})
+	check.TestingT(t)
 }
 
-func TestStoreUpdate(t *testing.T) {
-	for _, v := range modelsWithId {
-		setup(&v)
-		v.Text += "1234?"
+type StoreModel struct {
+	Id   bson.ObjectId `bson:"_id"`
+	Text string
+}
 
-		if err := NewStore(name).Update(Query{"_id": v.Id}, &v); err != nil {
-			t.Error(err)
-		}
-		mongo.DB(Database).C(name).FindId(v.Id).One(&v)
-		if !strings.HasSuffix(v.Text, "1234?") {
-			t.Error("Expected document to be updated.\n")
-		}
+type StoreSuite struct {
+	url   string
+	name  string
+	mongo *mgo.Session
+	model StoreModel
+}
 
-		teardown()
+func (s *StoreSuite) TestInsert(c *check.C) {
+	m := StoreModel{
+		Text: "I am getting inserted!!",
 	}
+
+	c.Check(NewStore(s.name).Insert(&m), check.IsNil)
+
+	i, err := s.mongo.DB("").C(s.name).Find(nil).Count()
+
+	c.Check(err, check.IsNil)
+	c.Check(i, check.Equals, 2)
 }
 
-func TestStoreRemove(t *testing.T) {
-	for _, v := range modelsWithId {
-		setup(v)
+func (s *StoreSuite) TestUpdate(c *check.C) {
+	q := Query{"_id": s.model.Id}
+	m := StoreModel{}
 
-		if err := NewStore(name).Remove(Query{"_id": v.Id}); err != nil {
-			t.Error(err)
-		}
-		if i := count(); i != 0 {
-			t.Errorf("Expected to have no documents but found %d.\n", i)
-		}
+	s.model.Text += "1234?"
 
-		teardown()
-	}
+	c.Check(NewStore(s.name).Update(q, &s.model), check.IsNil)
+
+	err := mongo.DB(Database).C(s.name).Find(q).One(&m)
+
+	c.Check(err, check.IsNil)
+	c.Check(m, check.DeepEquals, s.model)
 }
 
-func count() int {
-	i, _ := mongo.DB("").C(name).Find(nil).Count()
+func (s *StoreSuite) TestRemove(c *check.C) {
+	q := Query{"_id": s.model.Id}
 
-	return i
+	c.Check(NewStore(s.name).Remove(q), check.IsNil)
+
+	i, err := s.mongo.DB("").C(s.name).Find(q).Count()
+
+	c.Check(err, check.IsNil)
+	c.Check(i, check.Equals, 0)
 }
 
-func setup(v interface{}) {
-	mongo, _ = mgo.Dial("localhost/test")
-	mongo.DB("").C(name).DropCollection()
+func (s *StoreSuite) SetUpSuite(c *check.C) {
+	var err error
+	s.mongo, err = mgo.Dial(s.url)
 
-	if v != nil {
-		mongo.DB("").C(name).Insert(v)
-	}
+	c.Assert(err, check.IsNil)
+	c.Assert(s.mongo, check.NotNil)
+	c.Assert(Open(s.url), check.IsNil)
 }
 
-func teardown() {
-	mongo.DB("").C(name).DropCollection()
-	mongo.Close()
+func (s *StoreSuite) TearDownSuite(c *check.C) {
+	s.mongo.Close()
+
+	Close()
+}
+
+func (s *StoreSuite) SetUpTest(c *check.C) {
+	c.Assert(s.mongo.DB("").C(s.name).Insert(s.model), check.IsNil)
+}
+
+func (s *StoreSuite) TearDownTest(c *check.C) {
+	c.Assert(s.mongo.DB("").C(s.name).DropCollection(), check.IsNil)
 }
