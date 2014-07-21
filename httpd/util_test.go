@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"testing"
 
+	"gopkg.in/check.v1"
+
 	"github.com/satisfeet/hoopoe/store"
 )
 
@@ -12,11 +14,14 @@ var (
 	ErrTest = errors.New("a test error")
 )
 
-func TestErrorCode(t *testing.T) {
-	if v := ErrorCode(ErrTest); v != http.StatusInternalServerError {
-		t.Errorf("Expected to return 500 but had %d.\n", v)
-	}
-	if v := ErrorCode(store.ErrInvalidQuery); v != http.StatusBadRequest {
-		t.Errorf("Expected to return 400 but had %d.\n", v)
-	}
+func TestUtil(t *testing.T) {
+	check.Suite(&UtilSuite{})
+	check.TestingT(t)
+}
+
+type UtilSuite struct{}
+
+func (s *UtilSuite) TestErrorCode(c *check.C) {
+	c.Check(ErrorCode(ErrTest), check.Equals, http.StatusInternalServerError)
+	c.Check(ErrorCode(store.ErrInvalidQuery), check.Equals, http.StatusBadRequest)
 }

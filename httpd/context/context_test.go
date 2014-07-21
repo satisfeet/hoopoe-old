@@ -6,113 +6,77 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"gopkg.in/check.v1"
 )
+
+func TestContext(t *testing.T) {
+	check.Suite(&ContextSuite{})
+	check.TestingT(t)
+}
 
 var (
-	Error = errors.New("test error")
-
-	ErrorBody1 = "{\"error\":\"Not Found\"}\n"
-	ErrorBody2 = "{\"error\":\"test error\"}\n"
+	ErrTest = errors.New("test error")
 )
 
-func TestContextSet(t *testing.T) {
-	res := httptest.NewRecorder()
-
-	ctx := &Context{
-		writer: res,
-	}
-	ctx.Set("X-Response-Time", "10ms")
-
-	if h := res.Header().Get("X-Response-Time"); h != "10ms" {
-		t.Errorf("Expected response header to be set but it was %s.\n", h)
-	}
+type ContextSuite struct {
+	context  *Context
+	request  *http.Request
+	response *httptest.ResponseRecorder
 }
 
-func TestContextGet(t *testing.T) {
-	req, _ := http.NewRequest("POST", "/?foo=bar", nil)
-	req.Header.Set("Content-Type", "application/json")
+func (s *ContextSuite) TestSet(c *check.C) {
+	s.context.Set("X-Response-Time", "10ms")
 
-	ctx := &Context{
-		request: req,
-	}
-
-	if h := ctx.Get("Content-Type"); h != "application/json" {
-		t.Errorf("Expected request header to be application/json but it was %s.\n", h)
-	}
+	c.Check(s.response.Header().Get("X-Response-Time"), check.Equals, "10ms")
 }
 
-func TestContextQuery(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/?foo=bar", nil)
-
-	ctx := &Context{
-		request: req,
-	}
-
-	if v := ctx.Query("foo"); v != "bar" {
-		t.Errorf("Expected bar but had %s\n", v)
-	}
+func (s *ContextSuite) TestGet(c *check.C) {
+	c.Check(s.context.Get("Content-Type"), check.Equals, "application/json")
 }
 
-func TestContextParse(t *testing.T) {
+func (s *ContextSuite) TestQuery(c *check.C) {
+	c.Check(s.context.Query("foo"), check.Equals, "bar")
+}
+
+func (s *ContextSuite) TestParse(c *check.C) {
 	m := make(map[string]string)
 
-	req, _ := http.NewRequest("POST", "/", strings.NewReader(`
+	c.Check(s.context.Parse(&m), check.Equals, true)
+	c.Check(m["foo"], check.Equals, "bar")
+}
+
+func (s *ContextSuite) TestErrorOne(c *check.C) {
+	s.context.Error(nil, http.StatusNotFound)
+
+	c.Check(s.response.Code, check.Equals, http.StatusNotFound)
+	c.Check(s.response.Body.String(), check.Equals, "{\"error\":\"Not Found\"}\n")
+}
+
+func (s *ContextSuite) TestErrorCustom(c *check.C) {
+	s.context.Error(ErrTest, http.StatusBadRequest)
+
+	c.Check(s.response.Code, check.Equals, http.StatusBadRequest)
+	c.Check(s.response.Body.String(), check.Equals, "{\"error\":\"test error\"}\n")
+}
+
+func (s *ContextSuite) TestRespond(c *check.C) {
+	s.context.Respond(map[string]string{"foo": "bar"}, http.StatusBadRequest)
+
+	c.Check(s.response.Code, check.Equals, http.StatusBadRequest)
+	c.Check(s.response.Body.String(), check.Equals, "{\"foo\":\"bar\"}\n")
+}
+
+func (s *ContextSuite) SetUpTest(c *check.C) {
+	s.response = httptest.NewRecorder()
+
+	s.request, _ = http.NewRequest("POST", "/?foo=bar", strings.NewReader(`
 		{"foo":"bar"}
 	`))
-	req.Header.Add("Content-Type", "application/json")
+	s.request.Header.Set("Content-Type", "application/json")
 
-	ctx := &Context{
-		request: req,
-	}
-
-	if !ctx.Parse(&m) {
-		t.Errorf("Expected to return true.\n")
-	}
-	if v := m["foo"]; v != "bar" {
-		t.Errorf("Expected map foo to be bar but it was %s.\n", v)
-	}
-}
-
-func TestContextError(t *testing.T) {
-	res1 := httptest.NewRecorder()
-	res2 := httptest.NewRecorder()
-
-	ctx1 := &Context{
-		writer: res1,
-	}
-	ctx2 := &Context{
-		writer: res2,
-	}
-
-	ctx1.Error(nil, http.StatusNotFound)
-	ctx2.Error(Error, http.StatusBadRequest)
-
-	if v := res1.Code; v != http.StatusNotFound {
-		t.Errorf("Expected response status 404 but had %d\n", v)
-	}
-	if v := res2.Code; v != http.StatusBadRequest {
-		t.Errorf("Expected response status 400 but had %d\n", v)
-	}
-	if v := res1.Body.String(); v != ErrorBody1 {
-		t.Errorf("Expected response body %s but had %s\n", ErrorBody1, v)
-	}
-	if v := res2.Body.String(); v != ErrorBody2 {
-		t.Errorf("Expected response body %s but had %s\n", ErrorBody2, v)
-	}
-}
-
-func TestContextRespond(t *testing.T) {
-	res := httptest.NewRecorder()
-
-	ctx := &Context{
-		writer: res,
-	}
-	ctx.Respond(map[string]string{"foo": "bar"}, http.StatusBadRequest)
-
-	if v := res.Code; v != http.StatusBadRequest {
-		t.Errorf("Expected response status to be 400 but it was %d.\n", v)
-	}
-	if v := res.Body.String(); !strings.Contains(v, `{"foo":"bar"}`) {
-		t.Errorf("Expected response body to contain map but it had %s.\n", v)
+	s.context = &Context{
+		request: s.request,
+		writer:  s.response,
 	}
 }

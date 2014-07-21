@@ -6,22 +6,89 @@ import (
 	"strings"
 	"testing"
 
+	"gopkg.in/check.v1"
+	"gopkg.in/mgo.v2/bson"
+
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
-type customerTest struct {
-	Status  int
-	Method  string
-	Path    string
-	Body    string
-	ResBody string
+func TestCustomers(t *testing.T) {
+	check.Suite(&CustomersSuite{
+		url: "localhost/test",
+	})
+	check.TestingT(t)
 }
 
-var (
-	customer = model.Customer{
+type CustomersSuite struct {
+	url     string
+	model   model.Customer
+	store   *store.Store
+	session *store.Session
+	handler *Customers
+}
+
+func (s *CustomersSuite) TestList(c *check.C) {
+	req, _ := http.NewRequest("GET", "/customers", nil)
+	res := httptest.NewRecorder()
+
+	s.handler.ServeHTTP(res, req)
+
+	c.Check(res.Code, check.Equals, http.StatusOK)
+}
+
+func (s *CustomersSuite) TestShow(c *check.C) {
+	req, _ := http.NewRequest("GET", "/customers/"+s.model.Id.Hex(), nil)
+	res := httptest.NewRecorder()
+
+	s.handler.ServeHTTP(res, req)
+
+	c.Check(res.Code, check.Equals, http.StatusOK)
+}
+
+func (s *CustomersSuite) TestCreate(c *check.C) {
+	req, _ := http.NewRequest("POST", "/customers", strings.NewReader(`{
+		"name": "Edison T.",
+		"email": "edison@t.com",
+		"address": {
+			"city": "Leeds"
+		}
+	}`))
+	res := httptest.NewRecorder()
+
+	s.handler.ServeHTTP(res, req)
+
+	c.Check(res.Code, check.Equals, http.StatusOK)
+}
+
+func (s *CustomersSuite) TestUpdate(c *check.C) {
+	req, _ := http.NewRequest("PUT", "/customers/"+s.model.Id.Hex(), strings.NewReader(`{
+		"id":"`+s.model.Id.Hex()+`",
+		"name": "Joe Marley",
+		"email": "joe@yahoo.com",
+		"address": {
+			"city": "Tokio"
+		}
+	}`))
+	res := httptest.NewRecorder()
+
+	s.handler.ServeHTTP(res, req)
+
+	c.Check(res.Code, check.Equals, http.StatusNoContent)
+}
+
+func (s *CustomersSuite) TestDestroy(c *check.C) {
+	req, _ := http.NewRequest("DELETE", "/customers/"+s.model.Id.Hex(), nil)
+	res := httptest.NewRecorder()
+
+	s.handler.ServeHTTP(res, req)
+
+	c.Check(res.Code, check.Equals, http.StatusNoContent)
+
+}
+
+func (s *CustomersSuite) SetUpSuite(c *check.C) {
+	s.model = model.Customer{
 		Id:    bson.NewObjectId(),
 		Name:  "Bob Marley",
 		Email: "bob@yahoo.com",
@@ -29,91 +96,32 @@ var (
 			City: "Honolulu",
 		},
 	}
-
-	customerTests = []customerTest{
-		customerTest{
-			Status: http.StatusOK,
-			Method: "GET",
-			Path:   "/customers",
-		},
-		customerTest{
-			Status: http.StatusOK,
-			Method: "GET",
-			Path:   "/customers?search=Berl",
-		},
-		customerTest{
-			Status: http.StatusOK,
-			Method: "POST",
-			Path:   "/customers",
-			Body: `{
-				"name":"Edison Trent",
-				"email":"edison@apache.org",
-				"address":{
-					"city":"Leeds"
-				}
-			}`,
-		},
-		customerTest{
-			Status: http.StatusBadRequest,
-			Method: "GET",
-			Path:   "/customers/1234",
-		},
-		customerTest{
-			Status: http.StatusNotFound,
-			Method: "GET",
-			Path:   "/customers/" + bson.NewObjectId().Hex(),
-		},
-		customerTest{
-			Status: http.StatusOK,
-			Method: "GET",
-			Path:   "/customers/" + customer.Id.Hex(),
-		},
-		customerTest{
-			Status: http.StatusNoContent,
-			Method: "PUT",
-			Path:   "/customers/" + customer.Id.Hex(),
-			Body: `{
-				"id":"` + customer.Id.Hex() + `",
-				"name":"Bob Marley",
-				"email":"bob@yahoo.com",
-				"address":{
-					"city":"Honolulu"
-				}
-			}`,
-		},
-		customerTest{
-			Status: http.StatusNoContent,
-			Method: "DELETE",
-			Path:   "/customers/" + customer.Id.Hex(),
-		},
+	s.session = &store.Session{}
+	s.store = &store.Store{
+		Name:    "customers",
+		Session: s.session,
 	}
-)
-
-func TestCustomers(t *testing.T) {
-	store.Open("localhost/test")
-	defer store.Close()
-
-	c := &Customers{
-		Store: &store.Store{
-			Name: "customers",
-		},
+	s.handler = &Customers{
+		Store: s.store,
 	}
 
-	s, _ := mgo.Dial("localhost/test")
-	defer s.Close()
+	c.Assert(s.session.Open(s.url), check.IsNil)
+}
 
-	for _, ct := range customerTests {
-		s.DB("").C("customers").Insert(&customer)
+func (s *CustomersSuite) SetUpTest(c *check.C) {
+	m := s.session.Mongo()
+	defer m.Close()
 
-		req, _ := http.NewRequest(ct.Method, ct.Path, strings.NewReader(ct.Body))
-		res := httptest.NewRecorder()
+	c.Assert(m.DB("").C("customers").Insert(&s.model), check.IsNil)
+}
 
-		c.ServeHTTP(res, req)
+func (s *CustomersSuite) TearDownTest(c *check.C) {
+	m := s.session.Mongo()
+	defer m.Close()
 
-		if v := res.Code; v != ct.Status {
-			t.Errorf("Expected %s %s status to be %d but it was %d with %s.\n", ct.Method, ct.Path, ct.Status, v, res.Body.String())
-		}
+	c.Assert(m.DB("").C("customers").DropCollection(), check.IsNil)
+}
 
-		s.DB("").C("customers").DropCollection()
-	}
+func (s *CustomersSuite) TearDownSuite(c *check.C) {
+	s.session.Close()
 }

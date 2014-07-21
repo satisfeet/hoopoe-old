@@ -1,7 +1,6 @@
 package httpd
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/satisfeet/hoopoe/httpd/context"
@@ -60,8 +59,6 @@ func (h *Customers) update(c *context.Context) {
 	q.Id(c.Param("id"))
 
 	if c.Parse(&m) {
-		fmt.Printf("param id: %s and body id: %s\n", c.Param("id"), m.Id.Hex())
-
 		if err := h.Store.Update(q, &m); err != nil {
 			c.Error(err, ErrorCode(err))
 		} else {
