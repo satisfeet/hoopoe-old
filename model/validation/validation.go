@@ -1,46 +1,73 @@
 package validation
 
 import (
-	"fmt"
-
-	"gopkg.in/validator.v1"
+	"net/mail"
+	"reflect"
+	"strings"
 )
 
-type Error struct {
-	errors map[string][]error
-}
+type Error string
 
 func (err Error) Error() string {
-	for k, errs := range err.errors {
-		return fmt.Sprintf("%s value had %s", k, errs[0].Error())
-	}
-
-	return "no error"
+	return string(err)
 }
 
-func init() {
-	validator.SetValidationFunc("min", Min)
-	validator.SetValidationFunc("mail", Email)
-}
+var (
+	ErrEmail    = Error("invalid email")
+	ErrRange    = Error("invalid range")
+	ErrLength   = Error("invalid length")
+	ErrRequired = Error("required")
+)
 
-func Validate(v interface{}) error {
-	if ok, errs := validator.Validate(v); !ok {
-
-		for _, errs := range errs {
-			for _, err := range errs {
-				switch err {
-				case validator.ErrUnknownTag:
-					return err
-				case validator.ErrUnsupported:
-					return err
-				case validator.ErrBadParameter:
-					return err
-				}
-			}
+func Email(s string) error {
+	if _, err := mail.ParseAddress(s); err != nil {
+		return ErrEmail
+	} else {
+		// the above sees "foo@bar." as valid so do
+		// additional check if "." is not last char
+		if strings.LastIndex(s, ".") == len(s)-1 {
+			return ErrEmail
 		}
-
-		return Error{errs}
 	}
+	return nil
+}
 
+func Range(i int, a, b int) error {
+	if a != 0 {
+		if i < a {
+			return ErrRange
+		}
+	}
+	if b != 0 {
+		if i > b {
+			return ErrRange
+		}
+	}
+	return nil
+}
+
+func Length(s string, a, b int) error {
+	l := len(s)
+
+	if a != 0 {
+		if l < a {
+			return ErrLength
+		}
+	}
+	if b != 0 {
+		if l > b {
+			return ErrLength
+		}
+	}
+	return nil
+}
+
+func Required(v interface{}) error {
+	if v == nil {
+		return ErrRequired
+	}
+	if v == reflect.Zero(reflect.TypeOf(v)).Interface() {
+		return ErrRequired
+	}
 	return nil
 }

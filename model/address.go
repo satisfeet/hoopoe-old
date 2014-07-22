@@ -1,8 +1,6 @@
 package model
 
-import (
-	"github.com/satisfeet/hoopoe/model/validation"
-)
+import "github.com/satisfeet/hoopoe/model/validation"
 
 type Address struct {
 	City   string `json:"city"   "omitempty" validate:"nonzero,min=4,max=40"`
