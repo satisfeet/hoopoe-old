@@ -8,6 +8,9 @@ boot:
 test:
 	@go test ./...
 
+test-conf:
+	@go test ./conf/...
+
 test-httpd:
 	@go test ./httpd/...
 
@@ -17,4 +20,4 @@ test-model:
 test-store:
 	@go test ./store/...
 
-.PHONY: test test-httpd test-store
+.PHONY: test test-conf test-httpd test-model test-store
