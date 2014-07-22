@@ -32,13 +32,14 @@ func (s *HandlerSuite) TestAuth(c *check.C) {
 		res[i] = httptest.NewRecorder()
 	}
 
-	req[0].SetBasicAuth(Username, Password)
-	req[1].SetBasicAuth(Password, Username)
+	req[0].SetBasicAuth("foo", "bar")
+	req[1].SetBasicAuth("foo", "bla")
 	req[2].Header.Add("Authorization", "Basic ")
 
-	Auth(s.hello()).ServeHTTP(res[0], req[0])
-	Auth(s.hello()).ServeHTTP(res[1], req[1])
-	Auth(s.hello()).ServeHTTP(res[2], req[2])
+	Basic = "foo:bar"
+	Auth(s).ServeHTTP(res[0], req[0])
+	Auth(s).ServeHTTP(res[1], req[1])
+	Auth(s).ServeHTTP(res[2], req[2])
 
 	c.Check(res[0].Code, check.Equals, http.StatusOK)
 	c.Check(res[1].Code, check.Equals, http.StatusUnauthorized)
@@ -57,9 +58,7 @@ func (s *HandlerSuite) TestNotFound(c *check.C) {
 	c.Check(res.Body.String(), check.Equals, "{\"error\":\"Not Found\"}\n")
 }
 
-func (s *HandlerSuite) hello() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		w.Write([]byte("Hello World"))
-	})
+func (s *HandlerSuite) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+	w.Write([]byte("Hello World"))
 }

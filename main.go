@@ -15,15 +15,17 @@ func main() {
 	s := &store.Session{}
 
 	if err := c.Flags(os.Args[1:]); err != nil {
-		fmt.Errorf("Error parsing arguments: %s.\n", err)
+		fmt.Printf("Error parsing arguments: %s.\n", err)
 
 		return
 	}
 	if err := s.Open(c.Mongo); err != nil {
-		fmt.Errorf("Error connecting to database: %s.\n", err)
+		fmt.Printf("Error connecting to database: %s.\n", err)
 
 		return
 	}
+
+	httpd.Basic = c.Auth
 
 	http.Handle("/customers", httpd.Auth(&httpd.Customers{
 		Store: &store.Store{Name: "customers", Session: s},
@@ -31,6 +33,6 @@ func main() {
 	http.Handle("/", httpd.Auth(httpd.NotFound()))
 
 	if err := http.ListenAndServe(c.Host, nil); err != nil {
-		fmt.Errorf("Error starting http server: %s.\n", err)
+		fmt.Printf("Error starting http server: %s.\n", err)
 	}
 }

@@ -9,12 +9,11 @@ import (
 )
 
 var (
-	Username = "bodokaiser"
-	Password = "secret"
+	Basic = ""
 )
 
 func Auth(h http.Handler) http.Handler {
-	b := base64.StdEncoding.EncodeToString([]byte(Username + ":" + Password))
+	b := base64.StdEncoding.EncodeToString([]byte(Basic))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c := context.NewContext(w, r)
