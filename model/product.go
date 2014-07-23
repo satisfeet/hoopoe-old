@@ -1,16 +1,17 @@
 package model
 
 import (
-	"github.com/satisfeet/hoopoe/model/validation"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/satisfeet/hoopoe/model/validation"
 )
 
 type Product struct {
-	Id          bson.ObjectId      `json:"id"     bson:"_id"`
-	Name        string             `json:"name"`
-	Pricing     Pricing            `json:"pricing"`
-	Variations  []ProductVariation `json:"variations"`
-	Description string             `json:"description"`
+	Id          bson.ObjectId `json:"id"     bson:"_id"`
+	Name        string        `json:"name"`
+	Pricing     Pricing       `json:"pricing"`
+	Variations  []Variation   `json:"variations"`
+	Description string        `json:"description"`
 }
 
 func (p Product) Validate() error {
@@ -35,27 +36,6 @@ func (p Product) Validate() error {
 
 			break
 		}
-	}
-
-	if errs.Has() {
-		return errs
-	}
-	return nil
-}
-
-type ProductVariation struct {
-	Size  string `json:"size"`
-	Color string `json:"color"`
-}
-
-func (p ProductVariation) Validate() error {
-	errs := validation.Error{}
-
-	if err := validation.Required(p.Size); err != nil {
-		errs.Set("size", err)
-	}
-	if err := validation.Required(p.Color); err != nil {
-		errs.Set("color", err)
 	}
 
 	if errs.Has() {

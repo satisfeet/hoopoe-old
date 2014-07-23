@@ -17,8 +17,8 @@ func (s *ProductSuite) TestValidate(c *check.C) {
 	p := Pricing{
 		Retail: 299,
 	}
-	v := []ProductVariation{
-		ProductVariation{
+	v := []Variation{
+		Variation{
 			Color: "black",
 			Size:  "42",
 		},
@@ -54,26 +54,4 @@ func (s *ProductSuite) TestValidate(c *check.C) {
 		Pricing:    p,
 		Variations: v,
 	}.Validate(), check.ErrorMatches, "description has invalid.*")
-}
-
-func TestProductVariation(t *testing.T) {
-	check.Suite(&ProductVariationSuite{})
-	check.TestingT(t)
-}
-
-type ProductVariationSuite struct{}
-
-func (s *ProductVariationSuite) TestValidate(c *check.C) {
-	c.Check(ProductVariation{
-		Color: "red",
-		Size:  "42",
-	}.Validate(), check.IsNil)
-
-	c.Check(ProductVariation{
-		Color: "red",
-	}.Validate(), check.ErrorMatches, "size has invalid .*")
-
-	c.Check(ProductVariation{
-		Size: "42",
-	}.Validate(), check.ErrorMatches, "color has invalid .*")
 }
