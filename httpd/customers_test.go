@@ -170,9 +170,7 @@ func (s *CustomersSuite) SetUpSuite(c *check.C) {
 		Name:    "customers",
 		Session: s.session,
 	}
-	s.handler = &Customers{
-		Store: s.store,
-	}
+	s.handler = NewCustomers(s.store)
 
 	c.Assert(s.session.Open(s.url), check.IsNil)
 }

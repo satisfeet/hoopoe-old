@@ -36,12 +36,10 @@ func main() {
 }
 
 func Handler(s *store.Session) http.Handler {
-	c := &httpd.Customers{
-		Store: &store.Store{
-			Name:    "customers",
-			Session: s,
-		},
-	}
+	c := httpd.NewCustomers(&store.Store{
+		Name:    "customers",
+		Session: s,
+	})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
