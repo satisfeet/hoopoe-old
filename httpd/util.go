@@ -47,10 +47,8 @@ func ErrorCode(err error) int {
 	c := http.StatusInternalServerError
 
 	switch err {
-	case mgo.ErrNotFound:
+	case mgo.ErrNotFound, store.ErrInvalidQuery:
 		c = http.StatusNotFound
-	case store.ErrInvalidQuery:
-		c = http.StatusBadRequest
 	}
 
 	switch err.(type) {
