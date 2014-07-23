@@ -3,7 +3,6 @@ package model
 import (
 	"testing"
 
-	"github.com/satisfeet/hoopoe/model/validation"
 	"gopkg.in/check.v1"
 )
 
@@ -24,5 +23,5 @@ func (s *AddressSuite) TestValidate(c *check.C) {
 		Zip:    12105,
 	}.Validate(), check.IsNil)
 
-	c.Check(Address{}.Validate(), check.Equals, validation.ErrRequired)
+	c.Check(Address{}.Validate(), check.ErrorMatches, "city has invalid value")
 }

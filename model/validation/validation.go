@@ -1,22 +1,17 @@
 package validation
 
 import (
+	"errors"
 	"net/mail"
 	"reflect"
 	"strings"
 )
 
-type Error string
-
-func (err Error) Error() string {
-	return string(err)
-}
-
 var (
-	ErrEmail    = Error("invalid email")
-	ErrRange    = Error("invalid range")
-	ErrLength   = Error("invalid length")
-	ErrRequired = Error("required")
+	ErrEmail    = errors.New("invalid email")
+	ErrRange    = errors.New("invalid range")
+	ErrLength   = errors.New("invalid length")
+	ErrRequired = errors.New("invalid value")
 )
 
 func Email(s string) error {
