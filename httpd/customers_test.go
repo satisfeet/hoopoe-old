@@ -1,7 +1,6 @@
 package httpd
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,10 +14,117 @@ import (
 )
 
 func TestCustomers(t *testing.T) {
+	m := model.Customer{
+		Id:    bson.NewObjectId(),
+		Name:  "Bob Marley",
+		Email: "bob@yahoo.com",
+		Address: model.Address{
+			City: "Honolulu",
+		},
+	}
+
 	check.Suite(&CustomersSuite{
 		url: "localhost/test",
+		tests: []CustomersTest{
+			CustomersTest{
+				Path:   "/customers",
+				Method: "GET",
+				Status: http.StatusOK,
+			},
+			CustomersTest{
+				Path:   "/customers?search=mar",
+				Method: "GET",
+				Status: http.StatusOK,
+			},
+			CustomersTest{
+				Path:   "/customers?search=foobar",
+				Method: "GET",
+				Status: http.StatusOK,
+			},
+			CustomersTest{
+				Path:   "/customers",
+				Method: "POST",
+				Status: http.StatusOK,
+				Body: `{
+					"name": "Edison T.",
+					"email": "edison@t.com",
+					"address": {
+						"city": "Leeds"
+					}
+				}`,
+			},
+			CustomersTest{
+				Path:   "/customers",
+				Method: "POST",
+				Status: http.StatusBadRequest,
+				Body: `{
+					"email": "edison@t.com",
+					"address": {
+						"city": "Leeds"
+					}
+				}`,
+			},
+			CustomersTest{
+				Path:   "/customers/" + m.Id.Hex(),
+				Method: "GET",
+				Status: http.StatusOK,
+			},
+			CustomersTest{
+				Path:   "/customers/" + bson.NewObjectId().Hex(),
+				Method: "GET",
+				Status: http.StatusNotFound,
+			},
+			CustomersTest{
+				Path:   "/customers/1234",
+				Method: "GET",
+				Status: http.StatusNotFound,
+			},
+			CustomersTest{
+				Path:   "/customers/" + m.Id.Hex(),
+				Method: "PUT",
+				Status: http.StatusNoContent,
+				Body: `{
+					"id": "` + m.Id.Hex() + `",
+					"name": "Bob Marley",
+					"email": "bob@marley.com",
+					"address": {
+						"city": "New York"
+					}
+				}`,
+			},
+			CustomersTest{
+				Path:   "/customers/" + m.Id.Hex(),
+				Method: "PUT",
+				Status: http.StatusBadRequest,
+				Body: `{
+					"id": "` + m.Id.Hex() + `",
+					"name": "Bob Marley",
+					"address": {
+						"city": "New York"
+					}
+				}`,
+			},
+			CustomersTest{
+				Path:   "/customers/" + m.Id.Hex(),
+				Method: "DELETE",
+				Status: http.StatusNoContent,
+			},
+			CustomersTest{
+				Path:   "/customers/" + bson.NewObjectId().Hex(),
+				Method: "DELETE",
+				Status: http.StatusNotFound,
+			},
+		},
+		model: m,
 	})
 	check.TestingT(t)
+}
+
+type CustomersTest struct {
+	Path   string
+	Method string
+	Status int
+	Body   string
 }
 
 type CustomersSuite struct {
@@ -27,168 +133,55 @@ type CustomersSuite struct {
 	store   *store.Store
 	session *store.Session
 	handler *Customers
+	tests   []CustomersTest
 }
 
-func (s *CustomersSuite) TestList(c *check.C) {
-	req, _ := http.NewRequest("GET", "/customers", nil)
-	res := httptest.NewRecorder()
+func (s *CustomersSuite) TestServeHTTP(c *check.C) {
+	for i, t := range s.tests {
+		var req *http.Request
 
-	s.handler.ServeHTTP(res, req)
-
-	b, err := json.Marshal([]model.Customer{s.model})
-	c.Check(err, check.IsNil)
-
-	c.Check(res.Code, check.Equals, http.StatusOK)
-	c.Check(res.Body.String(), check.Equals, string(b)+"\n")
-}
-
-func (s *CustomersSuite) TestListSearch(c *check.C) {
-	req1, _ := http.NewRequest("GET", "/customers?search=foobar", nil)
-	req2, _ := http.NewRequest("GET", "/customers?search=mar", nil)
-	res1 := httptest.NewRecorder()
-	res2 := httptest.NewRecorder()
-
-	s.handler.ServeHTTP(res1, req1)
-	s.handler.ServeHTTP(res2, req2)
-
-	b, err := json.Marshal([]model.Customer{s.model})
-	c.Check(err, check.IsNil)
-
-	c.Check(res1.Code, check.Equals, http.StatusOK)
-	c.Check(res2.Code, check.Equals, http.StatusOK)
-	c.Check(res1.Body.String(), check.Equals, "[]\n")
-	c.Check(res2.Body.String(), check.Equals, string(b)+"\n")
-}
-
-func (s *CustomersSuite) TestShow(c *check.C) {
-	req1, _ := http.NewRequest("GET", "/customers/1234", nil)
-	req2, _ := http.NewRequest("GET", "/customers/"+bson.NewObjectId().Hex(), nil)
-	req3, _ := http.NewRequest("GET", "/customers/"+s.model.Id.Hex(), nil)
-	res1 := httptest.NewRecorder()
-	res2 := httptest.NewRecorder()
-	res3 := httptest.NewRecorder()
-
-	s.handler.ServeHTTP(res1, req1)
-	s.handler.ServeHTTP(res2, req2)
-	s.handler.ServeHTTP(res3, req3)
-
-	b, err := json.Marshal(s.model)
-	c.Check(err, check.IsNil)
-
-	c.Check(res1.Code, check.Equals, http.StatusNotFound)
-	c.Check(res2.Code, check.Equals, http.StatusNotFound)
-	c.Check(res3.Code, check.Equals, http.StatusOK)
-	c.Check(res3.Body.String(), check.Equals, string(b)+"\n")
-}
-
-func (s *CustomersSuite) TestCreate(c *check.C) {
-	req1, _ := http.NewRequest("POST", "/customers", strings.NewReader(`{
-		"name": "Edison T.",
-		"email": "edison@t.com",
-		"address": {
-			"city": "Leeds"
+		if len(t.Body) != 0 {
+			req, _ = http.NewRequest(t.Method, t.Path, strings.NewReader(t.Body))
+		} else {
+			req, _ = http.NewRequest(t.Method, t.Path, nil)
 		}
-	}`))
-	req2, _ := http.NewRequest("POST", "/customers", strings.NewReader(`{
-		"email": "edison@t.com",
-		"address": {
-			"city": "Leeds"
+
+		res := httptest.NewRecorder()
+
+		s.handler.ServeHTTP(res, req)
+
+		if v := res.Code; v != t.Status {
+			b := res.Body.String()
+
+			c.Errorf("Expected #%d %s %s to respond with %d but it had %d %s", i, t.Method, t.Path, t.Status, v, b)
 		}
-	}`))
-	res1 := httptest.NewRecorder()
-	res2 := httptest.NewRecorder()
-
-	s.handler.ServeHTTP(res1, req1)
-	s.handler.ServeHTTP(res2, req2)
-
-	c.Check(res1.Code, check.Equals, http.StatusOK)
-	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
-}
-
-func (s *CustomersSuite) TestUpdate(c *check.C) {
-	req1, _ := http.NewRequest("PUT", "/customers/"+s.model.Id.Hex(), strings.NewReader(`{
-		"id":"`+s.model.Id.Hex()+`",
-		"name": "Joe Marley",
-		"email": "joe@yahoo.com",
-		"address": {
-			"city": "Tokio"
-		}
-	}`))
-	req2, _ := http.NewRequest("PUT", "/customers/"+s.model.Id.Hex(), strings.NewReader(`{
-		"id":"`+s.model.Id.Hex()+`",
-		"name": "Joe Marley",
-		"address": {
-			"city": "Tokio"
-		}
-	}`))
-	req3, _ := http.NewRequest("PUT", "/customers/1234", strings.NewReader(`{
-		"id":"`+s.model.Id.Hex()+`",
-		"name": "Joe Marley",
-		"email": "joe@yahoo.com",
-		"address": {
-			"city": "Tokio"
-		}
-	}`))
-	res1 := httptest.NewRecorder()
-	res2 := httptest.NewRecorder()
-	res3 := httptest.NewRecorder()
-
-	s.handler.ServeHTTP(res1, req1)
-	s.handler.ServeHTTP(res2, req2)
-	s.handler.ServeHTTP(res3, req3)
-
-	c.Check(res1.Code, check.Equals, http.StatusNoContent)
-	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
-	c.Check(res3.Code, check.Equals, http.StatusNotFound)
-}
-
-func (s *CustomersSuite) TestDestroy(c *check.C) {
-	req1, _ := http.NewRequest("DELETE", "/customers/"+s.model.Id.Hex(), nil)
-	req2, _ := http.NewRequest("DELETE", "/customers/1234", nil)
-	res1 := httptest.NewRecorder()
-	res2 := httptest.NewRecorder()
-
-	s.handler.ServeHTTP(res1, req1)
-	s.handler.ServeHTTP(res2, req2)
-
-	c.Check(res1.Code, check.Equals, http.StatusNoContent)
-	c.Check(res2.Code, check.Equals, http.StatusNotFound)
-	c.Check(res1.Body.String(), check.Equals, "")
+	}
 }
 
 func (s *CustomersSuite) SetUpSuite(c *check.C) {
-	s.model = model.Customer{
-		Id:    bson.NewObjectId(),
-		Name:  "Bob Marley",
-		Email: "bob@yahoo.com",
-		Address: model.Address{
-			City: "Honolulu",
-		},
-	}
-	s.session = &store.Session{}
 	s.store = &store.Store{
 		Name:    "customers",
-		Session: s.session,
+		Session: &store.Session{},
 	}
 	s.handler = NewCustomers(s.store)
 
-	c.Assert(s.session.Open(s.url), check.IsNil)
+	c.Assert(s.store.Session.Open(s.url), check.IsNil)
 }
 
 func (s *CustomersSuite) SetUpTest(c *check.C) {
-	m := s.session.Mongo()
+	m := s.store.Session.Mongo()
 	defer m.Close()
 
 	c.Assert(m.DB("").C("customers").Insert(&s.model), check.IsNil)
 }
 
 func (s *CustomersSuite) TearDownTest(c *check.C) {
-	m := s.session.Mongo()
+	m := s.store.Session.Mongo()
 	defer m.Close()
 
 	c.Assert(m.DB("").C("customers").DropCollection(), check.IsNil)
 }
 
 func (s *CustomersSuite) TearDownSuite(c *check.C) {
-	s.session.Close()
+	s.store.Session.Close()
 }
