@@ -3,9 +3,9 @@ package model
 import "github.com/satisfeet/hoopoe/model/validation"
 
 type Address struct {
-	City   string `json:"city"   "omitempty"`
-	Street string `json:"street" "omitempty"`
-	Zip    int    `json:"zip"    "omitempty"`
+	City   string `json:"city,omitempty"`
+	Street string `json:"street,omitempty"`
+	Zip    int    `json:"zip,omitempty"`
 }
 
 func (a Address) Validate() error {

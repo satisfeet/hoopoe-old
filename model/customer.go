@@ -19,9 +19,9 @@ var (
 type Customer struct {
 	Id      bson.ObjectId `json:"id" bson:"_id"`
 	Name    string        `json:"name"`
-	Email   string        `json:"email"`
-	Company string        `json:"company" "omitempty"`
-	Address Address       `json:"address" "omitempty"`
+	Email   string        `json:"email,omitempty"`
+	Company string        `json:"company,omitempty"`
+	Address Address       `json:"address,omitempty"`
 }
 
 func (c Customer) Validate() error {
