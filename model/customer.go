@@ -1,10 +1,6 @@
 package model
 
-import (
-	"gopkg.in/mgo.v2/bson"
-
-	"github.com/satisfeet/hoopoe/model/validation"
-)
+import "gopkg.in/mgo.v2/bson"
 
 var (
 	// Fields which are on the index and searchable.
@@ -23,12 +19,4 @@ type Customer struct {
 	Email   string        `json:"email"               validate:"nonzero,email"`
 	Company string        `json:"company" "omitempty" validate:"min=6,max=50"`
 	Address Address       `json:"address" "omitempty"`
-}
-
-func (c Customer) Validate() error {
-	if err := validation.Validate(c); err != nil {
-		return err
-	}
-
-	return c.Address.Validate()
 }
