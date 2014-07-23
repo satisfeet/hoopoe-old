@@ -4,6 +4,7 @@ import (
 	"errors"
 	"reflect"
 
+	"github.com/satisfeet/hoopoe/model/validation"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -35,6 +36,12 @@ func (s *Store) Insert(v interface{}) error {
 		return ErrInvalidType
 	}
 
+	if v, ok := v.(validation.Validatable); ok {
+		if err := v.Validate(); err != nil {
+			return err
+		}
+	}
+
 	return m.DB(Database).C(s.Name).Insert(v)
 }
 
@@ -44,6 +51,12 @@ func (s *Store) Update(q Query, v interface{}) error {
 
 	if !q.Valid() {
 		return ErrInvalidQuery
+	}
+
+	if v, ok := v.(validation.Validatable); ok {
+		if err := v.Validate(); err != nil {
+			return err
+		}
 	}
 
 	return m.DB(Database).C(s.Name).Update(q, v)

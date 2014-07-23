@@ -14,6 +14,10 @@ var (
 	ErrRequired = errors.New("invalid value")
 )
 
+type Validatable interface {
+	Validate() error
+}
+
 func Email(s string) error {
 	if _, err := mail.ParseAddress(s); err != nil {
 		return ErrEmail

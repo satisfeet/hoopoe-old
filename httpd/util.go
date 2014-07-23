@@ -8,6 +8,7 @@ import (
 	"gopkg.in/mgo.v2"
 
 	"github.com/satisfeet/hoopoe/httpd/context"
+	"github.com/satisfeet/hoopoe/model/validation"
 	"github.com/satisfeet/hoopoe/store"
 )
 
@@ -49,6 +50,11 @@ func ErrorCode(err error) int {
 	case mgo.ErrNotFound:
 		c = http.StatusNotFound
 	case store.ErrInvalidQuery:
+		c = http.StatusBadRequest
+	}
+
+	switch err.(type) {
+	case validation.Error:
 		c = http.StatusBadRequest
 	}
 
