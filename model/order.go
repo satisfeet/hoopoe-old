@@ -21,13 +21,8 @@ type OrderState struct {
 }
 
 type OrderItem struct {
-	Product   mgo.DBRef      `json:"product"`
-	Pricing   Pricing        `json:"price"`
-	Quantity  int            `json:"quantity"`
-	Variation OrderVariation `json:"variation"`
-}
-
-type OrderVariation struct {
-	Size  string `json:"size"`
-	Color string `json:"color"`
+	Product   mgo.DBRef        `json:"product"`
+	Pricing   Pricing          `json:"price"`
+	Quantity  int              `json:"quantity"`
+	Variation ProductVariation `json:"variation"`
 }

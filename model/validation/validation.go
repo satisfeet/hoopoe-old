@@ -61,6 +61,16 @@ func Required(v interface{}) error {
 	if v == nil {
 		return ErrRequired
 	}
+
+	switch r := reflect.ValueOf(v); r.Kind() {
+	case reflect.Slice, reflect.Map, reflect.Array:
+		if r.Len() == 0 {
+			return ErrRequired
+		} else {
+			return nil
+		}
+	}
+
 	if v == reflect.Zero(reflect.TypeOf(v)).Interface() {
 		return ErrRequired
 	}
