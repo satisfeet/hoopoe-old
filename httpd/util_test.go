@@ -53,7 +53,7 @@ func (s *UtilSuite) TestNotFound(c *check.C) {
 	res := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/bla", nil)
 
-	NotFound().ServeHTTP(res, req)
+	NotFound(res, req)
 
 	c.Check(res.Code, check.Equals, http.StatusNotFound)
 	c.Check(res.Body.String(), check.Equals, "{\"error\":\"Not Found\"}\n")

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/satisfeet/hoopoe/conf"
 	"github.com/satisfeet/hoopoe/httpd"
@@ -27,12 +28,27 @@ func main() {
 
 	httpd.Basic = c.Auth
 
-	http.Handle("/customers", httpd.Auth(&httpd.Customers{
-		Store: &store.Store{Name: "customers", Session: s},
-	}))
-	http.Handle("/", httpd.Auth(httpd.NotFound()))
+	h := httpd.Logger(httpd.Auth(Handler(s)))
 
-	if err := http.ListenAndServe(c.Host, nil); err != nil {
+	if err := http.ListenAndServe(c.Host, h); err != nil {
 		fmt.Printf("Error starting http server: %s.\n", err)
 	}
+}
+
+func Handler(s *store.Session) http.Handler {
+	c := &httpd.Customers{
+		Store: &store.Store{
+			Name:    "customers",
+			Session: s,
+		},
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/customers"):
+			c.ServeHTTP(w, r)
+		default:
+			httpd.NotFound(w, r)
+		}
+	})
 }

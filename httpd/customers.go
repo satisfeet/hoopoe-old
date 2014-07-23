@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/satisfeet/hoopoe/httpd/context"
@@ -70,6 +71,8 @@ func (h *Customers) update(c *context.Context) {
 func (h *Customers) destroy(c *context.Context) {
 	q := store.Query{}
 	q.Id(c.Param("id"))
+
+	fmt.Println("DELETE")
 
 	if err := h.Store.Remove(q); err != nil {
 		c.Error(err, ErrorCode(err))

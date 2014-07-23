@@ -2,6 +2,7 @@ package httpd
 
 import (
 	"encoding/base64"
+	"log"
 	"net/http"
 	"strings"
 
@@ -35,10 +36,16 @@ func Auth(h http.Handler) http.Handler {
 	})
 }
 
-func NotFound() http.Handler {
+func Logger(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		context.NewContext(w, r).Error(nil, http.StatusNotFound)
+		log.Printf("%s %s", r.Method, r.URL.String())
+
+		h.ServeHTTP(w, r)
 	})
+}
+
+func NotFound(w http.ResponseWriter, r *http.Request) {
+	context.NewContext(w, r).Error(nil, http.StatusNotFound)
 }
 
 // ErrorCode retrieves the correct http error code
