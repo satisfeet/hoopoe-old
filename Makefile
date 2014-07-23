@@ -3,7 +3,8 @@ SHELL := /bin/bash
 boot:
 	@go run main.go \
 		--host localhost:3000 \
-		--auth bodokaiser:secret \
+		--username bodokaiser \
+		--password secret \
 		--mongo localhost/satisfeet
 
 test:

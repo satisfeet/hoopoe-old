@@ -3,14 +3,14 @@ package conf
 import (
 	"errors"
 	"flag"
-	"strings"
 )
 
 // Conf contains application settings and
 // methods to load settings from different sources.
 type Conf struct {
 	// Credentials used for HTTP Basic Auth.
-	Auth string
+	Username string
+	Password string
 
 	// Host address used from HTTP server to listen.
 	Host string
@@ -20,12 +20,10 @@ type Conf struct {
 }
 
 var (
-	ErrAuthInvalid = errors.New("auth parameter invalid")
-	ErrHostInvalid = errors.New("host parameter invalid")
-
-	ErrAuthRequired  = errors.New("auth parameter required")
-	ErrHostRequired  = errors.New("host parameter required")
-	ErrMongoRequired = errors.New("mongo parameter required")
+	ErrUserInvalid  = errors.New("user parameter invalid")
+	ErrPassInvalid  = errors.New("pass parameter invalid")
+	ErrHostInvalid  = errors.New("host parameter invalid")
+	ErrMongoInvalid = errors.New("mongo parameter invalid")
 )
 
 // Check validates the current values of Conf and
@@ -34,21 +32,17 @@ var (
 // Note that checks are still very basic and they will
 // not guarante failures in other components.
 func (c *Conf) Check() error {
-	if len(c.Auth) == 0 {
-		return ErrAuthRequired
+	if len(c.Username) == 0 {
+		return ErrUserInvalid
+	}
+	if len(c.Password) == 0 {
+		return ErrPassInvalid
 	}
 	if len(c.Host) == 0 {
-		return ErrHostRequired
+		return ErrHostInvalid
 	}
 	if len(c.Mongo) == 0 {
-		return ErrMongoRequired
-	}
-
-	if !strings.Contains(c.Auth, ":") {
-		return ErrAuthInvalid
-	}
-	if !strings.Contains(c.Host, ":") {
-		return ErrHostInvalid
+		return ErrMongoInvalid
 	}
 
 	return nil
@@ -59,7 +53,8 @@ func (c *Conf) Check() error {
 // be os.Args[1:] but can also come from other sources.
 func (c *Conf) Flags(a []string) error {
 	f := flag.NewFlagSet("conf", flag.ExitOnError)
-	f.StringVar(&c.Auth, "auth", "", "Auth credentials for HTTP Basic.")
+	f.StringVar(&c.Username, "username", "", "Username for HTTP Basic.")
+	f.StringVar(&c.Password, "password", "", "Password for HTTP Basic.")
 	f.StringVar(&c.Host, "host", "", "Host address for HTTP Server.")
 	f.StringVar(&c.Mongo, "mongo", "", "MongoDB URL for storage layer.")
 

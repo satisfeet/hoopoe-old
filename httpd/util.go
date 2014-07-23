@@ -1,10 +1,8 @@
 package httpd
 
 import (
-	"encoding/base64"
 	"log"
 	"net/http"
-	"strings"
 
 	"gopkg.in/mgo.v2"
 
@@ -13,29 +11,8 @@ import (
 	"github.com/satisfeet/hoopoe/store"
 )
 
-var (
-	Basic = ""
-)
-
-func Auth(h http.Handler) http.Handler {
-	b := base64.StdEncoding.EncodeToString([]byte(Basic))
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c := context.NewContext(w, r)
-		a := c.Get("Authorization")
-
-		if i := strings.IndexRune(a, ' '); i != -1 {
-			if b == a[i+1:] {
-				h.ServeHTTP(w, r)
-				return
-			}
-		}
-
-		c.Set("WWW-Authenticate", "Basic realm=hoopoe")
-		c.Error(nil, http.StatusUnauthorized)
-	})
-}
-
+// Logger prints the request method with url and then executes
+// the next http.Handler.
 func Logger(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL.String())
@@ -44,6 +21,7 @@ func Logger(h http.Handler) http.Handler {
 	})
 }
 
+// NotFound will send a context conform NotFound response.
 func NotFound(w http.ResponseWriter, r *http.Request) {
 	context.NewContext(w, r).Error(nil, http.StatusNotFound)
 }

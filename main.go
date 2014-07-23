@@ -26,9 +26,11 @@ func main() {
 		return
 	}
 
-	httpd.Basic = c.Auth
-
-	h := httpd.Logger(httpd.Auth(Handler(s)))
+	h := httpd.Logger(&httpd.Auth{
+		Username: c.Username,
+		Password: c.Password,
+		Handler:  Handler(s),
+	})
 
 	if err := http.ListenAndServe(c.Host, h); err != nil {
 		fmt.Printf("Error starting http server: %s.\n", err)
