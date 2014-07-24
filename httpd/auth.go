@@ -8,12 +8,18 @@ import (
 	"github.com/satisfeet/hoopoe/httpd/context"
 )
 
+// Auth is a http.Handler which wraps a http.Handler for requests which do not
+// match the required authentication.
 type Auth struct {
 	Username string
 	Password string
 	Handler  http.Handler
 }
 
+// Implementation of the http.Handler interface. Validates the HTTP Request
+// against HTTP Basic.
+//
+// NOTE: To be only used over HTTPS to not expose credentials!
 func (a Auth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c := context.NewContext(w, r)
 	h := c.Get("Authorization")

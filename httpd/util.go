@@ -11,8 +11,7 @@ import (
 	"github.com/satisfeet/hoopoe/store"
 )
 
-// Logger prints the request method with url and then executes
-// the next http.Handler.
+// Logger prints the request method with url and then executes the next Handler.
 func Logger(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.Method, r.URL.String())
@@ -26,8 +25,11 @@ func NotFound(w http.ResponseWriter, r *http.Request) {
 	context.NewContext(w, r).Error(nil, http.StatusNotFound)
 }
 
-// ErrorCode retrieves the correct http error code
-// depending on the provided error type.
+// ErrorCode retrieves the correct http error code depending on the provided
+// error type.
+//
+// NOTE: It may be an idea to add status code information to a specific Error
+// type however this may couple to hard to a HTTP interface.
 func ErrorCode(err error) int {
 	c := http.StatusInternalServerError
 

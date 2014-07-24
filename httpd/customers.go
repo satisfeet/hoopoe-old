@@ -9,11 +9,14 @@ import (
 	"github.com/satisfeet/hoopoe/store"
 )
 
+// Customers is a http.Handler which provides a REST API for the customers
+// ressource.
 type Customers struct {
 	store  *store.Store
 	router *router.Router
 }
 
+// Initializes a new Customers Handler.
 func NewCustomers(s *store.Store) *Customers {
 	r := router.NewRouter()
 
@@ -31,6 +34,7 @@ func NewCustomers(s *store.Store) *Customers {
 	return c
 }
 
+// Responds a list of customers.
 func (h *Customers) List(c *context.Context) {
 	m := []model.Customer{}
 
@@ -44,6 +48,7 @@ func (h *Customers) List(c *context.Context) {
 	}
 }
 
+// Responds a single customer.
 func (h *Customers) Show(c *context.Context) {
 	m := model.Customer{}
 
@@ -57,6 +62,7 @@ func (h *Customers) Show(c *context.Context) {
 	}
 }
 
+// Responds a created customer.
 func (h *Customers) Create(c *context.Context) {
 	m := model.Customer{}
 
@@ -69,6 +75,7 @@ func (h *Customers) Create(c *context.Context) {
 	}
 }
 
+// Updates a customer, responds nothing.
 func (h *Customers) Update(c *context.Context) {
 	m := model.Customer{}
 
@@ -84,6 +91,7 @@ func (h *Customers) Update(c *context.Context) {
 	}
 }
 
+// Removes a customer, responds nothing.
 func (h *Customers) Destroy(c *context.Context) {
 	q := store.Query{}
 	q.Id(c.Param("id"))
@@ -95,6 +103,7 @@ func (h *Customers) Destroy(c *context.Context) {
 	}
 }
 
+// Forwards HTTP handling to the internal router.
 func (h *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.router.ServeHTTP(w, r)
 }

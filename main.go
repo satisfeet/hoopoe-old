@@ -37,6 +37,9 @@ func main() {
 	}
 }
 
+// Handler sets up a basic prefixed based http multiplexer to switch between
+// different HTTP resources. If not HTTP resource is found it will respond a Not
+// Found error.
 func Handler(s *store.Session) http.Handler {
 	c := httpd.NewCustomers(&store.Store{
 		Name:    "customers",
