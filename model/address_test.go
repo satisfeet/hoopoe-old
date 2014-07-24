@@ -18,9 +18,9 @@ func (s *AddressSuite) TestValidate(c *check.C) {
 		City: "Berlin",
 	}.Validate(), check.IsNil)
 	c.Check(Address{
-		City:   "Berlin",
-		Street: "Geiserichstr. 3",
-		Zip:    12105,
+		City:    "Berlin",
+		Street:  "Geiserichstr. 3",
+		ZipCode: 12105,
 	}.Validate(), check.IsNil)
 
 	c.Check(Address{}.Validate(), check.ErrorMatches, "City .*")
