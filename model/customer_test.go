@@ -33,13 +33,13 @@ func (s *CustomerSuite) TestValidate(c *check.C) {
 	c.Check(Customer{
 		Email:   "foo@bar.org",
 		Address: a,
-	}.Validate(), check.ErrorMatches, "name has invalid.*")
+	}.Validate(), check.ErrorMatches, "Name .*")
 	c.Check(Customer{
 		Name:    "Bodo Kaiser",
 		Address: a,
-	}.Validate(), check.ErrorMatches, "email has invalid.*")
+	}.Validate(), check.ErrorMatches, "Email .*")
 	c.Check(Customer{
 		Name:  "Bodo Kaiser",
 		Email: "foo@bar.org",
-	}.Validate(), check.ErrorMatches, "address has invalid.*")
+	}.Validate(), check.ErrorMatches, "Address.*")
 }

@@ -16,14 +16,14 @@ type VariationSuite struct{}
 func (s *VariationSuite) TestValidate(c *check.C) {
 	c.Check(Variation{
 		Color: "red",
-		Size:  "42",
+		Size:  "42-44",
 	}.Validate(), check.IsNil)
 
 	c.Check(Variation{
 		Color: "red",
-	}.Validate(), check.ErrorMatches, "size has invalid .*")
+	}.Validate(), check.ErrorMatches, "Size.*")
 
 	c.Check(Variation{
-		Size: "42",
-	}.Validate(), check.ErrorMatches, "color has invalid .*")
+		Size: "42-44",
+	}.Validate(), check.ErrorMatches, "Color.*")
 }

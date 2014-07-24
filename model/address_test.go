@@ -23,5 +23,5 @@ func (s *AddressSuite) TestValidate(c *check.C) {
 		Zip:    12105,
 	}.Validate(), check.IsNil)
 
-	c.Check(Address{}.Validate(), check.ErrorMatches, "city has invalid value")
+	c.Check(Address{}.Validate(), check.ErrorMatches, "City .*")
 }
