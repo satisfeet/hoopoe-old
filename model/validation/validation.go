@@ -1,82 +1,49 @@
 package validation
 
-import (
-	"errors"
-	"net/mail"
-	"reflect"
-	"strings"
-)
+import "gopkg.in/validator.v1"
 
 var (
-	ErrEmail    = errors.New("invalid email")
-	ErrRange    = errors.New("invalid range")
-	ErrLength   = errors.New("invalid length")
-	ErrRequired = errors.New("invalid value")
+	// The default validator we extend and use.
+	//
+	// We use an extra instance over here to avoid
+	// collisions with the one exported by validator.
+	DefaultValidator = validator.NewValidator()
 )
 
+// Extends DefaultValidator to use our own constraints
+// in favor to the built-ins.
+func init() {
+	DefaultValidator.SetValidationFunc("id", Id)
+	DefaultValidator.SetValidationFunc("ref", Ref)
+	DefaultValidator.SetValidationFunc("min", Minimum)
+	DefaultValidator.SetValidationFunc("email", Email)
+	DefaultValidator.SetValidationFunc("nested", Nested)
+	DefaultValidator.SetValidationFunc("required", Required)
+}
+
+// Every type which implements a Validate method is
+// Validatable.
+//
+// This will mostly be implemented by models which use
+// one of the validation methods of this package.
 type Validatable interface {
 	Validate() error
 }
 
-func Email(s string) error {
-	if _, err := mail.ParseAddress(s); err != nil {
-		return ErrEmail
-	} else {
-		// the above sees "foo@bar." as valid so do
-		// additional check if "." is not last char
-		if strings.LastIndex(s, ".") == len(s)-1 {
-			return ErrEmail
-		}
+// Returns Errors if validation of single value fails else
+// it will return nil.
+func Valid(v interface{}, s string) error {
+	if ok, err := DefaultValidator.Valid(v, s); !ok {
+		return Errors(err)
 	}
 	return nil
 }
 
-func Range(i int, a, b int) error {
-	if a != 0 {
-		if i < a {
-			return ErrRange
-		}
-	}
-	if b != 0 {
-		if i > b {
-			return ErrRange
-		}
-	}
-	return nil
-}
-
-func Length(s string, a, b int) error {
-	l := len(s)
-
-	if a != 0 {
-		if l < a {
-			return ErrLength
-		}
-	}
-	if b != 0 {
-		if l > b {
-			return ErrLength
-		}
-	}
-	return nil
-}
-
-func Required(v interface{}) error {
-	if v == nil {
-		return ErrRequired
-	}
-
-	switch r := reflect.ValueOf(v); r.Kind() {
-	case reflect.Slice, reflect.Map, reflect.Array:
-		if r.Len() == 0 {
-			return ErrRequired
-		} else {
-			return nil
-		}
-	}
-
-	if v == reflect.Zero(reflect.TypeOf(v)).Interface() {
-		return ErrRequired
+// Returns Error if validation of tagged struct value fails
+// else it will return nil.
+func Validate(v interface{}) error {
+	if ok, err := DefaultValidator.Validate(v); !ok {
+		return Error(err)
 	}
 	return nil
 }

@@ -20,7 +20,7 @@ func (s *PricingSuite) TestValidate(c *check.C) {
 
 	c.Check(Pricing{
 		Retail: -11,
-	}.Validate(), check.ErrorMatches, "retail has invalid range")
+	}.Validate(), check.ErrorMatches, "Retail.*")
 
-	c.Check(Pricing{}.Validate(), check.ErrorMatches, "retail has invalid value")
+	c.Check(Pricing{}.Validate(), check.ErrorMatches, "Retail.*")
 }

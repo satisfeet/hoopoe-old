@@ -7,39 +7,13 @@ import (
 )
 
 type Product struct {
-	Id          bson.ObjectId `json:"id"     bson:"_id"`
-	Name        string        `json:"name"`
-	Pricing     Pricing       `json:"pricing"`
-	Variations  []Variation   `json:"variations"`
-	Description string        `json:"description"`
+	Id          bson.ObjectId `json:"id" bson:"_id"`
+	Name        string        `json:"name" validate:"required,min=10,max=20"`
+	Pricing     Pricing       `json:"pricing" validate:"required,nested"`
+	Variations  []Variation   `json:"variations" validate:"required,nested"`
+	Description string        `json:"description" validate:"required,min=60"`
 }
 
 func (p Product) Validate() error {
-	errs := validation.Error{}
-
-	if err := validation.Required(p.Name); err != nil {
-		errs.Set("name", err)
-	}
-	if err := validation.Required(p.Description); err != nil {
-		errs.Set("description", err)
-	}
-	if err := validation.Required(p.Variations); err != nil {
-		errs.Set("variations", err)
-	}
-	if err := p.Pricing.Validate(); err != nil {
-		errs.Set("pricing", err)
-	}
-
-	for _, v := range p.Variations {
-		if err := v.Validate(); err != nil {
-			errs.Set("variations", err)
-
-			break
-		}
-	}
-
-	if errs.Has() {
-		return errs
-	}
-	return nil
+	return validation.Validate(p)
 }

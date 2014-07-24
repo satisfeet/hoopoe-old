@@ -20,38 +20,54 @@ func (s *ProductSuite) TestValidate(c *check.C) {
 	v := []Variation{
 		Variation{
 			Color: "black",
-			Size:  "42",
+			Size:  "42-45",
 		},
 	}
-
-	c.Check(Product{
-		Name:        "Business Socks",
-		Pricing:     p,
-		Variations:  v,
-		Description: "These are some Business socks!",
-	}.Validate(), check.IsNil)
-
-	c.Check(Product{
-		Pricing:     p,
-		Variations:  v,
-		Description: "These are some Business socks!",
-	}.Validate(), check.ErrorMatches, "name has invalid.*")
-
-	c.Check(Product{
-		Name:        "Business Socks",
-		Variations:  v,
-		Description: "These are some Business socks!",
-	}.Validate(), check.ErrorMatches, "pricing has .*")
-
-	c.Check(Product{
-		Name:        "Business Socks",
-		Pricing:     p,
-		Description: "These are some Business socks!",
-	}.Validate(), check.ErrorMatches, "variations has .*")
 
 	c.Check(Product{
 		Name:       "Business Socks",
 		Pricing:    p,
 		Variations: v,
-	}.Validate(), check.ErrorMatches, "description has invalid.*")
+		Description: `
+			These are some Business socks!
+			They are really really nice.
+			You should try them!
+		`,
+	}.Validate(), check.IsNil)
+
+	c.Check(Product{
+		Pricing:    p,
+		Variations: v,
+		Description: `
+			These are some Business socks!
+			They are really really nice.
+			You should try them!
+		`,
+	}.Validate(), check.ErrorMatches, "Name.*")
+
+	c.Check(Product{
+		Name:       "Business Socks",
+		Variations: v,
+		Description: `
+			These are some Business socks!
+			They are really really nice.
+			You should try them!
+		`,
+	}.Validate(), check.ErrorMatches, "Pricing.*")
+
+	c.Check(Product{
+		Name:    "Business Socks",
+		Pricing: p,
+		Description: `
+			These are some Business socks!
+			They are really really nice.
+			You should try them!
+		`,
+	}.Validate(), check.ErrorMatches, "Variations.*")
+
+	c.Check(Product{
+		Name:       "Business Socks",
+		Pricing:    p,
+		Variations: v,
+	}.Validate(), check.ErrorMatches, "Description.*")
 }

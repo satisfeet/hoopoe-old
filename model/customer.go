@@ -18,44 +18,12 @@ var (
 
 type Customer struct {
 	Id      bson.ObjectId `json:"id" bson:"_id"`
-	Name    string        `json:"name"`
-	Email   string        `json:"email,omitempty"`
-	Company string        `json:"company,omitempty"`
-	Address Address       `json:"address,omitempty"`
+	Name    string        `json:"name,omitempty" validate:"required,min=5,max=40"`
+	Email   string        `json:"email,omitempty" validate:"required,email"`
+	Company string        `json:"company,omitempty" validate:"min=5,max=40"`
+	Address Address       `json:"address,omitempty" validate:"required,nested"`
 }
 
 func (c Customer) Validate() error {
-	errs := validation.Error{}
-
-	if err := validation.Required(c.Name); err == nil {
-		if err := validation.Length(c.Name, 5, 40); err != nil {
-			errs.Set("name", err)
-		}
-	} else {
-		errs.Set("name", err)
-	}
-	if err := validation.Required(c.Email); err == nil {
-		if err := validation.Email(c.Email); err != nil {
-			errs.Set("email", err)
-		}
-	} else {
-		errs.Set("email", err)
-	}
-	if err := validation.Required(c.Address); err == nil {
-		if err := c.Address.Validate(); err != nil {
-			errs.Set("address", err)
-		}
-	} else {
-		errs.Set("address", err)
-	}
-	if err := validation.Required(c.Company); err == nil {
-		if err := validation.Length(c.Company, 5, 40); err != nil {
-			errs.Set("company", err)
-		}
-	}
-
-	if errs.Has() {
-		return errs
-	}
-	return nil
+	return validation.Validate(c)
 }
