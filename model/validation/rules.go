@@ -12,6 +12,9 @@ import (
 )
 
 // Returns error if given value is not a bson object id.
+//
+// NOTE: It may be wise to remove the required check as the most common case for
+// invalid object ids are uninitialized one which currently just are skipped.
 func Id(v interface{}, _ string) error {
 	if err := Required(v, ""); err != nil {
 		return nil
@@ -30,9 +33,10 @@ func Id(v interface{}, _ string) error {
 
 // Returns error if the given value is not a valid mongo DBRef.
 //
-// This only validates the basic requirements for a DBRef there is
-// no check if the defined reference actually exists. This would need
-// to be done seperated - maybe in the models Validate() method.
+// NOTE: This only validates the basic requirements for a DBRef there is no
+// check if the defined reference actually exists. This would need to be done
+// seperated - maybe in the models Validate() method.
+// TODO: Remove required check. See above for more.
 func Ref(v interface{}, _ string) error {
 	if err := Required(v, ""); err != nil {
 		return nil
@@ -53,10 +57,6 @@ func Ref(v interface{}, _ string) error {
 }
 
 // Returns error if given value is not an email.
-//
-// Validation is done using the built-in email parser
-// with additional character checks.
-// Remeber that Email will not return an error on zero values!
 func Email(v interface{}, _ string) error {
 	if err := Required(v, ""); err != nil {
 		return nil
@@ -80,9 +80,9 @@ func Email(v interface{}, _ string) error {
 
 // Returns error if the given value does not validate.
 //
-// This actually just allows to call validation recursively
-// and to integrate the errors into the existing Error map.
-// It also supports recursive validation of Validatable slices.
+// NOTE: This actually just allows to call validation recursively and to
+// integrate the errors into the existing Error map. It also supports recursive
+// validation of Validatable slices.
 func Nested(v interface{}, _ string) error {
 	if v == nil {
 		return nil
@@ -109,9 +109,9 @@ func Nested(v interface{}, _ string) error {
 
 // Returns error if given value exceeds minimum.
 //
-// In difference to the built-in min validator this one will
-// NOT validate zero or nil values. To get the old behaviour
-// you will need to combine this with the required constraint.
+// NOTE: In difference to the built-in min validator this one will NOT validate
+// zero or nil values. To get the old behaviour you will need to combine this
+// with the required constraint.
 func Minimum(v interface{}, s string) error {
 	if err := Required(v, ""); err != nil {
 		return nil
@@ -145,9 +145,6 @@ func Minimum(v interface{}, s string) error {
 }
 
 // Returns error if given value is nil or zero value.
-//
-// Depending on the type we first check for nil and then
-// for length and if value equals the default zero value.
 func Required(v interface{}, _ string) error {
 	if v == nil {
 		return validator.ErrZeroValue
@@ -167,8 +164,6 @@ func Required(v interface{}, _ string) error {
 }
 
 // Parses an int in string into int type.
-//
-// Sugar to the wrapped strconv method.
 func parseInt(s string) (int64, error) {
 	i, err := strconv.ParseInt(s, 0, 64)
 

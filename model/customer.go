@@ -1,21 +1,22 @@
 package model
 
 import (
-	"github.com/satisfeet/hoopoe/model/validation"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/satisfeet/hoopoe/model/validation"
 )
 
-var (
-	// Fields which are on the index and searchable.
-	CustomerIndex = []string{
-		"name",
-		"email",
-		"company",
-		"address.city",
-		"address.street",
-	}
-)
+// Fields which should be on the index. These fields can be safely used by for
+// full-text-search on documents.
+var CustomerIndex = []string{
+	"name",
+	"email",
+	"company",
+	"address.city",
+	"address.street",
+}
 
+// Customer represents ... a customer.
 type Customer struct {
 	Id      bson.ObjectId `json:"id" bson:"_id"`
 	Name    string        `json:"name,omitempty" validate:"required,min=5,max=40"`
@@ -24,6 +25,9 @@ type Customer struct {
 	Address Address       `json:"address,omitempty" validate:"required,nested"`
 }
 
+// Returns errors if mandatory fields are missing or invalid.
+//
+// TODO: It MAY be a good idea to do an DNS check on the email address.
 func (c Customer) Validate() error {
 	return validation.Validate(c)
 }

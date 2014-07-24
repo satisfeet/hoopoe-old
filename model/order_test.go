@@ -33,7 +33,7 @@ func (s *OrderSuite) TestValidate(c *check.C) {
 			},
 			Quantity: 1,
 			Variation: Variation{
-				Size:  "38",
+				Size:  "38-40",
 				Color: "blue",
 			},
 		},
