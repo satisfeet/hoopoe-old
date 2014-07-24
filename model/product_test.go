@@ -14,6 +14,9 @@ func TestProduct(t *testing.T) {
 type ProductSuite struct{}
 
 func (s *ProductSuite) TestValidate(c *check.C) {
+	i := []string{
+		"24781374dhsfhkhk",
+	}
 	p := Pricing{
 		Retail: 299,
 	}
@@ -26,6 +29,7 @@ func (s *ProductSuite) TestValidate(c *check.C) {
 
 	c.Check(Product{
 		Name:       "Business Socks",
+		Images:     i,
 		Pricing:    p,
 		Variations: v,
 		Description: `
@@ -36,6 +40,7 @@ func (s *ProductSuite) TestValidate(c *check.C) {
 	}.Validate(), check.IsNil)
 
 	c.Check(Product{
+		Images:     i,
 		Pricing:    p,
 		Variations: v,
 		Description: `
@@ -47,6 +52,18 @@ func (s *ProductSuite) TestValidate(c *check.C) {
 
 	c.Check(Product{
 		Name:       "Business Socks",
+		Pricing:    p,
+		Variations: v,
+		Description: `
+			These are some Business socks!
+			They are really really nice.
+			You should try them!
+		`,
+	}.Validate(), check.ErrorMatches, "Images.*")
+
+	c.Check(Product{
+		Name:       "Business Socks",
+		Images:     i,
 		Variations: v,
 		Description: `
 			These are some Business socks!
@@ -57,6 +74,7 @@ func (s *ProductSuite) TestValidate(c *check.C) {
 
 	c.Check(Product{
 		Name:    "Business Socks",
+		Images:  i,
 		Pricing: p,
 		Description: `
 			These are some Business socks!
@@ -67,6 +85,7 @@ func (s *ProductSuite) TestValidate(c *check.C) {
 
 	c.Check(Product{
 		Name:       "Business Socks",
+		Images:     i,
 		Pricing:    p,
 		Variations: v,
 	}.Validate(), check.ErrorMatches, "Description.*")
