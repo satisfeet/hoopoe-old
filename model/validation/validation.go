@@ -13,6 +13,8 @@ var (
 // Extends DefaultValidator to use our own constraints
 // in favor to the built-ins.
 func init() {
+	DefaultValidator.SetValidationFunc("id", Id)
+	DefaultValidator.SetValidationFunc("ref", Ref)
 	DefaultValidator.SetValidationFunc("min", Minimum)
 	DefaultValidator.SetValidationFunc("email", Email)
 	DefaultValidator.SetValidationFunc("nested", Nested)

@@ -11,7 +11,7 @@ type Order struct {
 	Id       bson.ObjectId `json:"id" bson:"_id"`
 	Items    []OrderItem   `json:"items" validate:"nested"`
 	Pricing  Pricing       `json:"pricing" validate:"nested"`
-	Customer mgo.DBRef     `json:"customer" validate:"required"`
+	Customer mgo.DBRef     `json:"customer" validate:"required,ref"`
 }
 
 func (o Order) Validate() error {
@@ -26,7 +26,7 @@ func (o Order) SetCustomer(c Customer) {
 }
 
 type OrderItem struct {
-	Product   mgo.DBRef `json:"product" validate:"required"`
+	Product   mgo.DBRef `json:"product" validate:"required,ref"`
 	Quantity  int       `json:"quantity" validate:"required"`
 	Pricing   Pricing   `json:"price" validate:"nested"`
 	Variation Variation `json:"variation" validate:"nested"`

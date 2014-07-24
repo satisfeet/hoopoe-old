@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"gopkg.in/check.v1"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/validator.v1"
 )
 
@@ -14,6 +16,28 @@ func TestRules(t *testing.T) {
 }
 
 type RulesSuite struct{}
+
+func (s *RulesSuite) TestId(c *check.C) {
+	c.Check(Id("", ""), check.IsNil)
+	c.Check(Id(nil, ""), check.IsNil)
+	c.Check(Id(bson.NewObjectId(), ""), check.IsNil)
+
+	c.Check(Id("abcd", ""), check.Equals, validator.ErrUnsupported)
+	c.Check(Id(bson.ObjectId("1234"), ""), check.Equals, validator.ErrInvalid)
+}
+
+func (s *RulesSuite) TestRef(c *check.C) {
+	c.Check(Ref(nil, ""), check.IsNil)
+	c.Check(Ref(mgo.DBRef{
+		Id:         bson.NewObjectId(),
+		Collection: "collection1",
+	}, ""), check.IsNil)
+
+	c.Check(Ref(123, ""), check.Equals, validator.ErrUnsupported)
+	c.Check(Ref(mgo.DBRef{
+		Id: bson.NewObjectId(),
+	}, ""), check.Equals, validator.ErrInvalid)
+}
 
 func (s *RulesSuite) TestEmail(c *check.C) {
 	c.Check(Email("", ""), check.IsNil)

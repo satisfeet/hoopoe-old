@@ -6,8 +6,51 @@ import (
 	"strconv"
 	"strings"
 
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/validator.v1"
 )
+
+// Returns error if given value is not a bson object id.
+func Id(v interface{}, _ string) error {
+	if err := Required(v, ""); err != nil {
+		return nil
+	}
+
+	switch t := v.(type) {
+	case bson.ObjectId:
+		if !t.Valid() {
+			return validator.ErrInvalid
+		}
+	default:
+		return validator.ErrUnsupported
+	}
+	return nil
+}
+
+// Returns error if the given value is not a valid mongo DBRef.
+//
+// This only validates the basic requirements for a DBRef there is
+// no check if the defined reference actually exists. This would need
+// to be done seperated - maybe in the models Validate() method.
+func Ref(v interface{}, _ string) error {
+	if err := Required(v, ""); err != nil {
+		return nil
+	}
+
+	switch t := v.(type) {
+	case mgo.DBRef:
+		if id, ok := t.Id.(bson.ObjectId); ok && !id.Valid() {
+			return validator.ErrInvalid
+		}
+		if len(t.Collection) == 0 {
+			return validator.ErrInvalid
+		}
+	default:
+		return validator.ErrUnsupported
+	}
+	return nil
+}
 
 // Returns error if given value is not an email.
 //
