@@ -32,3 +32,11 @@ func (s *ErrorSuite) TestErrors(c *check.C) {
 		validator.ErrMin,
 	}.Error(), check.Matches, validator.ErrMin.Error())
 }
+
+func (s *ErrorSuite) TestErrorsAdd(c *check.C) {
+	err := Errors{}
+
+	c.Check(err.Add(validator.ErrMin), check.DeepEquals, Errors{
+		validator.ErrMin,
+	})
+}

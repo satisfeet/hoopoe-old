@@ -35,6 +35,35 @@ func Email(v interface{}, _ string) error {
 	return nil
 }
 
+// Returns error if the given value does not validate.
+//
+// This actually just allows to call validation recursively
+// and to integrate the errors into the existing Error map.
+// It also supports recursive validation of Validatable slices.
+func Nested(v interface{}, _ string) error {
+	if v == nil {
+		return nil
+	}
+	if r := reflect.ValueOf(v); r.Kind() == reflect.Slice {
+		errs := Errors{}
+		for i := 0; i < r.Len(); i++ {
+			if n, ok := r.Index(i).Interface().(Validatable); ok {
+				if err := n.Validate(); err != nil {
+					errs = errs.Add(err)
+				}
+			}
+		}
+		if len(errs) > 0 {
+			return errs
+		}
+		return nil
+	}
+	if n, ok := v.(Validatable); ok {
+		return n.Validate()
+	}
+	return nil
+}
+
 // Returns error if given value exceeds minimum.
 //
 // In difference to the built-in min validator this one will

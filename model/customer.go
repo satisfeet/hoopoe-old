@@ -21,12 +21,9 @@ type Customer struct {
 	Name    string        `json:"name,omitempty" validate:"required,min=5,max=40"`
 	Email   string        `json:"email,omitempty" validate:"required,email"`
 	Company string        `json:"company,omitempty" validate:"min=5,max=40"`
-	Address Address       `json:"address,omitempty"`
+	Address Address       `json:"address,omitempty" validate:"required,nested"`
 }
 
 func (c Customer) Validate() error {
-	if err := validation.Validate(c); err != nil {
-		return err
-	}
-	return c.Address.Validate()
+	return validation.Validate(c)
 }

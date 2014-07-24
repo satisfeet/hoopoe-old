@@ -13,6 +13,10 @@ func (err Error) Error() string {
 
 type Errors []error
 
+func (errs Errors) Add(err error) Errors {
+	return append(errs, err)
+}
+
 func (errs Errors) Error() string {
 	if len(errs) > 0 {
 		return errs[0].Error()

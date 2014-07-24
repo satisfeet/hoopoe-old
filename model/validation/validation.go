@@ -15,6 +15,7 @@ var (
 func init() {
 	DefaultValidator.SetValidationFunc("min", Minimum)
 	DefaultValidator.SetValidationFunc("email", Email)
+	DefaultValidator.SetValidationFunc("nested", Nested)
 	DefaultValidator.SetValidationFunc("required", Required)
 }
 

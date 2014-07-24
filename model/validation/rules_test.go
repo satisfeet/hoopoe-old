@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"testing"
 
 	"gopkg.in/check.v1"
@@ -25,6 +26,21 @@ func (s *RulesSuite) TestEmail(c *check.C) {
 	c.Check(Email("foo@bar.", ""), check.Equals, validator.ErrInvalid)
 }
 
+func (s *RulesSuite) TestNested(c *check.C) {
+	c.Check(Nested(nil, ""), check.IsNil)
+	c.Check(Nested([]nested{}, ""), check.IsNil)
+
+	c.Check(Nested(nested{}, ""), check.ErrorMatches, "error")
+
+	c.Check(Nested([]nested{
+		nested{},
+		nested{},
+	}, ""), check.DeepEquals, Errors{
+		errors.New("error"),
+		errors.New("error"),
+	})
+}
+
 func (s *RulesSuite) TestMinimum(c *check.C) {
 	c.Check(Minimum(0, "1"), check.IsNil)
 	c.Check(Minimum(5, "4"), check.IsNil)
@@ -46,4 +62,12 @@ func (s *RulesSuite) TestRequired(c *check.C) {
 	c.Check(Required(0, ""), check.Equals, validator.ErrZeroValue)
 	c.Check(Required("", ""), check.Equals, validator.ErrZeroValue)
 	c.Check(Required([]int{}, ""), check.Equals, validator.ErrZeroValue)
+}
+
+type nested struct {
+	Name string
+}
+
+func (n nested) Validate() error {
+	return errors.New("error")
 }
