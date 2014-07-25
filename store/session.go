@@ -1,61 +1,51 @@
 package store
 
-import (
-	"errors"
+import "gopkg.in/mgo.v2"
 
-	"gopkg.in/mgo.v2"
-)
+// Default session used when no Session was passed to Store.
+var session = &Session{}
 
-var (
-	// As we define the database to use in the mongo url we use this empty
-	// placeholder. To avoid code empty strings everywhere we use this
-	// variable as placeholder.
-	Database = ""
+// Opens the default session.
+func Open(u string) error {
+	return session.Open(u)
+}
 
-	// Error returned when no database sessions where established.
-	// This can be simply solved by calling Open on a session before use.
-	ErrNotConnected = errors.New("not connected")
-)
+// Closes the default session.
+func Close() error {
+	return session.Close()
+}
 
-// Session is a database connection container. It is used as dependency
-// for higher level structs to provide an unified access to multiple databases.
-//
-// NOTE: At the moment this is mongodb only though it should be easy to add
-// more databases with time.
+// Session is a container with database connections.
 type Session struct {
 	mongo *mgo.Session
 }
 
-// Opens all databases with the given parameter. Returns an error if something
-// went wrong.
-//
-// NOTE: You NEED to call this before any further database actions can be
-// performed else you will get ErrNotConnected.
+// Opens all database connections.
 func (s *Session) Open(u string) error {
 	var err error
 	s.mongo, err = mgo.Dial(u)
+
 	return err
 }
 
-// Returns a cloned connection to the mongodb service. This will panic if no
-// connection was opened before.
-//
-// TODO: Do not expose the raw mongo session to the public. Just not sure how
-// to hide this else?
-func (s *Session) Mongo() *mgo.Session {
+// Returns a copy of the mongodb connection and error if connection was not
+// initialized.
+func (s *Session) Mongo() (*mgo.Session, error) {
 	if s.mongo == nil {
-		panic(ErrNotConnected)
+		return nil, ErrNotConnected
 	}
 
-	return s.mongo.Clone()
+	return s.mongo.Clone(), nil
 }
 
-// Closes all database connections or panics if not connected.
-func (s *Session) Close() {
+// Closes all database connections.
+func (s *Session) Close() error {
 	if s.mongo == nil {
-		panic(ErrNotConnected)
+		return ErrNotConnected
 	}
 
 	s.mongo.Close()
 	s.mongo = nil
+
+	return nil
 }

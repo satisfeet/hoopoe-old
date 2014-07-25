@@ -22,11 +22,15 @@ type SessionSuite struct {
 func (s *SessionSuite) TestOpen(c *check.C) {
 	c.Check(s.session.Open(s.url), check.IsNil)
 
-	m := s.session.Mongo()
+	m, err := s.session.Mongo()
+
+	c.Assert(err, check.IsNil)
+
 	m.Close()
 }
 
 func (s *SessionSuite) TestClose(c *check.C) {
 	s.session.Open(s.url)
-	s.session.Close()
+
+	c.Assert(s.session.Close(), check.IsNil)
 }

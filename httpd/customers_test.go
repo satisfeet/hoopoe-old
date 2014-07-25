@@ -169,14 +169,20 @@ func (s *CustomersSuite) SetUpSuite(c *check.C) {
 }
 
 func (s *CustomersSuite) SetUpTest(c *check.C) {
-	m := s.store.Session.Mongo()
+	m, err := s.store.Session.Mongo()
+
+	c.Assert(err, check.IsNil)
+
 	defer m.Close()
 
 	c.Assert(m.DB("").C("customers").Insert(&s.model), check.IsNil)
 }
 
 func (s *CustomersSuite) TearDownTest(c *check.C) {
-	m := s.store.Session.Mongo()
+	m, err := s.store.Session.Mongo()
+
+	c.Assert(err, check.IsNil)
+
 	defer m.Close()
 
 	c.Assert(m.DB("").C("customers").DropCollection(), check.IsNil)
