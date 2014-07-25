@@ -13,13 +13,16 @@ test:
 test-conf:
 	@go test ./conf/...
 
-test-httpd:
-	@go test ./httpd/...
-
 test-model:
 	@go test ./model/...
 
 test-store:
 	@go test ./store/...
 
-.PHONY: test test-conf test-httpd test-model test-store
+test-email:
+	@go test ./email/...
+
+test-httpd:
+	@go test ./httpd/...
+
+.PHONY: test test-conf test-model test-store test-email test-httpd
