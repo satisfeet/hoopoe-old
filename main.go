@@ -13,14 +13,13 @@ import (
 
 func main() {
 	c := &conf.Conf{}
-	s := &store.Session{}
 
 	if err := c.Flags(os.Args[1:]); err != nil {
 		fmt.Printf("Error parsing arguments: %s.\n", err)
 
 		return
 	}
-	if err := s.Open(c.Mongo); err != nil {
+	if err := store.Open(c.Mongo); err != nil {
 		fmt.Printf("Error connecting to database: %s.\n", err)
 
 		return
@@ -29,7 +28,7 @@ func main() {
 	h := httpd.Logger(&httpd.Auth{
 		Username: c.Username,
 		Password: c.Password,
-		Handler:  Handler(s),
+		Handler:  Handler(),
 	})
 
 	if err := http.ListenAndServe(c.Host, h); err != nil {
@@ -40,10 +39,9 @@ func main() {
 // Handler sets up a basic prefixed based http multiplexer to switch between
 // different HTTP resources. If not HTTP resource is found it will respond a Not
 // Found error.
-func Handler(s *store.Session) http.Handler {
+func Handler() http.Handler {
 	c := httpd.NewCustomers(&store.Store{
-		Name:    "customers",
-		Session: s,
+		Name: "customers",
 	})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

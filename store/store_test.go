@@ -52,7 +52,7 @@ func (s *StoreSuite) TestUpdate(c *check.C) {
 
 	c.Check(s.store.Update(q, &s.model), check.IsNil)
 
-	err := s.mongo.DB(Database).C(s.name).Find(q).One(&m)
+	err := s.mongo.DB("").C(s.name).Find(q).One(&m)
 
 	c.Check(err, check.IsNil)
 	c.Check(m, check.DeepEquals, s.model)
@@ -91,9 +91,9 @@ func (s *StoreSuite) TearDownSuite(c *check.C) {
 }
 
 func (s *StoreSuite) SetUpTest(c *check.C) {
-	c.Assert(s.mongo.DB(Database).C(s.name).Insert(s.model), check.IsNil)
+	c.Assert(s.mongo.DB("").C(s.name).Insert(s.model), check.IsNil)
 }
 
 func (s *StoreSuite) TearDownTest(c *check.C) {
-	c.Assert(s.mongo.DB(Database).C(s.name).DropCollection(), check.IsNil)
+	c.Assert(s.mongo.DB("").C(s.name).DropCollection(), check.IsNil)
 }
