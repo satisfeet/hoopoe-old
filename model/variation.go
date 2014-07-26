@@ -1,6 +1,6 @@
 package model
 
-import "github.com/satisfeet/hoopoe/model/validation"
+import "github.com/satisfeet/go-validation"
 
 // Variation represents the properties of a Product. We use it as there may be
 // different derivates of a product commonly in color and size. It can further

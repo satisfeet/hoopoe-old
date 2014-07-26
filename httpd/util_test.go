@@ -9,7 +9,7 @@ import (
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
 
-	"github.com/satisfeet/hoopoe/model/validation"
+	"github.com/satisfeet/go-validation"
 )
 
 var (

@@ -1,6 +1,6 @@
 package model
 
-import "github.com/satisfeet/hoopoe/model/validation"
+import "github.com/satisfeet/go-validation"
 
 // Address represents a Germany-based address. For private sales the least
 // possible value is to only contain the city property for online sales or

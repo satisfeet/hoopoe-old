@@ -3,7 +3,7 @@ package model
 import (
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/model/validation"
+	"github.com/satisfeet/go-validation"
 )
 
 // Product represents a product in stock. It contains a few details to be

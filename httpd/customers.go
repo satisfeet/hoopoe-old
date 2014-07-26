@@ -3,7 +3,7 @@ package httpd
 import (
 	"net/http"
 
-	"github.com/satisfeet/hoopoe/httpd/context"
+	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/hoopoe/httpd/route"
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/satisfeet/hoopoe/httpd/context"
+	"github.com/satisfeet/go-context"
 )
 
 // Auth is a http.Handler which wraps a http.Handler for requests which do not

@@ -1,6 +1,6 @@
 package model
 
-import "github.com/satisfeet/hoopoe/model/validation"
+import "github.com/satisfeet/go-validation"
 
 // Pricing represents pricing information. At the moment this is only the retail
 // price however in future it will contain tax information and possible

@@ -4,7 +4,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/model/validation"
+	"github.com/satisfeet/go-validation"
 )
 
 // Order represents an order made by a customer.
@@ -12,7 +12,7 @@ type Order struct {
 	Id       bson.ObjectId `json:"id" bson:"_id"`
 	Items    []OrderItem   `json:"items" validate:"nested"`
 	Pricing  Pricing       `json:"pricing" validate:"nested"`
-	Customer mgo.DBRef     `json:"customer" validate:"required,ref"`
+	Customer mgo.DBRef     `json:"customer" validate:"required"`
 }
 
 // Returns errors if order is invalid.

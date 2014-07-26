@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/mgo.v2"
 
-	"github.com/satisfeet/hoopoe/httpd/context"
-	"github.com/satisfeet/hoopoe/model/validation"
+	"github.com/satisfeet/go-context"
+	"github.com/satisfeet/go-validation"
 )
 
 // Logger prints the request method with url and then executes the next Handler.

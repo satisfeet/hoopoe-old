@@ -3,7 +3,7 @@ package model
 import (
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/model/validation"
+	"github.com/satisfeet/go-validation"
 )
 
 // Fields which should be on the index. These fields can be safely used by for

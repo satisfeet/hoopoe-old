@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/model/validation"
+	"github.com/satisfeet/hoopoe/model"
 )
 
 var (
@@ -43,7 +43,7 @@ func (s *Store) Insert(v interface{}) error {
 		return ErrInvalidType
 	}
 
-	if v, ok := v.(validation.Validatable); ok {
+	if v, ok := v.(model.Validatable); ok {
 		if err := v.Validate(); err != nil {
 			return err
 		}
@@ -59,7 +59,7 @@ func (s *Store) Update(q Query, v interface{}) error {
 	}
 	defer m.Close()
 
-	if v, ok := v.(validation.Validatable); ok {
+	if v, ok := v.(model.Validatable); ok {
 		if err := v.Validate(); err != nil {
 			return err
 		}
