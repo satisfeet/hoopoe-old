@@ -40,9 +40,7 @@ func main() {
 // different HTTP resources. If not HTTP resource is found it will respond a Not
 // Found error.
 func Handler() http.Handler {
-	c := httpd.NewCustomers(&store.Store{
-		Name: "customers",
-	})
+	c := &httpd.Customers{&store.Store{Name: "customers"}}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
