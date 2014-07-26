@@ -47,10 +47,17 @@ func (handler HandlerFunc) ServeHTTP(c *context.Context) {
 func (router *Router) Handle(m, p string, h Handler) {
 	router.router.Handle(m, p, func(w http.ResponseWriter, r *http.Request,
 		p httprouter.Params) {
-		c := context.NewContext(w, r)
-		c.Param = p.ByName
+		params := make(map[string]string, len(p))
 
-		h.ServeHTTP(c)
+		for _, p := range p {
+			params[p.Key] = p.Value
+		}
+
+		h.ServeHTTP(&context.Context{
+			Params:   params,
+			Request:  r,
+			Response: w,
+		})
 	})
 }
 

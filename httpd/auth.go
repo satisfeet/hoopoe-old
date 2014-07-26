@@ -21,7 +21,10 @@ type Auth struct {
 //
 // NOTE: To be only used over HTTPS to not expose credentials!
 func (a Auth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c := context.NewContext(w, r)
+	c := &context.Context{
+		Request:  r,
+		Response: w,
+	}
 	h := c.Get("Authorization")
 
 	if i := strings.IndexRune(h, ' '); i != -1 {

@@ -21,6 +21,7 @@ var (
 
 type ContextSuite struct {
 	context  *Context
+	params   map[string]string
 	request  *http.Request
 	response *httptest.ResponseRecorder
 }
@@ -37,6 +38,10 @@ func (s *ContextSuite) TestGet(c *check.C) {
 
 func (s *ContextSuite) TestQuery(c *check.C) {
 	c.Check(s.context.Query("foo"), check.Equals, "bar")
+}
+
+func (s *ContextSuite) TestParam(c *check.C) {
+	c.Check(s.context.Param("id"), check.Equals, "123")
 }
 
 func (s *ContextSuite) TestParse(c *check.C) {
@@ -76,7 +81,10 @@ func (s *ContextSuite) SetUpTest(c *check.C) {
 	s.request.Header.Set("Content-Type", "application/json")
 
 	s.context = &Context{
-		request: s.request,
-		writer:  s.response,
+		Params: map[string]string{
+			"id": "123",
+		},
+		Request:  s.request,
+		Response: s.response,
 	}
 }
