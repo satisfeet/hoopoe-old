@@ -1,99 +1,17 @@
 package store
 
-import (
-	"errors"
-	"reflect"
+import "github.com/satisfeet/hoopoe/store/mongodb"
 
-	"gopkg.in/mgo.v2/bson"
-
-	"github.com/satisfeet/hoopoe/model"
-)
-
-var (
-	ErrNotConnected = errors.New("not connected")
-	ErrInvalidType  = errors.New("invalid type")
-)
-
-// Store provides high-level CRUD interface to databases.
-type Store struct {
-	Name    string
-	Session *Session
-}
-
-// Returns provided Session or global as fallback.
-func (s *Store) session() *Session {
-	if s.Session == nil {
-		return session
-	}
-	return s.Session
-}
-
-func (s *Store) Insert(v interface{}) error {
-	m, err := s.session().Mongo()
-	if err != nil {
+func Open(s string) error {
+	if err := mongodb.DefaultStore.Open(s); err != nil {
 		return err
 	}
-	defer m.Close()
-
-	if v := reflect.ValueOf(v).Elem().FieldByName("Id"); true {
-		if !v.Interface().(bson.ObjectId).Valid() {
-			v.Set(reflect.ValueOf(bson.NewObjectId()))
-		}
-	} else {
-		return ErrInvalidType
-	}
-
-	if v, ok := v.(model.Validatable); ok {
-		if err := v.Validate(); err != nil {
-			return err
-		}
-	}
-
-	return m.DB("").C(s.Name).Insert(v)
+	return nil
 }
 
-func (s *Store) Update(q Query, v interface{}) error {
-	m, err := s.session().Mongo()
-	if err != nil {
+func Close() error {
+	if err := mongodb.DefaultStore.Close(); err != nil {
 		return err
 	}
-	defer m.Close()
-
-	if v, ok := v.(model.Validatable); ok {
-		if err := v.Validate(); err != nil {
-			return err
-		}
-	}
-
-	return m.DB("").C(s.Name).Update(q, v)
-}
-
-func (s *Store) Remove(q Query) error {
-	m, err := s.session().Mongo()
-	if err != nil {
-		return err
-	}
-	defer m.Close()
-
-	return m.DB("").C(s.Name).Remove(q)
-}
-
-func (s *Store) FindAll(q Query, v interface{}) error {
-	m, err := s.session().Mongo()
-	if err != nil {
-		return err
-	}
-	defer m.Close()
-
-	return m.DB("").C(s.Name).Find(q).All(v)
-}
-
-func (s *Store) FindOne(q Query, v interface{}) error {
-	m, err := s.session().Mongo()
-	if err != nil {
-		return err
-	}
-	defer m.Close()
-
-	return m.DB("").C(s.Name).Find(q).One(v)
+	return nil
 }

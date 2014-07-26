@@ -8,6 +8,7 @@ import (
 
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-validation"
+	"github.com/satisfeet/hoopoe/store/common"
 )
 
 // Logger prints the request method with url and then executes the next Handler.
@@ -39,6 +40,8 @@ func ErrorCode(err error) int {
 	switch err {
 	case mgo.ErrNotFound:
 		c = http.StatusNotFound
+	case common.ErrBadQueryId:
+		c = http.StatusBadRequest
 	}
 
 	switch err.(type) {

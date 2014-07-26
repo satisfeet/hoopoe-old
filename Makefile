@@ -13,9 +13,6 @@ test:
 test-conf:
 	@go test ./conf/...
 
-test-model:
-	@go test ./model/...
-
 test-store:
 	@go test ./store/...
 
@@ -25,4 +22,4 @@ test-email:
 test-httpd:
 	@go test ./httpd/...
 
-.PHONY: test test-conf test-model test-store test-email test-httpd
+.PHONY: test test-conf test-store test-email test-httpd

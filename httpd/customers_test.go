@@ -7,25 +7,26 @@ import (
 	"testing"
 
 	"gopkg.in/check.v1"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/store/mongodb"
 )
 
 func TestCustomers(t *testing.T) {
-	m := model.Customer{
+	m := store.Customer{
 		Id:    bson.NewObjectId(),
 		Name:  "Bob Marley",
 		Email: "bob@yahoo.com",
-		Address: model.Address{
+		Address: store.Address{
 			City: "Honolulu",
 		},
 	}
 
 	check.Suite(&CustomersSuite{
-		url: "localhost/test",
-		tests: []CustomersTest{
+		Url: "localhost/test",
+		Tests: []CustomersTest{
 			CustomersTest{
 				Path:   "/customers",
 				Method: "GET",
@@ -115,7 +116,7 @@ func TestCustomers(t *testing.T) {
 				Status: http.StatusNotFound,
 			},
 		},
-		model: m,
+		Model: m,
 	})
 	check.TestingT(t)
 }
@@ -128,16 +129,15 @@ type CustomersTest struct {
 }
 
 type CustomersSuite struct {
-	url     string
-	model   model.Customer
-	store   *store.Store
-	session *store.Session
-	handler *Customers
-	tests   []CustomersTest
+	Url     string
+	Model   store.Customer
+	Session *mgo.Session
+	Handler *Customers
+	Tests   []CustomersTest
 }
 
 func (s *CustomersSuite) TestServeHTTP(c *check.C) {
-	for i, t := range s.tests {
+	for i, t := range s.Tests {
 		var req *http.Request
 
 		if len(t.Body) != 0 {
@@ -148,7 +148,7 @@ func (s *CustomersSuite) TestServeHTTP(c *check.C) {
 
 		res := httptest.NewRecorder()
 
-		s.handler.ServeHTTP(res, req)
+		s.Handler.ServeHTTP(res, req)
 
 		if v := res.Code; v != t.Status {
 			b := res.Body.String()
@@ -159,35 +159,27 @@ func (s *CustomersSuite) TestServeHTTP(c *check.C) {
 }
 
 func (s *CustomersSuite) SetUpSuite(c *check.C) {
-	s.store = &store.Store{
-		Name:    "customers",
-		Session: &store.Session{},
-	}
-	s.handler = &Customers{s.store}
+	session, err := mgo.Dial(s.Url)
+	c.Assert(err, check.IsNil)
 
-	c.Assert(s.store.Session.Open(s.url), check.IsNil)
+	s.Session = session
+	s.Handler = &Customers{
+		Store: &store.CustomerStore{
+			Mongo: &mongodb.Store{
+				Session: session,
+			},
+		},
+	}
 }
 
 func (s *CustomersSuite) SetUpTest(c *check.C) {
-	m, err := s.store.Session.Mongo()
-
-	c.Assert(err, check.IsNil)
-
-	defer m.Close()
-
-	c.Assert(m.DB("").C("customers").Insert(&s.model), check.IsNil)
+	c.Assert(s.Handler.Store.Insert(&s.Model), check.IsNil)
 }
 
 func (s *CustomersSuite) TearDownTest(c *check.C) {
-	m, err := s.store.Session.Mongo()
-
-	c.Assert(err, check.IsNil)
-
-	defer m.Close()
-
-	c.Assert(m.DB("").C("customers").DropCollection(), check.IsNil)
+	c.Assert(s.Session.DB("").C("customer").DropCollection(), check.IsNil)
 }
 
 func (s *CustomersSuite) TearDownSuite(c *check.C) {
-	s.store.Session.Close()
+	s.Session.Close()
 }

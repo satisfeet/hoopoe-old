@@ -5,56 +5,44 @@ import (
 
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/hoopoe/httpd/route"
-	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
 
 type Customers struct {
-	Store *store.Store
+	Store *store.CustomerStore
+}
+
+func NewCustomers() *Customers {
+	s := store.NewCustomerStore()
+
+	return &Customers{
+		Store: s,
+	}
 }
 
 func (h *Customers) list(c *context.Context) {
-	m := []model.Customer{}
-	q := store.Query{}
+	m := []store.Customer{}
+	//q.Search(c.Query("search"))
 
-	if s := c.Query("search"); len(s) > 0 {
-		if err := q.Search(s, model.CustomerIndex); err != nil {
-			c.Error(err, http.StatusBadRequest)
-
-			return
-		}
+	if err := h.Store.All(&m); err != nil {
+		c.Error(err, ErrorCode(err))
+	} else {
+		c.Respond(m, http.StatusOK)
 	}
-
-	if err := h.Store.FindAll(q, &m); err != nil {
-		c.Error(err, http.StatusInternalServerError)
-
-		return
-	}
-
-	c.Respond(m, http.StatusOK)
 }
 
 func (h *Customers) show(c *context.Context) {
-	m := model.Customer{}
-	q := store.Query{}
+	m := store.Customer{}
 
-	if err := q.Id(c.Param("id")); err != nil {
-		c.Error(err, http.StatusBadRequest)
-
-		return
+	if err := h.Store.One(c.Param("id"), &m); err != nil {
+		c.Error(err, ErrorCode(err))
+	} else {
+		c.Respond(m, http.StatusOK)
 	}
-
-	if err := h.Store.FindOne(q, &m); err != nil {
-		c.Error(err, http.StatusNotFound)
-
-		return
-	}
-
-	c.Respond(m, http.StatusOK)
 }
 
 func (h *Customers) create(c *context.Context) {
-	m := model.Customer{}
+	m := store.Customer{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -70,10 +58,7 @@ func (h *Customers) create(c *context.Context) {
 }
 
 func (h *Customers) update(c *context.Context) {
-	m := model.Customer{}
-
-	q := store.Query{}
-	q.Id(c.Param("id"))
+	m := store.Customer{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -81,7 +66,7 @@ func (h *Customers) update(c *context.Context) {
 		return
 	}
 
-	if err := h.Store.Update(q, &m); err != nil {
+	if err := h.Store.Update(&m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)
@@ -89,21 +74,19 @@ func (h *Customers) update(c *context.Context) {
 }
 
 func (h *Customers) destroy(c *context.Context) {
-	q := store.Query{}
+	m := store.Customer{}
 
-	if err := q.Id(c.Param("id")); err != nil {
-		c.Error(err, http.StatusBadRequest)
-
-		return
-	}
-
-	if err := h.Store.Remove(q); err != nil {
+	if err := h.Store.One(c.Param("id"), &m); err != nil {
 		c.Error(err, ErrorCode(err))
 
 		return
 	}
 
-	c.Respond(nil, http.StatusNoContent)
+	if err := h.Store.Remove(&m); err != nil {
+		c.Error(err, ErrorCode(err))
+	} else {
+		c.Respond(nil, http.StatusNoContent)
+	}
 }
 
 func (h *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
