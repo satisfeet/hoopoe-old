@@ -2,9 +2,9 @@ package httpd
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/satisfeet/hoopoe/httpd/context"
+	"github.com/satisfeet/hoopoe/httpd/route"
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
@@ -78,34 +78,28 @@ func (h *Customers) destroy(c *context.Context) {
 }
 
 func (h *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	a, p := route.Route("/customers", r)
+
 	c := &context.Context{
-		Params:   map[string]string{},
+		Params: map[string]string{
+			"id": p,
+		},
 		Request:  r,
 		Response: w,
 	}
 
-	if strings.HasPrefix(r.URL.Path, "/customers") {
-		switch s := strings.Split(r.URL.Path, "/"); len(s) {
-		case 2:
-			switch r.Method {
-			case "GET":
-				h.list(c)
-			case "POST":
-				h.create(c)
-			}
-			return
-		case 3:
-			switch c.Params["id"] = s[2]; r.Method {
-			case "GET":
-				h.show(c)
-			case "PUT":
-				h.update(c)
-			case "DELETE":
-				h.destroy(c)
-			}
-			return
-		}
+	switch a {
+	case route.List:
+		h.list(c)
+	case route.Show:
+		h.show(c)
+	case route.Create:
+		h.create(c)
+	case route.Update:
+		h.update(c)
+	case route.Destroy:
+		h.destroy(c)
+	default:
+		c.Error(nil, http.StatusNotFound)
 	}
-
-	c.Error(nil, http.StatusNotFound)
 }
