@@ -4,70 +4,46 @@ import (
 	"net/http"
 
 	"github.com/satisfeet/hoopoe/httpd/context"
-	"github.com/satisfeet/hoopoe/httpd/router"
+	"github.com/satisfeet/hoopoe/httpd/route"
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
 
-// Customers is a http.Handler which provides a REST API for the customers
-// ressource.
 type Customers struct {
-	store  *store.Store
-	router *router.Router
+	Store *store.Store
 }
 
-// Initializes a new Customers Handler.
-func NewCustomers(s *store.Store) *Customers {
-	r := router.NewRouter()
-
-	c := &Customers{
-		store:  s,
-		router: r,
-	}
-
-	r.HandleFunc(router.MethodShow, "/customers", c.List)
-	r.HandleFunc(router.MethodShow, "/customers/:id", c.Show)
-	r.HandleFunc(router.MethodCreate, "/customers", c.Create)
-	r.HandleFunc(router.MethodUpdate, "/customers/:id", c.Update)
-	r.HandleFunc(router.MethodDelete, "/customers/:id", c.Destroy)
-
-	return c
-}
-
-// Responds a list of customers.
-func (h *Customers) List(c *context.Context) {
+func (h *Customers) list(c *context.Context) {
 	m := []model.Customer{}
 
 	q := store.Query{}
 	q.Search(c.Query("search"), model.CustomerIndex)
 
-	if err := h.store.FindAll(q, &m); err != nil {
+	if err := h.Store.FindAll(q, &m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
 }
 
-// Responds a single customer.
-func (h *Customers) Show(c *context.Context) {
+func (h *Customers) show(c *context.Context) {
 	m := model.Customer{}
 
 	q := store.Query{}
 	q.Id(c.Param("id"))
 
-	if err := h.store.FindOne(q, &m); err != nil {
+	if err := h.Store.FindOne(q, &m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
 }
 
-// Responds a created customer.
-func (h *Customers) Create(c *context.Context) {
+func (h *Customers) create(c *context.Context) {
 	m := model.Customer{}
 
 	if c.Parse(&m) {
-		if err := h.store.Insert(&m); err != nil {
+		if err := h.Store.Insert(&m); err != nil {
 			c.Error(err, ErrorCode(err))
 		} else {
 			c.Respond(m, http.StatusOK)
@@ -75,15 +51,14 @@ func (h *Customers) Create(c *context.Context) {
 	}
 }
 
-// Updates a customer, responds nothing.
-func (h *Customers) Update(c *context.Context) {
+func (h *Customers) update(c *context.Context) {
 	m := model.Customer{}
 
 	q := store.Query{}
 	q.Id(c.Param("id"))
 
 	if c.Parse(&m) {
-		if err := h.store.Update(q, &m); err != nil {
+		if err := h.Store.Update(q, &m); err != nil {
 			c.Error(err, ErrorCode(err))
 		} else {
 			c.Respond(nil, http.StatusNoContent)
@@ -91,19 +66,40 @@ func (h *Customers) Update(c *context.Context) {
 	}
 }
 
-// Removes a customer, responds nothing.
-func (h *Customers) Destroy(c *context.Context) {
+func (h *Customers) destroy(c *context.Context) {
 	q := store.Query{}
 	q.Id(c.Param("id"))
 
-	if err := h.store.Remove(q); err != nil {
+	if err := h.Store.Remove(q); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)
 	}
 }
 
-// Forwards HTTP handling to the internal router.
 func (h *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.router.ServeHTTP(w, r)
+	a, p := route.Route("/customers", r)
+
+	c := &context.Context{
+		Params: map[string]string{
+			"id": p,
+		},
+		Request:  r,
+		Response: w,
+	}
+
+	switch a {
+	case route.List:
+		h.list(c)
+	case route.Show:
+		h.show(c)
+	case route.Create:
+		h.create(c)
+	case route.Update:
+		h.update(c)
+	case route.Destroy:
+		h.destroy(c)
+	default:
+		c.Error(nil, http.StatusNotFound)
+	}
 }

@@ -22,7 +22,11 @@ func Logger(h http.Handler) http.Handler {
 
 // NotFound will send a context conform NotFound response.
 func NotFound(w http.ResponseWriter, r *http.Request) {
-	context.NewContext(w, r).Error(nil, http.StatusNotFound)
+	c := &context.Context{
+		Request:  r,
+		Response: w,
+	}
+	c.Error(nil, http.StatusNotFound)
 }
 
 // ErrorCode retrieves the correct http error code depending on the provided
