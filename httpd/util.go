@@ -8,7 +8,6 @@ import (
 
 	"github.com/satisfeet/hoopoe/httpd/context"
 	"github.com/satisfeet/hoopoe/model/validation"
-	"github.com/satisfeet/hoopoe/store"
 )
 
 // Logger prints the request method with url and then executes the next Handler.
@@ -38,7 +37,7 @@ func ErrorCode(err error) int {
 	c := http.StatusInternalServerError
 
 	switch err {
-	case mgo.ErrNotFound, store.ErrInvalidQuery:
+	case mgo.ErrNotFound:
 		c = http.StatusNotFound
 	}
 

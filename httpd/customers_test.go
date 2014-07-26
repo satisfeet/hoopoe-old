@@ -77,7 +77,7 @@ func TestCustomers(t *testing.T) {
 			CustomersTest{
 				Path:   "/customers/1234",
 				Method: "GET",
-				Status: http.StatusNotFound,
+				Status: http.StatusBadRequest,
 			},
 			CustomersTest{
 				Path:   "/customers/" + m.Id.Hex(),

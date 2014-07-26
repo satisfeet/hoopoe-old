@@ -10,7 +10,6 @@ import (
 	"gopkg.in/mgo.v2"
 
 	"github.com/satisfeet/hoopoe/model/validation"
-	"github.com/satisfeet/hoopoe/store"
 )
 
 var (
@@ -42,6 +41,5 @@ func (s *UtilSuite) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *UtilSuite) TestErrorCode(c *check.C) {
 	c.Check(ErrorCode(ErrTest), check.Equals, http.StatusInternalServerError)
 	c.Check(ErrorCode(mgo.ErrNotFound), check.Equals, http.StatusNotFound)
-	c.Check(ErrorCode(store.ErrInvalidQuery), check.Equals, http.StatusNotFound)
 	c.Check(ErrorCode(validation.Error{}), check.Equals, http.StatusBadRequest)
 }

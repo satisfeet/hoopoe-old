@@ -11,7 +11,6 @@ import (
 
 var (
 	ErrNotConnected = errors.New("not connected")
-	ErrInvalidQuery = errors.New("invalid query")
 	ErrInvalidType  = errors.New("invalid type")
 )
 
@@ -60,10 +59,6 @@ func (s *Store) Update(q Query, v interface{}) error {
 	}
 	defer m.Close()
 
-	if !q.Valid() {
-		return ErrInvalidQuery
-	}
-
 	if v, ok := v.(validation.Validatable); ok {
 		if err := v.Validate(); err != nil {
 			return err
@@ -79,10 +74,6 @@ func (s *Store) Remove(q Query) error {
 		return err
 	}
 	defer m.Close()
-
-	if !q.Valid() {
-		return ErrInvalidQuery
-	}
 
 	return m.DB("").C(s.Name).Remove(q)
 }
@@ -103,10 +94,6 @@ func (s *Store) FindOne(q Query, v interface{}) error {
 		return err
 	}
 	defer m.Close()
-
-	if !q.Valid() {
-		return ErrInvalidQuery
-	}
 
 	return m.DB("").C(s.Name).Find(q).One(v)
 }

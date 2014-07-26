@@ -20,28 +20,23 @@ type QuerySuite struct {
 
 func (s *QuerySuite) TestId(c *check.C) {
 	q := Query{}
-	q.Id(s.id.Hex())
+	c.Check(q.Id(s.id.Hex()), check.IsNil)
 	c.Check(q, check.DeepEquals, Query{"_id": s.id})
 
 	q = Query{}
-	q.Id("1234")
+	c.Check(q.Id("1234"), check.Equals, ErrBadIdQuery)
 	c.Check(q, check.DeepEquals, Query{})
-}
-
-func (s *QuerySuite) TestValid(c *check.C) {
-	c.Check(Query{"_id": s.id}.Valid(), check.Equals, true)
-	c.Check(Query{}.Valid(), check.Equals, false)
 }
 
 func (s *QuerySuite) TestSearch(c *check.C) {
 	f := []string{"foo", "baz"}
 
 	q := Query{}
-	q.Search("", f)
+	c.Check(q.Search("", f), check.Equals, ErrBadSearchQuery)
 	c.Check(q, check.DeepEquals, Query{})
 
 	q = Query{}
-	q.Search("bar", f)
+	c.Check(q.Search("bar", f), check.IsNil)
 	c.Check(q, check.DeepEquals, Query{
 		"$or": []bson.M{
 			bson.M{"foo": bson.RegEx{"bar", "i"}},
