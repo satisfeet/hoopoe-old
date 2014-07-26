@@ -47,7 +47,7 @@ func (s *ContextSuite) TestParam(c *check.C) {
 func (s *ContextSuite) TestParse(c *check.C) {
 	m := make(map[string]string)
 
-	c.Check(s.context.Parse(&m), check.Equals, true)
+	c.Check(s.context.Parse(&m), check.IsNil)
 	c.Check(m["foo"], check.Equals, "bar")
 }
 

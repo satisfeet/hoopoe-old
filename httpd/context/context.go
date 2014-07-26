@@ -48,24 +48,15 @@ func (c *Context) Error(err error, s int) {
 // Parses a Request body and maps the data to the provided value. If an error
 // occurs it will respond an error and return false.
 //
-// TODO: Send 415 if Content-Type does not match JSON.
-func (c *Context) Parse(v interface{}) bool {
-	var err error
-
+// TODO: Return error on invalid content type.
+func (c *Context) Parse(v interface{}) error {
 	switch c.Request.Header.Get("Content-Type") {
 	// lets just assume json in every case...
 	//case "application/json":
 	default:
-		err = json.NewDecoder(c.Request.Body).Decode(v)
+		return json.NewDecoder(c.Request.Body).Decode(v)
 	}
-
-	if err != nil {
-		c.Error(err, http.StatusBadRequest)
-
-		return false
-	}
-
-	return true
+	return nil
 }
 
 // Responds a value by encoding it as json.

@@ -42,12 +42,16 @@ func (h *Customers) show(c *context.Context) {
 func (h *Customers) create(c *context.Context) {
 	m := model.Customer{}
 
-	if c.Parse(&m) {
-		if err := h.Store.Insert(&m); err != nil {
-			c.Error(err, ErrorCode(err))
-		} else {
-			c.Respond(m, http.StatusOK)
-		}
+	if err := c.Parse(&m); err != nil {
+		c.Error(err, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := h.Store.Insert(&m); err != nil {
+		c.Error(err, ErrorCode(err))
+	} else {
+		c.Respond(m, http.StatusOK)
 	}
 }
 
@@ -57,12 +61,16 @@ func (h *Customers) update(c *context.Context) {
 	q := store.Query{}
 	q.Id(c.Param("id"))
 
-	if c.Parse(&m) {
-		if err := h.Store.Update(q, &m); err != nil {
-			c.Error(err, ErrorCode(err))
-		} else {
-			c.Respond(nil, http.StatusNoContent)
-		}
+	if err := c.Parse(&m); err != nil {
+		c.Error(err, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := h.Store.Update(q, &m); err != nil {
+		c.Error(err, ErrorCode(err))
+	} else {
+		c.Respond(nil, http.StatusNoContent)
 	}
 }
 
