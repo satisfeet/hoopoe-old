@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/satisfeet/hoopoe/conf"
 	"github.com/satisfeet/hoopoe/httpd"
@@ -25,29 +24,9 @@ func main() {
 		return
 	}
 
-	h := httpd.Logger(&httpd.Auth{
-		Username: c.Username,
-		Password: c.Password,
-		Handler:  Handler(),
-	})
+	h := httpd.Handler(c.Username, c.Password)
 
 	if err := http.ListenAndServe(c.Host, h); err != nil {
 		fmt.Printf("Error starting http server: %s.\n", err)
 	}
-}
-
-// Handler sets up a basic prefixed based http multiplexer to switch between
-// different HTTP resources. If not HTTP resource is found it will respond a Not
-// Found error.
-func Handler() http.Handler {
-	c := httpd.NewCustomers()
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case strings.HasPrefix(r.URL.Path, "/customers"):
-			c.ServeHTTP(w, r)
-		default:
-			httpd.NotFound(w, r)
-		}
-	})
 }
