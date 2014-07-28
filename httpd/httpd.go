@@ -11,10 +11,17 @@ import (
 	"github.com/satisfeet/hoopoe/store/common"
 )
 
-var DefaultCustomers = NewCustomers()
-
 func Handler(u, p string) http.Handler {
-	h := http.HandlerFunc(mux)
+	c := NewCustomers().Handler()
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/customers"):
+			c.ServeHTTP(w, r)
+		default:
+			handler.NotFound(w, r)
+		}
+	})
 
 	a := &handler.Auth{
 		Username: u,
@@ -23,15 +30,6 @@ func Handler(u, p string) http.Handler {
 	}
 
 	return &handler.Logger{a}
-}
-
-func mux(w http.ResponseWriter, r *http.Request) {
-	switch {
-	case strings.HasPrefix(r.URL.Path, "/customers"):
-		DefaultCustomers.ServeHTTP(w, r)
-	default:
-		handler.NotFound(w, r)
-	}
 }
 
 func ErrorCode(err error) int {

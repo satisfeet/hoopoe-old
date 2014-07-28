@@ -137,6 +137,8 @@ type CustomersSuite struct {
 }
 
 func (s *CustomersSuite) TestServeHTTP(c *check.C) {
+	h := s.Handler.Handler()
+
 	for i, t := range s.Tests {
 		var req *http.Request
 
@@ -148,7 +150,7 @@ func (s *CustomersSuite) TestServeHTTP(c *check.C) {
 
 		res := httptest.NewRecorder()
 
-		s.Handler.ServeHTTP(res, req)
+		h.ServeHTTP(res, req)
 
 		if v := res.Code; v != t.Status {
 			b := res.Body.String()

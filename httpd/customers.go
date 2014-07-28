@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/satisfeet/go-context"
-	"github.com/satisfeet/hoopoe/httpd/route"
+	"github.com/satisfeet/go-router"
 	"github.com/satisfeet/hoopoe/store"
 )
 
@@ -89,29 +89,13 @@ func (h *Customers) destroy(c *context.Context) {
 	}
 }
 
-func (h *Customers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	a, p := route.Route("/customers", r)
+func (h *Customers) Handler() http.Handler {
+	r := router.NewRouter()
+	r.HandleFunc(router.Read, "/customers", h.list)
+	r.HandleFunc(router.Read, "/customers/:id", h.show)
+	r.HandleFunc(router.Create, "/customers", h.create)
+	r.HandleFunc(router.Update, "/customers/:id", h.update)
+	r.HandleFunc(router.Destroy, "/customers/:id", h.destroy)
 
-	c := &context.Context{
-		Params: map[string]string{
-			"id": p,
-		},
-		Request:  r,
-		Response: w,
-	}
-
-	switch a {
-	case route.List:
-		h.list(c)
-	case route.Show:
-		h.show(c)
-	case route.Create:
-		h.create(c)
-	case route.Update:
-		h.update(c)
-	case route.Destroy:
-		h.destroy(c)
-	default:
-		c.Error(nil, http.StatusNotFound)
-	}
+	return r
 }
