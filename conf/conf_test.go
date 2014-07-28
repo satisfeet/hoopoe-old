@@ -14,19 +14,16 @@ func TestConf(t *testing.T) {
 type ConfSuite struct{}
 
 func (s *ConfSuite) TestCheck(c *check.C) {
-	conf := &Conf{
-		Username: "foo",
-		Password: "bar",
-		Host:     "localhost:3000",
-		Mongo:    "mongodb://localhost/test",
-	}
-	c.Check(conf.Check(), check.IsNil)
+	Username = "foo"
+	Password = "bar"
+	Host = "localhost:3000"
+	Mongo = "mongodb://localhost/test"
+
+	c.Check(Check(), check.IsNil)
 }
 
 func (s *ConfSuite) TestFlags(c *check.C) {
-	conf := &Conf{}
-
-	c.Check(conf.Flags([]string{
+	c.Check(Flags([]string{
 		"--username",
 		"foo",
 		"--password",
@@ -37,8 +34,8 @@ func (s *ConfSuite) TestFlags(c *check.C) {
 		"mongodb://localhost/test",
 	}), check.IsNil)
 
-	c.Check(conf.Username, check.Equals, "foo")
-	c.Check(conf.Password, check.Equals, "bar")
-	c.Check(conf.Host, check.Equals, "localhost:3000")
-	c.Check(conf.Mongo, check.Equals, "mongodb://localhost/test")
+	c.Check(Username, check.Equals, "foo")
+	c.Check(Password, check.Equals, "bar")
+	c.Check(Host, check.Equals, "localhost:3000")
+	c.Check(Mongo, check.Equals, "mongodb://localhost/test")
 }
