@@ -7,11 +7,10 @@ import (
 	"testing"
 
 	"gopkg.in/check.v1"
-	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/hoopoe/store"
-	"github.com/satisfeet/hoopoe/store/mongodb"
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 func TestCustomers(t *testing.T) {
@@ -131,9 +130,21 @@ type CustomersTest struct {
 type CustomersSuite struct {
 	Url     string
 	Model   store.Customer
-	Session *mgo.Session
 	Handler *Customers
 	Tests   []CustomersTest
+}
+
+func (s *CustomersSuite) SetUpSuite(c *check.C) {
+	s.Handler = &Customers{
+		Store: &store.Customers{
+			Mongo: &mongo.Store{},
+		},
+	}
+	c.Assert(s.Handler.Store.Mongo.Open(s.Url), check.IsNil)
+}
+
+func (s *CustomersSuite) SetUpTest(c *check.C) {
+	c.Assert(s.Handler.Store.Insert(&s.Model), check.IsNil)
 }
 
 func (s *CustomersSuite) TestServeHTTP(c *check.C) {
@@ -160,28 +171,10 @@ func (s *CustomersSuite) TestServeHTTP(c *check.C) {
 	}
 }
 
-func (s *CustomersSuite) SetUpSuite(c *check.C) {
-	session, err := mgo.Dial(s.Url)
-	c.Assert(err, check.IsNil)
-
-	s.Session = session
-	s.Handler = &Customers{
-		Store: &store.CustomerStore{
-			Mongo: &mongodb.Store{
-				Session: session,
-			},
-		},
-	}
-}
-
-func (s *CustomersSuite) SetUpTest(c *check.C) {
-	c.Assert(s.Handler.Store.Insert(&s.Model), check.IsNil)
-}
-
 func (s *CustomersSuite) TearDownTest(c *check.C) {
-	c.Assert(s.Session.DB("").C("customer").DropCollection(), check.IsNil)
+	c.Assert(s.Handler.Store.Mongo.Drop("customers"), check.IsNil)
 }
 
 func (s *CustomersSuite) TearDownSuite(c *check.C) {
-	s.Session.Close()
+	c.Assert(s.Handler.Store.Mongo.Close(), check.IsNil)
 }

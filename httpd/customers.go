@@ -9,15 +9,7 @@ import (
 )
 
 type Customers struct {
-	Store *store.CustomerStore
-}
-
-func NewCustomers() *Customers {
-	s := store.NewCustomerStore()
-
-	return &Customers{
-		Store: s,
-	}
+	Store *store.Customers
 }
 
 func (h *Customers) list(c *context.Context) {

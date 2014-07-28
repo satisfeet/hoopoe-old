@@ -4,8 +4,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/store/common"
-	"github.com/satisfeet/hoopoe/store/mongodb"
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 type Customer struct {
@@ -20,38 +19,35 @@ func (c Customer) Validate() error {
 	return validation.Validate(c)
 }
 
-type CustomerStore struct {
-	Mongo common.Store
+type Customers struct {
+	Mongo *mongo.Store
 }
 
-func NewCustomerStore() *CustomerStore {
-	return &CustomerStore{
-		Mongo: mongodb.DefaultStore,
-	}
+const CustomersName = "customers"
+
+func (s *Customers) All(m *[]Customer) error {
+	q := mongo.Query{}
+
+	return s.Mongo.FindAll(CustomersName, q, m)
 }
 
-func (s *CustomerStore) All(m *[]Customer) error {
-	q := mongodb.Query{}
+func (s *Customers) One(i string, m *Customer) error {
+	q := mongo.Query{}
 
-	return s.Mongo.Find(q, m)
-}
-
-func (s *CustomerStore) One(i string, m *Customer) error {
-	q := mongodb.Query{}
 	if err := q.Id(i); err != nil {
 		return err
 	}
 
-	return s.Mongo.FindOne(q, m)
+	return s.Mongo.FindOne(CustomersName, q, m)
 }
 
-func (s *CustomerStore) Search(m *[]Customer) error {
-	q := mongodb.Query{}
+func (s *Customers) Search(m *[]Customer) error {
+	q := mongo.Query{}
 
-	return s.Mongo.Find(q, m)
+	return s.Mongo.FindAll(CustomersName, q, m)
 }
 
-func (s *CustomerStore) Insert(c *Customer) error {
+func (s *Customers) Insert(c *Customer) error {
 	if !c.Id.Valid() {
 		c.Id = bson.NewObjectId()
 	}
@@ -59,17 +55,28 @@ func (s *CustomerStore) Insert(c *Customer) error {
 		return err
 	}
 
-	return s.Mongo.Insert(c)
+	return s.Mongo.Insert(CustomersName, c)
 }
 
-func (s *CustomerStore) Update(c *Customer) error {
+func (s *Customers) Update(c *Customer) error {
+	q := mongo.Query{}
+
+	if err := q.Id(c.Id); err != nil {
+		return err
+	}
 	if err := c.Validate(); err != nil {
 		return err
 	}
 
-	return s.Mongo.Update(c)
+	return s.Mongo.Update(CustomersName, q, c)
 }
 
-func (s *CustomerStore) Remove(c *Customer) error {
-	return s.Mongo.Remove(c)
+func (s *Customers) Remove(c *Customer) error {
+	q := mongo.Query{}
+
+	if err := q.Id(c.Id); err != nil {
+		return err
+	}
+
+	return s.Mongo.Remove(CustomersName, q)
 }

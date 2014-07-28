@@ -8,11 +8,16 @@ import (
 
 	"github.com/satisfeet/go-handler"
 	"github.com/satisfeet/go-validation"
+	"github.com/satisfeet/hoopoe/store"
 	"github.com/satisfeet/hoopoe/store/common"
 )
 
 func Handler(u, p string) http.Handler {
-	c := NewCustomers().Handler()
+	c := (&Customers{
+		Store: &store.Customers{
+			Mongo: store.DefaultMongo,
+		},
+	}).Handler()
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
