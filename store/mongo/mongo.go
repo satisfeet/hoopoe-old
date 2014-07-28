@@ -7,10 +7,9 @@ import (
 	"github.com/satisfeet/hoopoe/store/common"
 )
 
-// Query abstracts conditions for mongocommon.
+// Implements Query interface for mongo.
 type Query bson.M
 
-// Adds an equals id condition to query.
 func (q Query) Id(v interface{}) error {
 	switch t := v.(type) {
 	case string:
@@ -30,6 +29,28 @@ func (q Query) Id(v interface{}) error {
 	}
 
 	return common.ErrBadQueryValue
+}
+
+func (q Query) Or(c Query) error {
+	if q["$or"] == nil {
+		q["$or"] = make([]Query, 0)
+	}
+	if or, ok := q["$or"].([]Query); ok {
+		q["$or"] = append(or, c)
+	} else {
+		return common.ErrBadQueryOr
+	}
+
+	return nil
+}
+
+func (q Query) Regex(k, v string) error {
+	if len(v) == 0 {
+		return common.ErrBadQueryRegex
+	}
+	q[k] = bson.RegEx{v, "i"}
+
+	return nil
 }
 
 // Store abstracts a store backed up by mongocommon.

@@ -14,9 +14,15 @@ type Customers struct {
 
 func (h *Customers) list(c *context.Context) {
 	m := []store.Customer{}
-	//q.Search(c.Query("search"))
 
-	if err := h.Store.All(&m); err != nil {
+	var err error
+	if s := c.Query("search"); len(s) != 0 {
+		err = h.Store.Search(s, &m)
+	} else {
+		err = h.Store.All(&m)
+	}
+
+	if err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)

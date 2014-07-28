@@ -11,7 +11,9 @@ import (
 var (
 	// Query specific errors.
 	ErrBadQueryId    = errors.New("bad query id")
+	ErrBadQueryOr    = errors.New("bad query or")
 	ErrBadQueryValue = errors.New("bad query value")
+	ErrBadQueryRegex = errors.New("bad query regex")
 
 	// Connection specific errors.
 	ErrNotConnected   = errors.New("not connected")
@@ -20,7 +22,12 @@ var (
 
 // Query describes a condition container to filter documents.
 type Query interface {
+	// Applies equals id condition.
 	Id(interface{}) error
+	// Merges optional query.
+	Or(Query) error
+	// Applies matches regex condition.
+	Regex(string, string) error
 }
 
 // Stores describes a persistent document storage.

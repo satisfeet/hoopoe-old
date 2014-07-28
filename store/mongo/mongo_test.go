@@ -37,6 +37,23 @@ func (s *QuerySuite) TestId(c *check.C) {
 	c.Check(q["_id"], check.Equals, id1)
 }
 
+func (s *QuerySuite) TestOr(c *check.C) {
+	q := Query{}
+	q1 := Query{"child": 1}
+	q2 := Query{"child": 2}
+
+	c.Check(q.Or(q1), check.IsNil)
+	c.Check(q.Or(q2), check.IsNil)
+	c.Check(q["$or"], check.DeepEquals, []Query{q1, q2})
+}
+
+func (s *QuerySuite) TestRegex(c *check.C) {
+	q := Query{}
+
+	c.Check(q.Regex("foo", "bar"), check.IsNil)
+	c.Check(q["foo"], check.Equals, bson.RegEx{"bar", "i"})
+}
+
 // Test model struct.
 type Model struct {
 	Id   bson.ObjectId `bson:"_id"`

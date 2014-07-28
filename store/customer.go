@@ -19,11 +19,24 @@ func (c Customer) Validate() error {
 	return validation.Validate(c)
 }
 
+// Customers store.
 type Customers struct {
 	Mongo *mongo.Store
 }
 
-const CustomersName = "customers"
+var (
+	// Collection name to use for databases.
+	CustomersName = "customers"
+
+	// Indexed fields to search.
+	CustomersIndex = []string{
+		"name",
+		"email",
+		"company",
+		"address.city",
+		"address.street",
+	}
+)
 
 func (s *Customers) All(m *[]Customer) error {
 	q := mongo.Query{}
@@ -41,8 +54,15 @@ func (s *Customers) One(i string, m *Customer) error {
 	return s.Mongo.FindOne(CustomersName, q, m)
 }
 
-func (s *Customers) Search(m *[]Customer) error {
+func (s *Customers) Search(v string, m *[]Customer) error {
 	q := mongo.Query{}
+
+	for _, i := range CustomersIndex {
+		qr := mongo.Query{}
+		qr.Regex(i, v)
+
+		q.Or(qr)
+	}
 
 	return s.Mongo.FindAll(CustomersName, q, m)
 }
