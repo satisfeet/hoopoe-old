@@ -2,12 +2,17 @@ package mongo
 
 import (
 	"errors"
+	"reflect"
+	"strings"
 
 	"gopkg.in/mgo.v2"
 )
 
+const TagName = "store"
+
 type Store struct {
-	session *mgo.Session
+	session  *mgo.Session
+	database *mgo.Database
 }
 
 var (
@@ -15,85 +20,134 @@ var (
 	ErrStillConnected = errors.New("still connected")
 )
 
-func (s *Store) Dial(u string) error {
-	if s.session != nil {
+func (store *Store) Dial(url string) error {
+	if store.session != nil {
 		return ErrStillConnected
 	}
 
-	sess, err := mgo.Dial(u)
+	s, err := mgo.Dial(url)
 
 	if err != nil {
 		return err
 	}
 
-	s.session = sess
+	store.session = s
+	store.database = s.DB("")
 
 	return nil
 }
 
-func (s *Store) Close() error {
-	if s.session == nil {
+func (store *Store) Close() error {
+	if store.session == nil {
 		return ErrNotConnected
 	}
 
-	s.session.Close()
-	s.session = nil
+	store.session.Close()
+	store.session = nil
+	store.database = nil
 
 	return nil
 }
 
-func (s *Store) clone() *mgo.Session {
-	return s.session.Clone()
+func (store *Store) clone() *mgo.Session {
+	return store.session.Clone()
 }
 
-func (s *Store) filesystem(n string) *mgo.GridFS {
-	return s.session.DB("").GridFS(n)
+func (store *Store) collection(model interface{}) *mgo.Collection {
+	var n string
+
+	switch v := value(model); v.Kind() {
+	case reflect.Struct:
+		n = v.Type().Name()
+	case reflect.Array, reflect.Slice:
+		n = v.Type().Elem().Name()
+	}
+
+	return store.database.C(strings.ToLower(n) + "s")
 }
 
-func (s *Store) collection(n string) *mgo.Collection {
-	return s.session.DB("").C(n)
+func (store *Store) Index(model interface{}) error {
+	s := store.clone()
+	defer s.Close()
+
+	i := mgo.Index{
+		Key: make([]string, 0),
+	}
+	u := mgo.Index{
+		Key:    make([]string, 0),
+		Unique: true,
+	}
+
+	switch t := value(model).Type(); t.Kind() {
+	case reflect.Array, reflect.Slice:
+		t = t.Elem()
+
+		fallthrough
+	case reflect.Struct:
+		for n := 0; n < t.NumField(); n++ {
+			f := t.Field(n)
+
+			switch n := strings.ToLower(f.Name); f.Tag.Get(TagName) {
+			case "-":
+				i.Key = append(i.Key, n)
+			case "unique":
+				u.Key = append(u.Key, n)
+			}
+		}
+	}
+
+	if err := store.collection(model).With(s).EnsureIndex(i); err != nil {
+		return err
+	} else {
+		return store.collection(model).With(s).EnsureIndex(u)
+	}
 }
 
-func (s *Store) Find(n string, q Query, v interface{}) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) Find(query Query, model interface{}) error {
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).Find(q).All(v)
+	return store.collection(model).With(s).Find(query).All(model)
 }
 
-func (s *Store) FindOne(n string, q Query, v interface{}) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) FindOne(query Query, model interface{}) error {
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).Find(q).One(v)
+	return store.collection(model).With(s).Find(query).One(model)
 }
 
-func (s *Store) Insert(n string, v interface{}) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) Insert(model interface{}) error {
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).Insert(v)
+	return store.collection(model).With(s).Insert(model)
 }
 
-func (s *Store) Update(n string, q Query, v interface{}) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) Update(model interface{}) error {
+	q := make(Query)
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).Update(q, v)
+	switch v := value(model); v.Kind() {
+	case reflect.Struct:
+		q.Id(v.FieldByName("Id").Interface())
+	}
+
+	return store.collection(model).With(s).Update(q, model)
 }
 
-func (s *Store) Remove(n string, q Query) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) Remove(model interface{}) error {
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).Remove(q)
+	return store.collection(model).With(s).Remove(model)
 }
 
-func (s *Store) RemoveAll(n string, q Query) error {
-	c := s.clone()
-	defer c.Close()
-
-	_, err := s.collection(n).With(c).RemoveAll(q)
-
-	return err
+func value(m interface{}) reflect.Value {
+	if v := reflect.ValueOf(m); v.Kind() == reflect.Ptr {
+		return v.Elem()
+	} else {
+		return v
+	}
 }

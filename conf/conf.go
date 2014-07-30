@@ -12,6 +12,10 @@ type Conf struct {
 	Password string
 }
 
+func NewConf() *Conf {
+	return &Conf{}
+}
+
 var (
 	ErrUserInvalid  = errors.New("user parameter invalid")
 	ErrPassInvalid  = errors.New("pass parameter invalid")

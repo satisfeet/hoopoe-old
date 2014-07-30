@@ -6,15 +6,16 @@ import (
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-router"
 	"github.com/satisfeet/hoopoe/model"
-	"github.com/satisfeet/hoopoe/store/mongo"
+	"github.com/satisfeet/hoopoe/store"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type CustomerHandler struct {
-	store  *mongo.Store
+	store  *store.Store
 	router *router.Router
 }
 
-func NewCustomerHandler(s *mongo.Store) *CustomerHandler {
+func NewCustomerHandler(s *store.Store) *CustomerHandler {
 	r := router.NewRouter()
 
 	h := &CustomerHandler{
@@ -33,13 +34,8 @@ func NewCustomerHandler(s *mongo.Store) *CustomerHandler {
 
 func (h *CustomerHandler) list(c *context.Context) {
 	m := []model.Customer{}
-	q := mongo.Query{}
 
-	if s := c.Query("search"); len(s) != 0 {
-		// append search conditions
-	}
-
-	if err := h.store.Find("customers", q, &m); err != nil {
+	if err := h.store.FindAll(&m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
@@ -48,15 +44,8 @@ func (h *CustomerHandler) list(c *context.Context) {
 
 func (h *CustomerHandler) show(c *context.Context) {
 	m := model.Customer{}
-	q := mongo.Query{}
 
-	if err := q.Id(c.Param("id")); err != nil {
-		c.Error(err, ErrorCode(err))
-
-		return
-	}
-
-	if err := h.store.FindOne("customers", q, &m); err != nil {
+	if err := h.store.FindId(c.Param("id"), &m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
@@ -64,7 +53,9 @@ func (h *CustomerHandler) show(c *context.Context) {
 }
 
 func (h *CustomerHandler) create(c *context.Context) {
-	m := model.Customer{}
+	m := model.Customer{
+		Id: bson.NewObjectId(),
+	}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -72,7 +63,7 @@ func (h *CustomerHandler) create(c *context.Context) {
 		return
 	}
 
-	if err := h.store.Insert("customers", &m); err != nil {
+	if err := h.store.Insert(&m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
@@ -81,13 +72,6 @@ func (h *CustomerHandler) create(c *context.Context) {
 
 func (h *CustomerHandler) update(c *context.Context) {
 	m := model.Customer{}
-	q := mongo.Query{}
-
-	if err := q.Id(c.Param("id")); err != nil {
-		c.Error(err, ErrorCode(err))
-
-		return
-	}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -95,7 +79,7 @@ func (h *CustomerHandler) update(c *context.Context) {
 		return
 	}
 
-	if err := h.store.Update("customers", q, &m); err != nil {
+	if err := h.store.Update(&m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)
@@ -103,14 +87,15 @@ func (h *CustomerHandler) update(c *context.Context) {
 }
 
 func (h *CustomerHandler) destroy(c *context.Context) {
-	q := mongo.Query{}
+	m := model.Customer{}
 
-	if err := q.Id(c.Param("id")); err != nil {
-		c.Error(err, http.StatusBadRequest)
+	if err := h.store.FindId(c.Param("id"), &m); err != nil {
+		c.Error(err, ErrorCode(err))
 
 		return
 	}
-	if err := h.store.Remove("customers", q); err != nil {
+
+	if err := h.store.Remove(m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)

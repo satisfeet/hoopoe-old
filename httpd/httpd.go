@@ -7,6 +7,7 @@ import (
 
 	"github.com/satisfeet/go-handler"
 	"github.com/satisfeet/go-validation"
+	"github.com/satisfeet/hoopoe/store"
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
@@ -16,7 +17,7 @@ type Handler struct {
 	handler http.Handler
 }
 
-func NewHandler(s *mongo.Store) *Handler {
+func NewHandler(s *store.Store) *Handler {
 	m := http.NewServeMux()
 	m.Handle("/customers", NewCustomerHandler(s))
 

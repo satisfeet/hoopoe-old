@@ -13,17 +13,17 @@ var (
 	ErrBadQueryValue = errors.New("bad query value")
 )
 
-func (q Query) Id(v interface{}) error {
-	switch t := v.(type) {
+func (query Query) Id(id interface{}) error {
+	switch t := id.(type) {
 	case string:
 		if bson.IsObjectIdHex(t) {
-			q["_id"] = bson.ObjectIdHex(t)
+			query["_id"] = bson.ObjectIdHex(t)
 
 			return nil
 		}
 	case bson.ObjectId:
 		if t.Valid() {
-			q["_id"] = t
+			query["_id"] = t
 
 			return nil
 		}
@@ -32,12 +32,12 @@ func (q Query) Id(v interface{}) error {
 	return ErrBadQueryParam
 }
 
-func (q Query) Or(c Query) error {
-	if q["$or"] == nil {
-		q["$or"] = make([]Query, 0)
+func (query Query) Or(q Query) error {
+	if query["$or"] == nil {
+		query["$or"] = make([]Query, 0)
 	}
-	if or, ok := q["$or"].([]Query); ok {
-		q["$or"] = append(or, c)
+	if or, ok := query["$or"].([]Query); ok {
+		query["$or"] = append(or, q)
 
 		return nil
 	}
@@ -45,11 +45,11 @@ func (q Query) Or(c Query) error {
 	return ErrBadQueryValue
 }
 
-func (q Query) Regex(k, v string) error {
-	if len(v) == 0 {
+func (query Query) Regex(key, pattern string) error {
+	if len(key) == 0 || len(pattern) == 0 {
 		return ErrBadQueryParam
 	}
-	q[k] = bson.RegEx{v, "i"}
+	query[key] = bson.RegEx{pattern, "i"}
 
 	return nil
 }

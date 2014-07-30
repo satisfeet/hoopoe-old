@@ -7,19 +7,19 @@ import (
 	"testing"
 
 	"gopkg.in/check.v1"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
-	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 func TestCustomers(t *testing.T) {
-	m := store.Customer{
+	m := &model.Customer{
 		Id:    bson.NewObjectId(),
 		Name:  "Bob Marley",
 		Email: "bob@yahoo.com",
-		Address: store.Address{
+		Address: model.Address{
 			City: "Honolulu",
 		},
 	}
@@ -129,19 +129,27 @@ type CustomersTest struct {
 }
 
 type CustomersSuite struct {
-	Url   string
-	Model model.Customer
-	Store *mongo.Store
-	Tests []CustomersTest
+	Url        string
+	Model      *model.Customer
+	Store      *store.Store
+	Database   *mgo.Database
+	Collection *mgo.Collection
+	Tests      []CustomersTest
 }
 
-func (s *CustomersSuite) SetUpSuite(c *check.C) {
-	s.Store = &mongo.Store{}
-	c.Assert(s.Store.Dial(s.Url), check.IsNil)
+func (suite *CustomersSuite) SetUpSuite(c *check.C) {
+	s, err := mgo.Dial(suite.Url)
+	c.Assert(err, check.IsNil)
+
+	suite.Store = store.NewStore()
+	c.Assert(suite.Store.Dial(suite.Url), check.IsNil)
+
+	suite.Database = s.DB("")
+	suite.Collection = s.DB("").C("customers")
 }
 
-func (s *CustomersSuite) SetUpTest(c *check.C) {
-	c.Assert(s.Store.Insert("customers", &s.Model), check.IsNil)
+func (suite *CustomersSuite) SetUpTest(c *check.C) {
+	c.Assert(suite.Collection.Insert(suite.Model), check.IsNil)
 }
 
 func (s *CustomersSuite) TestServeHTTP(c *check.C) {
@@ -168,10 +176,12 @@ func (s *CustomersSuite) TestServeHTTP(c *check.C) {
 	}
 }
 
-func (s *CustomersSuite) TearDownTest(c *check.C) {
-	c.Assert(s.Store.RemoveAll("customers", mongo.Query{}), check.IsNil)
+func (suite *CustomersSuite) TearDownTest(c *check.C) {
+	c.Assert(suite.Collection.DropCollection(), check.IsNil)
 }
 
-func (s *CustomersSuite) TearDownSuite(c *check.C) {
-	c.Assert(s.Store.Close(), check.IsNil)
+func (suite *CustomersSuite) TearDownSuite(c *check.C) {
+	c.Assert(suite.Store.Close(), check.IsNil)
+
+	suite.Database.Session.Close()
 }
