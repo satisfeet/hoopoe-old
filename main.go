@@ -11,20 +11,24 @@ import (
 )
 
 func main() {
-	if err := conf.Flags(os.Args[1:]); err != nil {
+	c := &conf.Conf{}
+
+	if err := c.Flags(os.Args[1:]); err != nil {
 		fmt.Printf("Error parsing arguments: %s.\n", err)
 
 		return
 	}
-	if err := store.Open(conf.Mongo); err != nil {
+	if err := store.Dial(c.Mongo); err != nil {
 		fmt.Printf("Error connecting to database: %s.\n", err)
 
 		return
 	}
 
-	h := httpd.Handler(conf.Username, conf.Password)
+	h := httpd.NewHandler(store.DefaultMongo)
+	h.Auth.Username = c.Username
+	h.Auth.Password = c.Password
 
-	if err := http.ListenAndServe(conf.Host, h); err != nil {
+	if err := http.ListenAndServe(c.Host, h); err != nil {
 		fmt.Printf("Error starting http server: %s.\n", err)
 	}
 }

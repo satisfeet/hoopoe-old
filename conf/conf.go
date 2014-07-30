@@ -5,55 +5,47 @@ import (
 	"flag"
 )
 
-var (
-	// Configuration values.
+type Conf struct {
 	Host     string
 	Mongo    string
 	Username string
 	Password string
+}
 
-	// Possible configuration errors.
+var (
 	ErrUserInvalid  = errors.New("user parameter invalid")
 	ErrPassInvalid  = errors.New("pass parameter invalid")
 	ErrHostInvalid  = errors.New("host parameter invalid")
 	ErrMongoInvalid = errors.New("mongo parameter invalid")
 )
 
-// Check validates the current values of Conf and
-// returns an error if something is empty or invalid.
-//
-// Note that checks are still very basic and they will
-// not guarante failures in other components.
-func Check() error {
-	if len(Username) == 0 {
+func (c *Conf) Check() error {
+	if len(c.Username) == 0 {
 		return ErrUserInvalid
 	}
-	if len(Password) == 0 {
+	if len(c.Password) == 0 {
 		return ErrPassInvalid
 	}
-	if len(Host) == 0 {
+	if len(c.Host) == 0 {
 		return ErrHostInvalid
 	}
-	if len(Mongo) == 0 {
+	if len(c.Mongo) == 0 {
 		return ErrMongoInvalid
 	}
 
 	return nil
 }
 
-// Flags loads data into Conf by parsing the provided
-// arguments. The provided arguments are most likely to
-// be os.Args[1:] but can also come from other sources.
-func Flags(a []string) error {
+func (c *Conf) Flags(a []string) error {
 	f := flag.NewFlagSet("conf", flag.ExitOnError)
-	f.StringVar(&Username, "username", "", "Username for HTTP Basic.")
-	f.StringVar(&Password, "password", "", "Password for HTTP Basic.")
-	f.StringVar(&Host, "host", "", "Host address for HTTP Server.")
-	f.StringVar(&Mongo, "mongo", "", "MongoDB URL for storage layer.")
+	f.StringVar(&c.Username, "username", "", "Username for HTTP Basic.")
+	f.StringVar(&c.Password, "password", "", "Password for HTTP Basic.")
+	f.StringVar(&c.Host, "host", "", "Host address for HTTP Server.")
+	f.StringVar(&c.Mongo, "mongo", "", "MongoDB URL for storage layer.")
 
 	if err := f.Parse(a); err != nil {
 		return err
 	}
 
-	return Check()
+	return c.Check()
 }

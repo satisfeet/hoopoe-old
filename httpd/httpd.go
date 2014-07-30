@@ -2,39 +2,37 @@ package httpd
 
 import (
 	"net/http"
-	"strings"
 
 	"gopkg.in/mgo.v2"
 
 	"github.com/satisfeet/go-handler"
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/store"
-	"github.com/satisfeet/hoopoe/store/common"
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
-func Handler(u, p string) http.Handler {
-	c := (&Customers{
-		Store: &store.Customers{
-			Mongo: store.DefaultMongo,
-		},
-	}).Handler()
+type Handler struct {
+	Auth    *handler.Auth
+	Logger  *handler.Logger
+	handler http.Handler
+}
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case strings.HasPrefix(r.URL.Path, "/customers"):
-			c.ServeHTTP(w, r)
-		default:
-			handler.NotFound(w, r)
-		}
-	})
+func NewHandler(s *mongo.Store) *Handler {
+	m := http.NewServeMux()
+	m.Handle("/customers", NewCustomerHandler(s))
 
-	a := &handler.Auth{
-		Username: u,
-		Password: p,
-		Handler:  h,
+	h := &Handler{
+		Auth:    &handler.Auth{},
+		Logger:  &handler.Logger{},
+		handler: m,
 	}
+	h.handler = h.Logger.Handle(h.handler)
+	h.handler = h.Auth.Handle(h.handler)
 
-	return &handler.Logger{a}
+	return h
+}
+
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.handler.ServeHTTP(w, r)
 }
 
 func ErrorCode(err error) int {
@@ -43,7 +41,7 @@ func ErrorCode(err error) int {
 	switch err {
 	case mgo.ErrNotFound:
 		c = http.StatusNotFound
-	case common.ErrBadQueryId:
+	case mongo.ErrBadQueryParam:
 		c = http.StatusBadRequest
 	}
 
