@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"gopkg.in/check.v1"
+
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 func TestStore(t *testing.T) {
@@ -17,7 +19,9 @@ type StoreSuite struct {
 	Url string
 }
 
-func (s *StoreSuite) TestOpenAndClose(c *check.C) {
-	c.Assert(Open(s.Url), check.IsNil)
-	c.Assert(Close(), check.IsNil)
+func (s *StoreSuite) TestDialAndClose(c *check.C) {
+	c.Check(Dial(s.Url), check.IsNil)
+	c.Check(Dial(s.Url), check.Equals, mongo.ErrStillConnected)
+	c.Check(Close(), check.IsNil)
+	c.Check(Close(), check.Equals, mongo.ErrNotConnected)
 }
