@@ -10,17 +10,15 @@
 
 Minor issues which should be easy to solve with:
 
-* code style differs accross files
-* mongo.Store.Index does not check nested structs
-* mongo.Store does not set auto set id
 * store.Search is not able to read tag from slices
-* (json) marshal logic on models is redundant = extract logic to package
+* code style differs accross files
 
 ### Major
 
-* define mongo independent id value
-* Cannot remove model without fetching before
 * store.Store does not auto-index (internal hooks)
+* Cannot remove model without fetching before
+* define mongo independent id value
+* (json) marshal logic on models is redundant = extract logic to package
 
 ## License
 

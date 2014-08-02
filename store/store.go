@@ -15,17 +15,16 @@ type Store struct {
 }
 
 func NewStore() *Store {
-	m := &mongo.Store{}
-
 	return &Store{
-		mongo: m,
+		mongo: &mongo.Store{},
 	}
 }
 
-func (s *Store) Dial(u string) error {
-	if err := s.mongo.Dial(u); err != nil {
+func (s *Store) Dial(url string) error {
+	if err := s.mongo.Dial(url); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -33,11 +32,13 @@ func (s *Store) Close() error {
 	if err := s.mongo.Close(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (store *Store) Search(pattern string, models interface{}) error {
+func (s *Store) Search(pattern string, models interface{}) error {
 	var t reflect.Type
+
 	switch v := reflect.ValueOf(models); v.Kind() {
 	case reflect.Ptr:
 		v = v.Elem()
@@ -47,6 +48,7 @@ func (store *Store) Search(pattern string, models interface{}) error {
 	}
 
 	q := make(mongo.Query)
+
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 
@@ -61,41 +63,41 @@ func (store *Store) Search(pattern string, models interface{}) error {
 		}
 	}
 
-	return store.mongo.Find(q, models)
+	return s.mongo.Find(q, models)
 }
 
-func (store *Store) FindAll(models interface{}) error {
+func (s *Store) FindAll(models interface{}) error {
 	q := make(mongo.Query)
 
-	return store.mongo.Find(q, models)
+	return s.mongo.Find(q, models)
 }
 
-func (store *Store) FindId(id, model interface{}) error {
+func (s *Store) FindId(id, model interface{}) error {
 	q := make(mongo.Query)
 
 	if err := q.Id(id); err != nil {
 		return err
 	}
 
-	return store.mongo.FindOne(q, model)
+	return s.mongo.FindOne(q, model)
 }
 
-func (store *Store) Insert(model interface{}) error {
+func (s *Store) Insert(model interface{}) error {
 	if err := validation.Validate(model); err != nil {
 		return err
 	}
 
-	return store.mongo.Insert(model)
+	return s.mongo.Insert(model)
 }
 
-func (store *Store) Update(model interface{}) error {
+func (s *Store) Update(model interface{}) error {
 	if err := validation.Validate(model); err != nil {
 		return err
 	}
 
-	return store.mongo.Update(model)
+	return s.mongo.Update(model)
 }
 
-func (store *Store) Remove(model interface{}) error {
-	return store.mongo.Remove(model)
+func (s *Store) Remove(model interface{}) error {
+	return s.mongo.Remove(model)
 }
