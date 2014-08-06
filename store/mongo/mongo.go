@@ -7,10 +7,8 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/store/common"
+	"github.com/satisfeet/hoopoe/utils"
 )
-
-const TagName = "store"
 
 type Query bson.M
 
@@ -107,7 +105,7 @@ func (store *Store) clone() *mgo.Session {
 }
 
 func (store *Store) collection(model interface{}) *mgo.Collection {
-	n := common.GetTypeName(model)
+	n := utils.GetTypeName(model)
 
 	return store.database.C(strings.ToLower(n) + "s")
 }
@@ -119,7 +117,7 @@ func (store *Store) Index(model interface{}) error {
 	i := make([]string, 0)
 	u := make([]string, 0)
 
-	for k, v := range common.GetStructInfo(model) {
+	for k, v := range utils.GetStructInfo(model) {
 		switch {
 		case v.Index:
 			i = append(i, k)
@@ -161,9 +159,9 @@ func (store *Store) Insert(model interface{}) error {
 	s := store.clone()
 	defer s.Close()
 
-	if id, ok := common.GetFieldValue(model, IdFieldName).(bson.ObjectId); ok {
+	if id, ok := utils.GetFieldValue(model, IdFieldName).(bson.ObjectId); ok {
 		if !id.Valid() {
-			common.SetFieldValue(model, IdFieldName, bson.NewObjectId())
+			utils.SetFieldValue(model, IdFieldName, bson.NewObjectId())
 		}
 	} else {
 		return ErrBadModel
@@ -177,7 +175,7 @@ func (store *Store) Update(model interface{}) error {
 	defer s.Close()
 
 	q := Query{}
-	q.Id(common.GetFieldValue(model, "Id"))
+	q.Id(utils.GetFieldValue(model, "Id"))
 
 	return store.collection(model).With(s).Update(q, model)
 }

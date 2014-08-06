@@ -2,8 +2,8 @@ package store
 
 import (
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/store/common"
 	"github.com/satisfeet/hoopoe/store/mongo"
+	"github.com/satisfeet/hoopoe/utils"
 )
 
 const TagName = "store"
@@ -37,7 +37,7 @@ func (s *Store) Close() error {
 func (s *Store) Search(pattern string, models interface{}) error {
 	q := mongo.Query{}
 
-	for k, _ := range common.GetStructInfo(models) {
+	for k, _ := range utils.GetStructInfo(models) {
 		sq := mongo.Query{}
 
 		if err := sq.Regex(k, pattern); err != nil {
