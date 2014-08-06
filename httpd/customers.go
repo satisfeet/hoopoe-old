@@ -35,7 +35,14 @@ func NewCustomerHandler(s *store.Store) *CustomerHandler {
 func (h *CustomerHandler) list(c *context.Context) {
 	m := []model.Customer{}
 
-	if err := h.store.FindAll(&m); err != nil {
+	var err error
+	if s := c.Query("search"); len(s) != 0 {
+		err = h.store.Search(s, &m)
+	} else {
+		err = h.store.FindAll(&m)
+	}
+
+	if err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)

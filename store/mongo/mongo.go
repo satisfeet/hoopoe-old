@@ -2,11 +2,12 @@ package mongo
 
 import (
 	"errors"
-	"reflect"
 	"strings"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/satisfeet/hoopoe/store/common"
 )
 
 const TagName = "store"
@@ -65,9 +66,12 @@ type Store struct {
 }
 
 var (
+	ErrBadModel       = errors.New("bad model")
 	ErrNotConnected   = errors.New("not connected")
 	ErrStillConnected = errors.New("still connected")
 )
+
+const IdFieldName = "Id"
 
 func (store *Store) Dial(url string) error {
 	if store.session != nil {
@@ -103,90 +107,40 @@ func (store *Store) clone() *mgo.Session {
 }
 
 func (store *Store) collection(model interface{}) *mgo.Collection {
-	var n string
-
-	switch v := value(model); v.Kind() {
-	case reflect.Struct:
-		n = v.Type().Name()
-	case reflect.Array, reflect.Slice:
-		n = v.Type().Elem().Name()
-	}
+	n := common.GetTypeName(model)
 
 	return store.database.C(strings.ToLower(n) + "s")
-}
-
-type fieldInfo struct {
-	Index  bool
-	Unique bool
-}
-
-type structInfo map[string]fieldInfo
-
-func getStructInfo(m interface{}) structInfo {
-	si := make(structInfo)
-
-	switch v := reflect.ValueOf(m); v.Kind() {
-	case reflect.Ptr, reflect.Array, reflect.Slice:
-		v = v.Elem()
-
-		fallthrough
-	case reflect.Struct:
-		t := v.Type()
-
-		for n := 0; n < t.NumField(); n++ {
-			f := t.Field(n)
-
-			if t := f.Tag.Get(TagName); len(t) > 0 {
-				si[strings.ToLower(f.Name)] = fieldInfo{
-					Index:  strings.Contains(t, "index"),
-					Unique: strings.Contains(t, "unique"),
-				}
-			}
-
-			if f.Type.Kind() == reflect.Struct {
-				nsi := getStructInfo(v.FieldByName(f.Name).Interface())
-
-				for n, nsi := range nsi {
-					si[strings.ToLower(f.Name+"."+n)] = nsi
-				}
-			}
-		}
-	}
-
-	return si
 }
 
 func (store *Store) Index(model interface{}) error {
 	s := store.clone()
 	defer s.Close()
 
-	i := mgo.Index{
-		Key: make([]string, 0),
-	}
-	u := mgo.Index{
-		Key:    make([]string, 0),
-		Unique: true,
-	}
+	i := make([]string, 0)
+	u := make([]string, 0)
 
-	for k, v := range getStructInfo(model) {
+	for k, v := range common.GetStructInfo(model) {
 		switch {
 		case v.Index:
-			i.Key = append(i.Key, k)
+			i = append(i, k)
 		case v.Unique:
-			u.Key = append(u.Key, k)
+			u = append(u, k)
 		}
 	}
 
-	if len(i.Key) > 0 {
-		if err := store.collection(model).With(s).EnsureIndex(i); err != nil {
-			return err
-		}
+	var err error
+
+	if len(u) > 0 {
+		err = store.collection(model).With(s).EnsureIndex(mgo.Index{
+			Key:    u,
+			Unique: true,
+		})
 	}
-	if len(u.Key) > 0 {
-		return store.collection(model).With(s).EnsureIndex(u)
+	if err == nil && len(i) > 0 {
+		err = store.collection(model).With(s).EnsureIndexKey(i...)
 	}
 
-	return nil
+	return err
 }
 
 func (store *Store) Find(query Query, model interface{}) error {
@@ -207,27 +161,23 @@ func (store *Store) Insert(model interface{}) error {
 	s := store.clone()
 	defer s.Close()
 
-	switch v := value(model); v.Kind() {
-	case reflect.Struct:
-		f := v.FieldByName("Id")
-
-		if id := f.Interface().(bson.ObjectId); !id.Valid() {
-			f.Set(reflect.ValueOf(bson.NewObjectId()))
+	if id, ok := common.GetFieldValue(model, IdFieldName).(bson.ObjectId); ok {
+		if !id.Valid() {
+			common.SetFieldValue(model, IdFieldName, bson.NewObjectId())
 		}
+	} else {
+		return ErrBadModel
 	}
 
 	return store.collection(model).With(s).Insert(model)
 }
 
 func (store *Store) Update(model interface{}) error {
-	q := make(Query)
 	s := store.clone()
 	defer s.Close()
 
-	switch v := value(model); v.Kind() {
-	case reflect.Struct:
-		q.Id(v.FieldByName("Id").Interface())
-	}
+	q := Query{}
+	q.Id(common.GetFieldValue(model, "Id"))
 
 	return store.collection(model).With(s).Update(q, model)
 }
@@ -237,12 +187,4 @@ func (store *Store) Remove(model interface{}) error {
 	defer s.Close()
 
 	return store.collection(model).With(s).Remove(model)
-}
-
-func value(m interface{}) reflect.Value {
-	if v := reflect.ValueOf(m); v.Kind() == reflect.Ptr {
-		return v.Elem()
-	} else {
-		return v
-	}
 }

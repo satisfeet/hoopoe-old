@@ -8,9 +8,9 @@ import (
 
 type Customer struct {
 	Id      bson.ObjectId `bson:"_id"`
-	Name    string        `index:"unique" validate:"required,min=5"`
-	Email   string        `index:"unique" validate:"required,email"`
-	Company string        `index:"-" validate:"min=5,max=40"`
+	Name    string        `validate:"required,min=5" store:"unique"`
+	Email   string        `validate:"required,email" store:"unique"`
+	Company string        `validate:"min=5,max=40" store:"index"`
 	Address Address       `validate:"required,nested"`
 }
 

@@ -1,10 +1,8 @@
 package store
 
 import (
-	"reflect"
-	"strings"
-
 	"github.com/satisfeet/go-validation"
+	"github.com/satisfeet/hoopoe/store/common"
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
@@ -37,30 +35,16 @@ func (s *Store) Close() error {
 }
 
 func (s *Store) Search(pattern string, models interface{}) error {
-	var t reflect.Type
+	q := mongo.Query{}
 
-	switch v := reflect.ValueOf(models); v.Kind() {
-	case reflect.Ptr:
-		v = v.Elem()
-		fallthrough
-	case reflect.Slice, reflect.Array:
-		t = v.Elem().Type()
-	}
+	for k, _ := range common.GetStructInfo(models) {
+		sq := mongo.Query{}
 
-	q := make(mongo.Query)
-
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-
-		if strings.Contains(f.Tag.Get(TagName), "search") {
-			sq := make(mongo.Query)
-
-			if err := sq.Regex(strings.ToLower(f.Name), pattern); err != nil {
-				return err
-			}
-
-			q.Or(sq)
+		if err := sq.Regex(k, pattern); err != nil {
+			return err
 		}
+
+		q.Or(sq)
 	}
 
 	return s.mongo.Find(q, models)

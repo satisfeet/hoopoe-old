@@ -5,6 +5,69 @@ import (
 	"strings"
 )
 
+// Tag name to lookup.
+const TagName = "store"
+
+// FieldInfo stores all possible information stored on a struct field via tags.
+type FieldInfo struct {
+	Name   string
+	Index  bool
+	Unique bool
+}
+
+// Returns a map of field infos representing tag infos from a slice, array,
+// pointer or struct.
+func GetStructInfo(model interface{}) map[string]FieldInfo {
+	v := reflect.Indirect(reflect.ValueOf(model))
+
+	switch t := v.Type(); t.Kind() {
+	case reflect.Array, reflect.Slice:
+		t = t.Elem()
+
+		fallthrough
+	default:
+		return getTypeInfo(t)
+	}
+}
+
+// Extracts recursively all valid store tags from given reflect type.
+func getTypeInfo(t reflect.Type) map[string]FieldInfo {
+	si := make(map[string]FieldInfo)
+
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		n := strings.ToLower(f.Name)
+
+		if t := f.Tag.Get(TagName); len(t) > 0 {
+			si[n] = FieldInfo{
+				Name:   f.Name,
+				Index:  strings.Contains(t, "index"),
+				Unique: strings.Contains(t, "unique"),
+			}
+		}
+
+		if f.Type.Kind() == reflect.Struct {
+			for k, i := range getTypeInfo(f.Type) {
+				si[n+"."+k] = i
+			}
+		}
+	}
+
+	return si
+}
+
+// Returns the type name
+func GetTypeName(model interface{}) string {
+	t := reflect.Indirect(reflect.ValueOf(model)).Type()
+
+	switch t.Kind() {
+	case reflect.Array, reflect.Slice:
+		t = t.Elem()
+	}
+
+	return t.Name()
+}
+
 // Returns the interface value of a field.
 func GetFieldValue(model interface{}, name string) interface{} {
 	v := reflect.Indirect(reflect.ValueOf(model))
@@ -19,65 +82,4 @@ func SetFieldValue(model interface{}, name string, value interface{}) {
 	if f := v.FieldByName(name); f.CanSet() {
 		f.Set(reflect.ValueOf(value))
 	}
-}
-
-// Tag name to lookup.
-const TagName = "store"
-
-// FieldInfo stores all possible information stored on a struct field via tags.
-type FieldInfo struct {
-	Name   string
-	Index  bool
-	Unique bool
-	Search bool
-}
-
-// StructInfo stores all field information for one struct.
-type StructInfo struct {
-	FieldMap   map[string]FieldInfo
-	FieldArray []FieldInfo
-}
-
-// Adds a field info to struct.
-func (si *StructInfo) addField(fi FieldInfo) {
-	if si.FieldMap == nil {
-		si.FieldMap = make(map[string]FieldInfo)
-	}
-	if si.FieldArray == nil {
-		si.FieldArray = make([]FieldInfo, 0)
-	}
-
-	si.FieldMap[fi.Name] = fi
-	si.FieldArray = append(si.FieldArray, fi)
-}
-
-// Parsed the tags of the given model and returns a struct info.
-func GetStructInfo(model interface{}) *StructInfo {
-	si := new(StructInfo)
-
-	t := reflect.Indirect(reflect.ValueOf(model)).Type()
-
-	switch t.Kind() {
-	case reflect.Array, reflect.Slice:
-		t = t.Elem()
-
-		fallthrough
-	case reflect.Ptr:
-		t = t.Elem()
-	}
-
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-
-		if t := f.Tag.Get(TagName); len(t) > 0 {
-			si.addField(FieldInfo{
-				Name:   strings.ToLower(f.Name),
-				Index:  strings.Contains(t, "index"),
-				Unique: strings.Contains(t, "unique"),
-				Search: strings.Contains(t, "search"),
-			})
-		}
-	}
-
-	return si
 }

@@ -6,13 +6,6 @@
 
 ## Issues
 
-### Minor
-
-Minor issues which should be easy to solve with:
-
-* store.Search is not able to read tag from slices
-* code style differs accross files
-
 ### Major
 
 * store.Store does not auto-index (internal hooks)
