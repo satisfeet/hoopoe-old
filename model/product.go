@@ -1,17 +1,27 @@
 package model
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	"encoding/json"
+
+	"gopkg.in/mgo.v2/bson"
+
+	"github.com/satisfeet/hoopoe/utils"
+)
 
 type Product struct {
-	Id          bson.ObjectId `json:"id" bson:"_id"`
-	Name        string        `json:"name" validate:"required,min=10,max=20"`
-	Images      []string      `json:"image" validate:"required,min=1"`
-	Pricing     Pricing       `json:"pricing" validate:"required,nested"`
-	Variations  []Variation   `json:"variations" validate:"required,nested"`
-	Description string        `json:"description" validate:"required,min=60"`
+	Id          bson.ObjectId `bson:"_id"`
+	Name        string        `validate:"required,min=10,max=20"`
+	Images      []string      `validate:"required,min=1"`
+	Pricing     Pricing       `validate:"required,nested"`
+	Variations  []Variation   `validate:"required,nested"`
+	Description string        `validate:"required,min=60"`
+}
+
+func (p Product) MarshalJSON() ([]byte, error) {
+	return json.Marshal(utils.GetFieldValues(p))
 }
 
 type Variation struct {
-	Size  string `json:"size" validate:"required,len=5"`
-	Color string `json:"color" validate:"required,min=3"`
+	Size  string `validate:"required,len=5"`
+	Color string `validate:"required,min=3"`
 }
