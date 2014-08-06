@@ -11,7 +11,6 @@
 * store.Store does not auto-index (internal hooks)
 * Cannot remove model without fetching before
 * define mongo independent id value
-* (json) marshal logic on models is redundant = extract logic to package
 
 ## License
 
