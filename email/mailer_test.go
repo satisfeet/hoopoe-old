@@ -23,6 +23,10 @@ type MailerSuite struct {
 	Email *Email
 }
 
+func (s *MailerSuite) SetUpSuite(c *check.C) {
+	c.Skip("too much traffic")
+}
+
 func (s *MailerSuite) TestOpen(c *check.C) {
 	m := &Mailer{
 		Service:  GMAIL,
