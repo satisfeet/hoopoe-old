@@ -7,23 +7,27 @@ import (
 )
 
 func TestConf(t *testing.T) {
-	check.Suite(&ConfSuite{})
+	check.Suite(&ConfSuite{
+		Conf: &Conf{},
+	})
 	check.TestingT(t)
 }
 
-type ConfSuite struct{}
+type ConfSuite struct {
+	Conf *Conf
+}
 
 func (s *ConfSuite) TestCheck(c *check.C) {
-	Username = "foo"
-	Password = "bar"
-	Host = "localhost:3000"
-	Mongo = "mongodb://localhost/test"
+	s.Conf.Username = "foo"
+	s.Conf.Password = "bar"
+	s.Conf.Host = "localhost:3000"
+	s.Conf.Mongo = "mongodb://localhost/test"
 
-	c.Check(Check(), check.IsNil)
+	c.Check(s.Conf.Check(), check.IsNil)
 }
 
 func (s *ConfSuite) TestFlags(c *check.C) {
-	c.Check(Flags([]string{
+	c.Check(s.Conf.Flags([]string{
 		"--username",
 		"foo",
 		"--password",
@@ -34,8 +38,8 @@ func (s *ConfSuite) TestFlags(c *check.C) {
 		"mongodb://localhost/test",
 	}), check.IsNil)
 
-	c.Check(Username, check.Equals, "foo")
-	c.Check(Password, check.Equals, "bar")
-	c.Check(Host, check.Equals, "localhost:3000")
-	c.Check(Mongo, check.Equals, "mongodb://localhost/test")
+	c.Check(s.Conf.Username, check.Equals, "foo")
+	c.Check(s.Conf.Password, check.Equals, "bar")
+	c.Check(s.Conf.Host, check.Equals, "localhost:3000")
+	c.Check(s.Conf.Mongo, check.Equals, "mongodb://localhost/test")
 }

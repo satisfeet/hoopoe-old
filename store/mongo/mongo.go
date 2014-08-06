@@ -1,144 +1,190 @@
 package mongo
 
 import (
+	"errors"
+	"strings"
+
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/hoopoe/store/common"
 )
 
-// Implements Query interface for mongo.
+const TagName = "store"
+
 type Query bson.M
 
-func (q Query) Id(v interface{}) error {
-	switch t := v.(type) {
+var (
+	ErrBadQueryParam = errors.New("bad query id")
+	ErrBadQueryValue = errors.New("bad query value")
+)
+
+func (query Query) Id(id interface{}) error {
+	switch t := id.(type) {
 	case string:
 		if bson.IsObjectIdHex(t) {
-			q["_id"] = bson.ObjectIdHex(t)
+			query["_id"] = bson.ObjectIdHex(t)
 
 			return nil
 		}
-		return common.ErrBadQueryId
 	case bson.ObjectId:
 		if t.Valid() {
-			q["_id"] = t
+			query["_id"] = t
 
 			return nil
 		}
-		return common.ErrBadQueryId
 	}
 
-	return common.ErrBadQueryValue
+	return ErrBadQueryParam
 }
 
-func (q Query) Or(c Query) error {
-	if q["$or"] == nil {
-		q["$or"] = make([]Query, 0)
+func (query Query) Or(q Query) error {
+	if query["$or"] == nil {
+		query["$or"] = make([]Query, 0)
 	}
-	if or, ok := q["$or"].([]Query); ok {
-		q["$or"] = append(or, c)
-	} else {
-		return common.ErrBadQueryOr
+	if or, ok := query["$or"].([]Query); ok {
+		query["$or"] = append(or, q)
+
+		return nil
 	}
+
+	return ErrBadQueryValue
+}
+
+func (query Query) Regex(key, pattern string) error {
+	if len(key) == 0 || len(pattern) == 0 {
+		return ErrBadQueryParam
+	}
+	query[key] = bson.RegEx{pattern, "i"}
 
 	return nil
 }
 
-func (q Query) Regex(k, v string) error {
-	if len(v) == 0 {
-		return common.ErrBadQueryRegex
-	}
-	q[k] = bson.RegEx{v, "i"}
-
-	return nil
-}
-
-// Store abstracts a store backed up by mongocommon.
 type Store struct {
-	session *mgo.Session
+	session  *mgo.Session
+	database *mgo.Database
 }
 
-// Establishes a connection to database.
-func (s *Store) Open(u string) error {
-	if s.session != nil {
-		return common.ErrStillConnected
+var (
+	ErrBadModel       = errors.New("bad model")
+	ErrNotConnected   = errors.New("not connected")
+	ErrStillConnected = errors.New("still connected")
+)
+
+const IdFieldName = "Id"
+
+func (store *Store) Dial(url string) error {
+	if store.session != nil {
+		return ErrStillConnected
 	}
 
-	sess, err := mgo.Dial(u)
+	s, err := mgo.Dial(url)
+
 	if err != nil {
 		return err
 	}
 
-	s.session = sess
+	store.session = s
+	store.database = s.DB("")
 
 	return nil
 }
 
-// Closes established connection.
-func (s *Store) Close() error {
-	if s.session == nil {
-		return common.ErrNotConnected
+func (store *Store) Close() error {
+	if store.session == nil {
+		return ErrNotConnected
 	}
-	s.session.Close()
-	s.session = nil
+
+	store.session.Close()
+	store.session = nil
+	store.database = nil
 
 	return nil
 }
 
-// Allocates new mongo session.
-func (s *Store) clone() *mgo.Session {
-	return s.session.Clone()
+func (store *Store) clone() *mgo.Session {
+	return store.session.Clone()
 }
 
-// Returns collection with name.
-func (s *Store) collection(n string) *mgo.Collection {
-	return s.session.DB("").C(n)
+func (store *Store) collection(model interface{}) *mgo.Collection {
+	n := common.GetTypeName(model)
+
+	return store.database.C(strings.ToLower(n) + "s")
 }
 
-// Drops collection of documents.
-func (s *Store) Drop(n string) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) Index(model interface{}) error {
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).DropCollection()
+	i := make([]string, 0)
+	u := make([]string, 0)
+
+	for k, v := range common.GetStructInfo(model) {
+		switch {
+		case v.Index:
+			i = append(i, k)
+		case v.Unique:
+			u = append(u, k)
+		}
+	}
+
+	var err error
+
+	if len(u) > 0 {
+		err = store.collection(model).With(s).EnsureIndex(mgo.Index{
+			Key:    u,
+			Unique: true,
+		})
+	}
+	if err == nil && len(i) > 0 {
+		err = store.collection(model).With(s).EnsureIndexKey(i...)
+	}
+
+	return err
 }
 
-// Inserts document with value into collection.
-func (s *Store) Insert(n string, v interface{}) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) Find(query Query, model interface{}) error {
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).Insert(v)
+	return store.collection(model).With(s).Find(query).All(model)
 }
 
-// Updates document matching query with value.
-func (s *Store) Update(n string, q Query, v interface{}) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) FindOne(query Query, model interface{}) error {
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).Update(q, v)
+	return store.collection(model).With(s).Find(query).One(model)
 }
 
-// Removes document matching query from collection.
-func (s *Store) Remove(n string, q Query) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) Insert(model interface{}) error {
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).Remove(q)
+	if id, ok := common.GetFieldValue(model, IdFieldName).(bson.ObjectId); ok {
+		if !id.Valid() {
+			common.SetFieldValue(model, IdFieldName, bson.NewObjectId())
+		}
+	} else {
+		return ErrBadModel
+	}
+
+	return store.collection(model).With(s).Insert(model)
 }
 
-// Maps documents matching query onto interface.
-func (s *Store) FindAll(n string, q Query, v interface{}) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) Update(model interface{}) error {
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).Find(q).All(v)
+	q := Query{}
+	q.Id(common.GetFieldValue(model, "Id"))
+
+	return store.collection(model).With(s).Update(q, model)
 }
 
-// Maps document matching query onto interface.
-func (s *Store) FindOne(n string, q Query, v interface{}) error {
-	c := s.clone()
-	defer c.Close()
+func (store *Store) Remove(model interface{}) error {
+	s := store.clone()
+	defer s.Close()
 
-	return s.collection(n).With(c).Find(q).One(v)
+	return store.collection(model).With(s).Remove(model)
 }

@@ -1,73 +1,85 @@
-// The common package provides utils and interfaces shared between database
-// stores.
 package common
 
 import (
-	"errors"
 	"reflect"
 	"strings"
 )
 
-var (
-	// Query specific errors.
-	ErrBadQueryId    = errors.New("bad query id")
-	ErrBadQueryOr    = errors.New("bad query or")
-	ErrBadQueryValue = errors.New("bad query value")
-	ErrBadQueryRegex = errors.New("bad query regex")
+// Tag name to lookup.
+const TagName = "store"
 
-	// Connection specific errors.
-	ErrNotConnected   = errors.New("not connected")
-	ErrStillConnected = errors.New("still connected")
-)
-
-// Query describes a condition container to filter documents.
-type Query interface {
-	// Applies equals id condition.
-	Id(interface{}) error
-	// Merges optional query.
-	Or(Query) error
-	// Applies matches regex condition.
-	Regex(string, string) error
+// FieldInfo stores all possible information stored on a struct field via tags.
+type FieldInfo struct {
+	Name   string
+	Index  bool
+	Unique bool
 }
 
-// Stores describes a persistent document storage.
-type Store interface {
-	// Connection methods.
-	Open(string) error
-	Close() error
+// Returns a map of field infos representing tag infos from a slice, array,
+// pointer or struct.
+func GetStructInfo(model interface{}) map[string]FieldInfo {
+	v := reflect.Indirect(reflect.ValueOf(model))
 
-	// Collection methods.
-	Drop(string) error
-
-	// Document write methods.
-	Insert(string, interface{}) error
-	Update(string, Query, interface{}) error
-	Remove(string, Query) error
-
-	// Document read methods.
-	FindOne(string, Query, interface{}) error
-	FindAll(string, Query, interface{}) error
-}
-
-// Returns pluralized and lowercased name of type.
-func Name(m interface{}) string {
-	n := ""
-
-	switch v := value(m); v.Kind() {
-	case reflect.Struct:
-		n = v.Type().Name()
+	switch t := v.Type(); t.Kind() {
 	case reflect.Array, reflect.Slice:
-		n = v.Type().Elem().Name()
+		t = t.Elem()
+
+		fallthrough
+	default:
+		return getTypeInfo(t)
+	}
+}
+
+// Extracts recursively all valid store tags from given reflect type.
+func getTypeInfo(t reflect.Type) map[string]FieldInfo {
+	si := make(map[string]FieldInfo)
+
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		n := strings.ToLower(f.Name)
+
+		if t := f.Tag.Get(TagName); len(t) > 0 {
+			si[n] = FieldInfo{
+				Name:   f.Name,
+				Index:  strings.Contains(t, "index"),
+				Unique: strings.Contains(t, "unique"),
+			}
+		}
+
+		if f.Type.Kind() == reflect.Struct {
+			for k, i := range getTypeInfo(f.Type) {
+				si[n+"."+k] = i
+			}
+		}
 	}
 
-	return strings.ToLower(n) + "s"
+	return si
 }
 
-// Returns the reflected value of a pointer or a struct.
-func value(m interface{}) reflect.Value {
-	if v := reflect.ValueOf(m); v.Kind() == reflect.Ptr {
-		return v.Elem()
-	} else {
-		return v
+// Returns the type name
+func GetTypeName(model interface{}) string {
+	t := reflect.Indirect(reflect.ValueOf(model)).Type()
+
+	switch t.Kind() {
+	case reflect.Array, reflect.Slice:
+		t = t.Elem()
+	}
+
+	return t.Name()
+}
+
+// Returns the interface value of a field.
+func GetFieldValue(model interface{}, name string) interface{} {
+	v := reflect.Indirect(reflect.ValueOf(model))
+
+	return v.FieldByName(name).Interface()
+}
+
+// Sets the interface value of a field.
+func SetFieldValue(model interface{}, name string, value interface{}) {
+	v := reflect.Indirect(reflect.ValueOf(model))
+
+	if f := v.FieldByName(name); f.CanSet() {
+		f.Set(reflect.ValueOf(value))
 	}
 }

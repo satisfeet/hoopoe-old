@@ -1,10 +1,6 @@
-package store
+package model
 
-import (
-	"gopkg.in/mgo.v2/bson"
-
-	"github.com/satisfeet/go-validation"
-)
+import "gopkg.in/mgo.v2/bson"
 
 type Product struct {
 	Id          bson.ObjectId `json:"id" bson:"_id"`
@@ -15,6 +11,7 @@ type Product struct {
 	Description string        `json:"description" validate:"required,min=60"`
 }
 
-func (p Product) Validate() error {
-	return validation.Validate(p)
+type Variation struct {
+	Size  string `json:"size" validate:"required,len=5"`
+	Color string `json:"color" validate:"required,min=3"`
 }

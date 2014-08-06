@@ -6,23 +6,52 @@ import (
 	"gopkg.in/check.v1"
 )
 
-func TestStore(t *testing.T) {
-	check.Suite(&StoreSuite{})
+func TestCommon(t *testing.T) {
+	check.Suite(&Suite{})
 	check.TestingT(t)
 }
 
-type Model struct {
-	Bar string
+type Suite struct{}
+
+type person struct {
+	Name    string `store:"unique"`
+	addresS addresS
 }
 
-type StoreSuite struct{}
+// We need an upper case letter in name to check lower casing.
+type addresS struct {
+	City string `store:"index"`
+}
 
-func (s *StoreSuite) TestName(c *check.C) {
-	f := Model{}
-	fs := []Model{}
+func (s *Suite) TestGetTypeName(c *check.C) {
+	p := person{}
+	ps := []person{p}
 
-	c.Check(Name(f), check.Equals, "models")
-	c.Check(Name(&f), check.Equals, "models")
-	c.Check(Name(fs), check.Equals, "models")
-	c.Check(Name(&fs), check.Equals, "models")
+	c.Check(GetTypeName(p), check.Equals, "person")
+	c.Check(GetTypeName(&p), check.Equals, "person")
+	c.Check(GetTypeName(ps), check.Equals, "person")
+	c.Check(GetTypeName(&ps), check.Equals, "person")
+}
+
+func (s *Suite) TestGetFieldValue(c *check.C) {
+	p := person{"Bodo", addresS{"Berlin"}}
+
+	c.Check(GetFieldValue(p, "Name"), check.Equals, "Bodo")
+	c.Check(GetFieldValue(&p, "Name"), check.Equals, "Bodo")
+}
+
+func (s *Suite) TestSetFieldValue(c *check.C) {
+	p := person{}
+
+	SetFieldValue(&p, "Name", "Joe")
+	c.Check(p.Name, check.Equals, "Joe")
+}
+
+func (s *Suite) TestGetStructInfo(c *check.C) {
+	result := GetStructInfo(person{})
+
+	c.Check(result, check.DeepEquals, map[string]FieldInfo{
+		"name":         FieldInfo{Name: "Name", Unique: true},
+		"address.city": FieldInfo{Name: "City", Index: true},
+	})
 }

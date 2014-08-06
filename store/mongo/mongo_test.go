@@ -6,149 +6,202 @@ import (
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-
-	"github.com/satisfeet/hoopoe/store/common"
 )
 
-func TestMongo(t *testing.T) {
-	check.Suite(&QuerySuite{})
-	check.Suite(&StoreSuite{
-		Url: "localhost/test",
+func TestStore(t *testing.T) {
+	check.Suite(&Suite{
+		url: "localhost/test",
 	})
 	check.TestingT(t)
 }
 
-type QuerySuite struct{}
-
-func (s *QuerySuite) TestId(c *check.C) {
-	q := Query{}
-	id1 := bson.NewObjectId()
-	id2 := bson.ObjectId("abcd")
-
-	c.Check(q.Id(0), check.Equals, common.ErrBadQueryValue)
-	c.Check(q.Id(nil), check.Equals, common.ErrBadQueryValue)
-	c.Check(q.Id(id2), check.Equals, common.ErrBadQueryId)
-	c.Check(q.Id("abcd"), check.Equals, common.ErrBadQueryId)
-
-	q = Query{}
-	c.Check(q.Id(id1.Hex()), check.IsNil)
-	q = Query{}
-	c.Check(q.Id(id1), check.IsNil)
-	c.Check(q["_id"], check.Equals, id1)
+type model struct {
+	Id     bson.ObjectId `bson:"_id"`
+	Age    int           `store:"index"`
+	Name   string        `store:"unique"`
+	Nested nested
 }
 
-func (s *QuerySuite) TestOr(c *check.C) {
-	q := Query{}
-	q1 := Query{"child": 1}
-	q2 := Query{"child": 2}
-
-	c.Check(q.Or(q1), check.IsNil)
-	c.Check(q.Or(q2), check.IsNil)
-	c.Check(q["$or"], check.DeepEquals, []Query{q1, q2})
+type nested struct {
+	Foo string `store:"index"`
 }
 
-func (s *QuerySuite) TestRegex(c *check.C) {
-	q := Query{}
+type Suite struct {
+	url        string
+	model      model
+	store      *Store
+	database   *mgo.Database
+	collection *mgo.Collection
+}
 
+func (s *Suite) TestQueryId(c *check.C) {
+	q := Query{}
+	c.Check(q.Id(0), check.Equals, ErrBadQueryParam)
+	c.Check(q.Id(nil), check.Equals, ErrBadQueryParam)
+	c.Check(q.Id("abcd"), check.Equals, ErrBadQueryParam)
+	c.Check(q.Id(bson.ObjectId("abcd")), check.Equals, ErrBadQueryParam)
+
+	id := bson.NewObjectId()
+	q = Query{}
+	c.Check(q.Id(id.Hex()), check.IsNil)
+	c.Check(q["_id"], check.Equals, id)
+	q = Query{}
+	c.Check(q.Id(id), check.IsNil)
+	c.Check(q["_id"], check.Equals, id)
+}
+
+func (s *Suite) TestQueryOr(c *check.C) {
+	q := Query{}
+	c.Check(q.Or(Query{"child": 1}), check.IsNil)
+	c.Check(q.Or(Query{"child": 2}), check.IsNil)
+	c.Check(q["$or"], check.DeepEquals, []Query{
+		Query{"child": 1},
+		Query{"child": 2},
+	})
+}
+
+func (s *Suite) TestQueryRegex(c *check.C) {
+	q := Query{}
 	c.Check(q.Regex("foo", "bar"), check.IsNil)
 	c.Check(q["foo"], check.Equals, bson.RegEx{"bar", "i"})
 }
 
-// Test model struct.
-type Model struct {
-	Id   bson.ObjectId `bson:"_id"`
-	Age  int
-	Name string
-}
-
-type StoreSuite struct {
-	Url   string
-	Store *Store
-	Model *Model
-	Mongo *mgo.Database
-}
-
-// Establishes connection to database. Sets up store instance.
-func (s *StoreSuite) SetUpSuite(c *check.C) {
-	sess, err := mgo.Dial(s.Url)
+func (s *Suite) SetUpSuite(c *check.C) {
+	sess, err := mgo.Dial(s.url)
 	c.Assert(err, check.IsNil)
 
-	s.Mongo = sess.DB("")
-	s.Store = &Store{sess}
+	s.store = &Store{
+		session:  sess,
+		database: sess.DB(""),
+	}
+	s.database = sess.DB("")
+	s.collection = sess.DB("").C("models")
 }
 
-// Sets up a new model and inserts is into database.
-func (s *StoreSuite) SetUpTest(c *check.C) {
-	s.Model = &Model{
+func (s *Suite) SetUpTest(c *check.C) {
+	s.model = model{
 		Id:   bson.NewObjectId(),
 		Age:  22,
 		Name: "Mob D.",
 	}
 
-	c.Assert(s.Mongo.C("t").Insert(s.Model), check.IsNil)
+	err := s.collection.Insert(s.model)
+	c.Assert(err, check.IsNil)
 }
 
-func (s *StoreSuite) TestOpenAndClose(c *check.C) {
-	store := &Store{}
+func (s *Suite) TestStoreDialAndClose(c *check.C) {
+	store := Store{}
 
-	c.Check(store.Open(s.Url), check.IsNil)
-	c.Check(store.Open(s.Url), check.Equals, common.ErrStillConnected)
-	c.Check(store.Close(), check.IsNil)
-	c.Check(store.Close(), check.Equals, common.ErrNotConnected)
+	c.Assert(store.Dial(s.url), check.IsNil)
+	c.Assert(store.Dial(s.url), check.Equals, ErrStillConnected)
+	c.Assert(store.Close(), check.IsNil)
+	c.Assert(store.Close(), check.Equals, ErrNotConnected)
 }
 
-func (s *StoreSuite) TestInsert(c *check.C) {
-	m1 := &Model{
-		Id:   bson.NewObjectId(),
+func (s *Suite) TestStoreFind(c *check.C) {
+	m := []model{}
+
+	err := s.store.Find(Query{}, &m)
+	c.Assert(err, check.IsNil)
+
+	c.Check(m, check.DeepEquals, []model{s.model})
+}
+
+func (s *Suite) TestStoreFindOne(c *check.C) {
+	m := model{}
+
+	err := s.store.FindOne(Query{"_id": s.model.Id}, &m)
+	c.Assert(err, check.IsNil)
+
+	c.Check(m, check.DeepEquals, s.model)
+}
+
+func (s *Suite) TestStoreIndex(c *check.C) {
+	err := s.store.Index(s.model)
+	c.Assert(err, check.IsNil)
+
+	indexes, err := s.collection.Indexes()
+	c.Assert(err, check.IsNil)
+
+	hasIndex := false
+	hasUnique := false
+
+	for _, i := range indexes {
+		switch i.Name {
+		case "name_1":
+			hasUnique = true
+
+			c.Check(i.Key, check.DeepEquals, []string{"name"})
+			c.Check(i.Unique, check.Equals, true)
+		case "nested.foo_1_age_1":
+			hasIndex = true
+
+			c.Check(i.Key, check.DeepEquals, []string{"nested.foo", "age"})
+			c.Check(i.Unique, check.Equals, false)
+		case "age_1_nested.foo_1":
+			hasIndex = true
+
+			c.Check(i.Key, check.DeepEquals, []string{"age", "nested.foo"})
+			c.Check(i.Unique, check.Equals, false)
+		}
+	}
+
+	c.Check(hasIndex, check.Equals, true)
+	c.Check(hasUnique, check.Equals, true)
+}
+
+func (s *Suite) TestStoreInsert(c *check.C) {
+	m1 := model{
 		Age:  32,
 		Name: "Big L.",
 	}
-	m2 := &Model{}
+	m2 := model{}
 
-	c.Check(s.Store.Insert("t", m1), check.IsNil)
-	c.Check(s.Mongo.C("t").FindId(m1.Id).One(m2), check.IsNil)
+	err := s.store.Insert(&m1)
+	c.Assert(err, check.IsNil)
+
+	err = s.collection.FindId(m1.Id).One(&m2)
+	c.Assert(err, check.IsNil)
+
 	c.Check(m2, check.DeepEquals, m1)
 }
 
-func (s *StoreSuite) TestUpdate(c *check.C) {
-	s.Model.Age += 10
-	q := Query{"_id": s.Model.Id}
-	m := &Model{}
+func (s *Suite) TestStoreUpdate(c *check.C) {
+	s.model.Age += 10
+	m := model{}
 
-	c.Check(s.Store.Update("t", q, s.Model), check.IsNil)
-	c.Check(s.Mongo.C("t").FindId(s.Model.Id).One(m), check.IsNil)
-	c.Check(m, check.DeepEquals, s.Model)
+	err := s.store.Update(s.model)
+	c.Assert(err, check.IsNil)
+
+	err = s.collection.FindId(s.model.Id).One(&m)
+	c.Assert(err, check.IsNil)
+
+	c.Check(m, check.DeepEquals, s.model)
 }
 
-func (s *StoreSuite) TestRemove(c *check.C) {
-	q := Query{"_id": s.Model.Id}
+func (s *Suite) TestStoreRemove(c *check.C) {
+	err := s.store.Remove(s.model)
+	c.Assert(err, check.IsNil)
 
-	c.Check(s.Store.Remove("t", q), check.IsNil)
-	c.Check(s.Mongo.C("t").FindId(s.Model.Id).One(nil), check.Equals, mgo.ErrNotFound)
+	err = s.collection.FindId(s.model.Id).One(nil)
+	c.Check(err, check.Equals, mgo.ErrNotFound)
 }
 
-func (s *StoreSuite) TestFindAll(c *check.C) {
-	m := []Model{}
-	q := Query{}
+func (s *Suite) TearDownTest(c *check.C) {
+	_, err := s.collection.RemoveAll(nil)
+	c.Assert(err, check.IsNil)
 
-	c.Check(s.Store.FindAll("t", q, &m), check.IsNil)
-	c.Check(m, check.DeepEquals, []Model{*s.Model})
+	indexes, err := s.collection.Indexes()
+	c.Assert(err, check.IsNil)
+
+	for _, index := range indexes {
+		if index.Key[0] != "_id" {
+			err = s.collection.DropIndex(index.Key...)
+			c.Assert(err, check.IsNil)
+		}
+	}
 }
 
-func (s *StoreSuite) TestFindOne(c *check.C) {
-	m := &Model{}
-	q := Query{"_id": s.Model.Id}
-
-	c.Check(s.Store.FindOne("t", q, m), check.IsNil)
-	c.Check(m, check.DeepEquals, s.Model)
-}
-
-// Drops database collection for clean up.
-func (s *StoreSuite) TearDownTest(c *check.C) {
-	c.Assert(s.Mongo.C("t").DropCollection(), check.IsNil)
-}
-
-// Closes connections to database.
-func (s *StoreSuite) TearDownSuite(c *check.C) {
-	s.Mongo.Session.Close()
+func (s *Suite) TearDownSuite(c *check.C) {
+	s.database.Session.Close()
 }
