@@ -54,13 +54,22 @@ func GetFieldValues(model interface{}) map[string]interface{} {
 		f := t.Field(i)
 		n := strings.ToLower(f.Name)
 
-		val := v.Field(i).Interface()
-
-		if val != reflect.Zero(f.Type).Interface() {
-			if f.Type.Kind() == reflect.Struct {
-				m[n] = GetFieldValues(val)
-			} else {
-				m[n] = val
+		// There is a problem when comparing empty values of type
+		// []bson.ObjectId() as they do not have a predefined zero value.
+		// By checking the array length before we can overgo this however this
+		// fix brings a lot of double logic.
+		switch v := v.Field(i); v.Kind() {
+		case reflect.Slice, reflect.Array:
+			if v.Len() > 0 {
+				m[n] = v.Interface()
+			}
+		default:
+			if v.Interface() != reflect.Zero(f.Type).Interface() {
+				if f.Type.Kind() == reflect.Struct {
+					m[n] = GetFieldValues(v.Interface())
+				} else {
+					m[n] = v.Interface()
+				}
 			}
 		}
 	}
