@@ -11,17 +11,15 @@ import (
 	"github.com/satisfeet/hoopoe/httpd"
 )
 
-var host, mongo, username, password string
+var host, auth, mongo string
 
 func main() {
-	flag.StringVar(&username, "username", "bodokaiser", "")
-	flag.StringVar(&password, "password", "secret", "")
-	flag.StringVar(&mongo, "mongo", "localhost/satisfeet", "")
 	flag.StringVar(&host, "host", ":3000", "")
+	flag.StringVar(&auth, "auth", "bodokaiser:secret", "")
+	flag.StringVar(&mongo, "mongo", "localhost/satisfeet", "")
 	flag.Parse()
 
 	s, err := mgo.Dial(mongo)
-
 	if err != nil {
 		fmt.Printf("Error connecting to database: %s.\n", err)
 
@@ -31,13 +29,8 @@ func main() {
 	m := http.NewServeMux()
 	m.Handle("/", httpd.NewCustomerHandler(s.DB("")))
 
-	h := &handler.Logger{
-		Handler: &handler.Auth{
-			Username: username,
-			Password: password,
-			Handler:  m,
-		},
-	}
+	h := handler.Logger(m)
+	h = handler.Auth(auth, h)
 
 	if err := http.ListenAndServe(host, h); err != nil {
 		fmt.Printf("Error starting http server: %s.\n", err)
