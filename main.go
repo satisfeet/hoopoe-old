@@ -1,27 +1,26 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
-	"os"
 
 	"gopkg.in/mgo.v2"
 
 	"github.com/satisfeet/go-handler"
-	"github.com/satisfeet/hoopoe/conf"
 	"github.com/satisfeet/hoopoe/httpd"
 )
 
+var host, mongo, username, password string
+
 func main() {
-	c := conf.NewConf()
+	flag.StringVar(&username, "username", "bodokaiser", "")
+	flag.StringVar(&password, "password", "secret", "")
+	flag.StringVar(&mongo, "mongo", "localhost/satisfeet", "")
+	flag.StringVar(&host, "host", ":3000", "")
+	flag.Parse()
 
-	if err := c.Flags(os.Args[1:]); err != nil {
-		fmt.Printf("Error parsing arguments: %s.\n", err)
-
-		return
-	}
-
-	s, err := mgo.Dial(c.Mongo)
+	s, err := mgo.Dial(mongo)
 
 	if err != nil {
 		fmt.Printf("Error connecting to database: %s.\n", err)
@@ -34,13 +33,13 @@ func main() {
 
 	h := &handler.Logger{
 		Handler: &handler.Auth{
-			Username: c.Username,
-			Password: c.Password,
+			Username: username,
+			Password: password,
 			Handler:  m,
 		},
 	}
 
-	if err := http.ListenAndServe(c.Host, h); err != nil {
+	if err := http.ListenAndServe(host, h); err != nil {
 		fmt.Printf("Error starting http server: %s.\n", err)
 	}
 }
