@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"gopkg.in/mgo.v2"
 
@@ -26,13 +27,23 @@ func main() {
 		return
 	}
 
-	m := http.NewServeMux()
-	m.Handle("/", httpd.NewCustomerHandler(s.DB("")))
-
-	h := handler.Logger(m)
-	h = handler.Auth(auth, h)
-
-	if err := http.ListenAndServe(host, h); err != nil {
+	if err := http.ListenAndServe(host, handle(s.DB(""))); err != nil {
 		fmt.Printf("Error starting http server: %s.\n", err)
 	}
+}
+
+func handle(db *mgo.Database) http.Handler {
+	p := httpd.NewProductHandler(db)
+	c := httpd.NewCustomerHandler(db)
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix("/products", r.URL.Path):
+			p.ServeHTTP(w, r)
+		case strings.HasPrefix("/customers", r.URL.Path):
+			c.ServeHTTP(w, r)
+		}
+	})
+
+	return handler.Logger(handler.Auth(auth, h))
 }
