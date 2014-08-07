@@ -2,7 +2,6 @@ package httpd
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"strings"
 
 	"gopkg.in/check.v1"
@@ -26,132 +25,112 @@ var product = model.Product{
 	Description: "These Summer Socks will make you really really happy.",
 }
 
-type productTest struct {
-	Path   string
-	Method string
-	Status int
-	Body   string
+func (s *Suite) TestProductHandlerList(c *check.C) {
+	h := NewProductHandler(s.db)
+
+	ctx1, res1 := s.Context("GET", "/products", nil)
+
+	h.List(ctx1)
+
+	c.Check(res1.Code, check.Equals, http.StatusOK)
+	c.Check(strings.HasPrefix(res1.Body.String(), "[{"), check.Equals, true)
 }
 
-var productTests = []productTest{
-	productTest{
-		Path:   "/products",
-		Method: "GET",
-		Status: http.StatusOK,
-	},
-	productTest{
-		Path:   "/products",
-		Method: "POST",
-		Status: http.StatusOK,
-		Body: `{
-			"name": "Winter Socks",
-			"pricing": {
-				"retail": 499
-			},
-			"variations": [
-				{
-					"size": "42-44",
-					"color": "blue"
-				}
-			],
-			"description": "Getting cold again. Not with these socks anymore."
-		}`,
-	},
-	productTest{
-		Path:   "/products",
-		Method: "POST",
-		Status: http.StatusBadRequest,
-		Body: `{
-			"name": "No Socks",
-			"pricing": {
-				"retail": -299
+func (s *Suite) TestProductHandlerShow(c *check.C) {
+	h := NewProductHandler(s.db)
+
+	ctx1, res1 := s.Context("GET", "/", nil)
+	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
+	ctx2, res2 := s.Context("GET", "/", nil)
+	ctx2.Params = map[string]string{"pid": bson.NewObjectId().Hex()}
+	ctx3, res3 := s.Context("GET", "/", nil)
+	ctx3.Params = map[string]string{"pid": "1234"}
+
+	h.Show(ctx1)
+	h.Show(ctx2)
+	h.Show(ctx3)
+
+	c.Check(res1.Code, check.Equals, http.StatusOK)
+	c.Check(res2.Code, check.Equals, http.StatusNotFound)
+	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
+}
+
+func (s *Suite) TestProductHandlerCreate(c *check.C) {
+	h := NewProductHandler(s.db)
+
+	ctx1, res1 := s.Context("POST", "/products", strings.NewReader(`{
+		"name": "Winter Socks",
+		"pricing": {
+			"retail": 499
+		},
+		"variations": [
+			{
+				"size": "42-44",
+				"color": "blue"
 			}
-		}`,
-	},
-	productTest{
-		Path:   "/products/" + product.Id.Hex(),
-		Method: "GET",
-		Status: http.StatusOK,
-	},
-	productTest{
-		Path:   "/products/" + bson.NewObjectId().Hex(),
-		Method: "GET",
-		Status: http.StatusNotFound,
-	},
-	productTest{
-		Path:   "/products/1234",
-		Method: "GET",
-		Status: http.StatusBadRequest,
-	},
-	productTest{
-		Path:   "/products/" + product.Id.Hex(),
-		Method: "PUT",
-		Status: http.StatusNoContent,
-		Body: `{
-			"id": "` + product.Id.Hex() + `",
-			"name": "Winter Socks",
-			"pricing": {
-				"retail": 599
-			},
-			"variations": [
-				{
-					"size": "44-46",
-					"color": "blue"
-				}
-			],
-			"description": "Getting cold again. Not with these socks anymore."
-		}`,
-	},
-	productTest{
-		Path:   "/products/" + product.Id.Hex(),
-		Method: "PUT",
-		Status: http.StatusBadRequest,
-		Body: `{
-			"id": "` + product.Id.Hex() + `",
-			"name": "Winter Socks",
-			"pricing": {
-				"retail": "599"
-			},
-			"description": "Getting cold again. Not with these socks anymore."
-		}`,
-	},
-	productTest{
-		Path:   "/products/" + product.Id.Hex(),
-		Method: "DELETE",
-		Status: http.StatusNoContent,
-	},
-	productTest{
-		Path:   "/products/" + bson.NewObjectId().Hex(),
-		Method: "DELETE",
-		Status: http.StatusNotFound,
-	},
+		],
+		"description": "Getting cold again. Not with these socks anymore."
+	}`))
+	ctx2, res2 := s.Context("POST", "/products", strings.NewReader(`{
+		"name": "No Socks",
+		"pricing": {
+			"retail": -299
+		}
+	}`))
+
+	h.Create(ctx1)
+	h.Create(ctx2)
+
+	c.Check(res1.Code, check.Equals, http.StatusOK)
+	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestProductHandler(c *check.C) {
-	coll := s.db.C("products")
+func (s *Suite) TestProductHandlerUpdate(c *check.C) {
+	h := NewProductHandler(s.db)
 
-	for i, t := range productTests {
-		c.Assert(coll.Insert(product), check.IsNil)
+	ctx1, res1 := s.Context("PUT", "/", strings.NewReader(`{
+		"id": "`+product.Id.Hex()+`",
+		"name": "Winter Socks",
+		"pricing": {
+			"retail": 599
+		},
+		"variations": [
+			{
+				"size": "44-46",
+				"color": "blue"
+			}
+		],
+		"description": "Getting cold again. Not with these socks anymore."
+	}`))
+	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
+	ctx2, res2 := s.Context("PUT", "/", strings.NewReader(`{
+		"id": "`+product.Id.Hex()+`",
+		"name": "Winter Socks",
+		"pricing": {
+			"retail": "599"
+		},
+		"description": "Getting cold again. Not with these socks anymore."
+	}`))
+	ctx2.Params = map[string]string{"pid": product.Id.Hex()}
 
-		var req *http.Request
+	h.Update(ctx1)
+	h.Update(ctx2)
 
-		if len(t.Body) != 0 {
-			req, _ = http.NewRequest(t.Method, t.Path, strings.NewReader(t.Body))
-		} else {
-			req, _ = http.NewRequest(t.Method, t.Path, nil)
-		}
+	c.Check(res1.Code, check.Equals, http.StatusNoContent)
+	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
+}
 
-		res := httptest.NewRecorder()
+func (s *Suite) TestProductHandlerDestroy(c *check.C) {
+	h := NewProductHandler(s.db)
 
-		NewProductHandler(s.db).ServeHTTP(res, req)
+	ctx1, res1 := s.Context("DELETE", "/", nil)
+	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
+	ctx2, res2 := s.Context("DELETE", "/", nil)
+	ctx2.Params = map[string]string{"pid": bson.NewObjectId().Hex()}
 
-		if v := res.Code; v != t.Status {
-			b := res.Body.String()
+	h.Destroy(ctx1)
+	h.Destroy(ctx2)
 
-			c.Errorf("Expected #%d %s %s to respond with %d but it had %d %s", i, t.Method, t.Path, t.Status, v, b)
-		}
-
-		_, err := coll.RemoveAll(nil)
-		c.Assert(err, check.IsNil)
-	}
+	c.Check(res1.Code, check.Equals, http.StatusNoContent)
+	c.Check(res2.Code, check.Equals, http.StatusNotFound)
 }
