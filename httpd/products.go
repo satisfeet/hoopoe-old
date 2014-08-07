@@ -21,24 +21,25 @@ type ProductHandler struct {
 }
 
 func NewProductHandler(db *mgo.Database) *ProductHandler {
-	r := router.NewRouter()
-	f := db.GridFS("products")
-	c := db.C("products")
-	h := &ProductHandler{f, c, r}
+	h := &ProductHandler{
+		store:  db.C("products"),
+		files:  db.GridFS("products"),
+		router: router.NewRouter(),
+	}
 
-	r.HandleFunc("GET", "/products", h.list)
-	r.HandleFunc("GET", "/products/:pid", h.show)
-	r.HandleFunc("GET", "/products/:pid/images/:iid", h.showImage)
-	r.HandleFunc("POST", "/products", h.create)
-	r.HandleFunc("POST", "/products/:pid/images", h.createImage)
-	r.HandleFunc("PUT", "/products/:pid", h.update)
-	r.HandleFunc("DELETE", "/products/:pid", h.destroy)
-	r.HandleFunc("DELETE", "/products/:pid/images/:iid", h.destroyImage)
+	h.router.HandleFunc("GET", "/products", h.List)
+	h.router.HandleFunc("GET", "/products/:pid", h.Show)
+	h.router.HandleFunc("GET", "/products/:pid/images/:iid", h.ShowImage)
+	h.router.HandleFunc("POST", "/products", h.Create)
+	h.router.HandleFunc("POST", "/products/:pid/images", h.CreateImage)
+	h.router.HandleFunc("PUT", "/products/:pid", h.Update)
+	h.router.HandleFunc("DELETE", "/products/:pid", h.Destroy)
+	h.router.HandleFunc("DELETE", "/products/:pid/images/:iid", h.DestroyImage)
 
 	return h
 }
 
-func (h *ProductHandler) list(c *context.Context) {
+func (h *ProductHandler) List(c *context.Context) {
 	m := []model.Product{}
 
 	if err := h.store.Find(nil).All(&m); err != nil {
@@ -48,7 +49,7 @@ func (h *ProductHandler) list(c *context.Context) {
 	}
 }
 
-func (h *ProductHandler) show(c *context.Context) {
+func (h *ProductHandler) Show(c *context.Context) {
 	m := model.Product{}
 	q := store.Query{}
 
@@ -65,7 +66,7 @@ func (h *ProductHandler) show(c *context.Context) {
 	}
 }
 
-func (h *ProductHandler) create(c *context.Context) {
+func (h *ProductHandler) Create(c *context.Context) {
 	m := model.Product{Id: bson.NewObjectId()}
 
 	if err := c.Parse(&m); err != nil {
@@ -87,7 +88,7 @@ func (h *ProductHandler) create(c *context.Context) {
 	}
 }
 
-func (h *ProductHandler) update(c *context.Context) {
+func (h *ProductHandler) Update(c *context.Context) {
 	m := model.Product{}
 
 	if err := c.Parse(&m); err != nil {
@@ -109,7 +110,7 @@ func (h *ProductHandler) update(c *context.Context) {
 	}
 }
 
-func (h *ProductHandler) destroy(c *context.Context) {
+func (h *ProductHandler) Destroy(c *context.Context) {
 	q := store.Query{}
 
 	if err := q.Id(c.Param("pid")); err != nil {
@@ -125,7 +126,7 @@ func (h *ProductHandler) destroy(c *context.Context) {
 	}
 }
 
-func (h *ProductHandler) showImage(c *context.Context) {
+func (h *ProductHandler) ShowImage(c *context.Context) {
 	m := model.Product{}
 	q := store.Query{}
 
@@ -157,7 +158,7 @@ func (h *ProductHandler) showImage(c *context.Context) {
 	}
 }
 
-func (h *ProductHandler) createImage(c *context.Context) {
+func (h *ProductHandler) CreateImage(c *context.Context) {
 	m := model.Product{}
 	q := store.Query{}
 
@@ -203,7 +204,7 @@ func (h *ProductHandler) createImage(c *context.Context) {
 	c.Respond(nil, http.StatusNoContent)
 }
 
-func (h *ProductHandler) destroyImage(c *context.Context) {
+func (h *ProductHandler) DestroyImage(c *context.Context) {
 	m := model.Product{}
 	q := store.Query{}
 

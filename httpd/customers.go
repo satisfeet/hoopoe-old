@@ -19,20 +19,21 @@ type CustomerHandler struct {
 }
 
 func NewCustomerHandler(db *mgo.Database) *CustomerHandler {
-	r := router.NewRouter()
-	c := db.C("customers")
-	h := &CustomerHandler{c, r}
+	h := &CustomerHandler{
+		store:  db.C("customers"),
+		router: router.NewRouter(),
+	}
 
-	r.HandleFunc("GET", "/customers", h.list)
-	r.HandleFunc("GET", "/customers/:cid", h.show)
-	r.HandleFunc("POST", "/customers", h.create)
-	r.HandleFunc("PUT", "/customers/:cid", h.update)
-	r.HandleFunc("DELETE", "/customers/:cid", h.destroy)
+	h.router.HandleFunc("GET", "/customers", h.List)
+	h.router.HandleFunc("GET", "/customers/:cid", h.Show)
+	h.router.HandleFunc("POST", "/customers", h.Create)
+	h.router.HandleFunc("PUT", "/customers/:cid", h.Update)
+	h.router.HandleFunc("DELETE", "/customers/:cid", h.Destroy)
 
 	return h
 }
 
-func (h *CustomerHandler) list(c *context.Context) {
+func (h *CustomerHandler) List(c *context.Context) {
 	m := []model.Customer{}
 
 	q := store.Query{}
@@ -45,7 +46,7 @@ func (h *CustomerHandler) list(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) show(c *context.Context) {
+func (h *CustomerHandler) Show(c *context.Context) {
 	m := model.Customer{}
 
 	q := store.Query{}
@@ -63,7 +64,7 @@ func (h *CustomerHandler) show(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) create(c *context.Context) {
+func (h *CustomerHandler) Create(c *context.Context) {
 	m := model.Customer{Id: bson.NewObjectId()}
 
 	if err := c.Parse(&m); err != nil {
@@ -85,7 +86,7 @@ func (h *CustomerHandler) create(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) update(c *context.Context) {
+func (h *CustomerHandler) Update(c *context.Context) {
 	m := model.Customer{}
 
 	if err := c.Parse(&m); err != nil {
@@ -107,7 +108,7 @@ func (h *CustomerHandler) update(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) destroy(c *context.Context) {
+func (h *CustomerHandler) Destroy(c *context.Context) {
 	q := store.Query{}
 
 	if err := q.Id(c.Param("cid")); err != nil {
