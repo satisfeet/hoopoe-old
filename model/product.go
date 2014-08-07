@@ -9,12 +9,12 @@ import (
 )
 
 type Product struct {
-	Id          bson.ObjectId `bson:"_id"`
-	Name        string        `validate:"required,min=10,max=20"`
-	Images      []string      `validate:"required,min=1"`
-	Pricing     Pricing       `validate:"required,nested"`
-	Variations  []Variation   `validate:"required,nested"`
-	Description string        `validate:"required,min=60"`
+	Id          bson.ObjectId   `bson:"_id"`
+	Name        string          `validate:"required,min=10,max=20"`
+	Images      []bson.ObjectId `validate:"required,min=1"`
+	Pricing     Pricing         `validate:"required,nested"`
+	Variations  []Variation     `validate:"required,nested"`
+	Description string          `validate:"required,min=60"`
 }
 
 func (p Product) MarshalJSON() ([]byte, error) {
