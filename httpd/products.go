@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"io"
 	"net/http"
 
 	"gopkg.in/mgo.v2"
@@ -13,20 +14,25 @@ import (
 )
 
 type ProductHandler struct {
+	files  *mgo.GridFS
 	store  *mgo.Collection
 	router *router.Router
 }
 
 func NewProductHandler(db *mgo.Database) *ProductHandler {
 	r := router.NewRouter()
+	f := db.GridFS("products")
 	c := db.C("products")
-	h := &ProductHandler{c, r}
+	h := &ProductHandler{f, c, r}
 
 	r.HandleFunc("GET", "/products", h.list)
 	r.HandleFunc("GET", "/products/:pid", h.show)
+	r.HandleFunc("GET", "/products/:pid/images/:iid", h.showImage)
 	r.HandleFunc("POST", "/products", h.create)
+	r.HandleFunc("POST", "/products/:pid/images", h.createImage)
 	r.HandleFunc("PUT", "/products/:pid", h.update)
 	r.HandleFunc("DELETE", "/products/:pid", h.destroy)
+	r.HandleFunc("DELETE", "/products/:pid/images/:iid", h.destroyImage)
 
 	return h
 }
@@ -117,6 +123,117 @@ func (h *ProductHandler) destroy(c *context.Context) {
 		c.Error(err, http.StatusNotFound)
 	} else {
 		c.Respond(nil, http.StatusNoContent)
+	}
+}
+
+func (h *ProductHandler) showImage(c *context.Context) {
+	q := bson.M{}
+	m := model.Product{}
+
+	if p := c.Param("pid"); bson.IsObjectIdHex(p) {
+		q["_id"] = bson.ObjectIdHex(p)
+	} else {
+		c.Error(nil, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := h.store.Find(q).One(&m); err != nil {
+		c.Error(err, http.StatusNotFound)
+
+		return
+	}
+
+	if p := c.Param("iid"); !bson.IsObjectIdHex(p) {
+		c.Error(nil, http.StatusBadRequest)
+	} else {
+		file, err := h.files.OpenId(bson.ObjectIdHex(p))
+
+		if err != nil {
+			c.Error(nil, http.StatusNotFound)
+
+			return
+		}
+
+		io.Copy(c.Response, file)
+		file.Close()
+	}
+}
+
+func (h *ProductHandler) createImage(c *context.Context) {
+	q := bson.M{}
+	m := model.Product{}
+
+	if p := c.Param("pid"); bson.IsObjectIdHex(p) {
+		q["_id"] = bson.ObjectIdHex(p)
+	} else {
+		c.Error(nil, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := h.store.Find(q).One(&m); err != nil {
+		c.Error(err, http.StatusNotFound)
+
+		return
+	}
+
+	id := bson.NewObjectId()
+
+	file, err := h.files.Create("")
+	file.SetId(id)
+
+	if err != nil {
+		c.Error(err, http.StatusInternalServerError)
+
+		return
+	}
+
+	defer file.Close()
+
+	if _, err := io.Copy(file, c.Request.Body); err != nil {
+		c.Error(err, http.StatusBadRequest)
+
+		return
+	}
+
+	m.Images = append(m.Images, id)
+
+	if _, err := h.store.UpsertId(m.Id, bson.M{"$push": bson.M{"images": id}}); err != nil {
+		c.Error(err, http.StatusInternalServerError)
+
+		return
+	}
+
+	c.Respond(nil, http.StatusNoContent)
+}
+
+func (h *ProductHandler) destroyImage(c *context.Context) {
+	q := bson.M{}
+	m := model.Product{}
+
+	if p := c.Param("pid"); bson.IsObjectIdHex(p) {
+		q["_id"] = bson.ObjectIdHex(p)
+	} else {
+		c.Error(nil, http.StatusBadRequest)
+
+		return
+	}
+
+	if err := h.store.Find(q).One(&m); err != nil {
+		c.Error(err, http.StatusNotFound)
+
+		return
+	}
+
+	if p := c.Param("iid"); !bson.IsObjectIdHex(p) {
+		c.Error(nil, http.StatusBadRequest)
+	} else {
+		if err := h.files.RemoveId(bson.ObjectIdHex(p)); err != nil {
+			c.Error(nil, http.StatusNotFound)
+		} else {
+			c.Respond(nil, http.StatusNoContent)
+		}
 	}
 }
 
