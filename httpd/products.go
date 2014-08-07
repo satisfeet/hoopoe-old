@@ -126,12 +126,10 @@ func (h *ProductHandler) destroy(c *context.Context) {
 }
 
 func (h *ProductHandler) showImage(c *context.Context) {
-	q := bson.M{}
 	m := model.Product{}
+	q := store.Query{}
 
-	if p := c.Param("pid"); bson.IsObjectIdHex(p) {
-		q["_id"] = bson.ObjectIdHex(p)
-	} else {
+	if err := q.Id(c.Param("pid")); err != nil {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
@@ -160,12 +158,10 @@ func (h *ProductHandler) showImage(c *context.Context) {
 }
 
 func (h *ProductHandler) createImage(c *context.Context) {
-	q := bson.M{}
 	m := model.Product{}
+	q := store.Query{}
 
-	if p := c.Param("pid"); bson.IsObjectIdHex(p) {
-		q["_id"] = bson.ObjectIdHex(p)
-	} else {
+	if err := q.Id(c.Param("pid")); err != nil {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
@@ -208,12 +204,10 @@ func (h *ProductHandler) createImage(c *context.Context) {
 }
 
 func (h *ProductHandler) destroyImage(c *context.Context) {
-	q := bson.M{}
 	m := model.Product{}
+	q := store.Query{}
 
-	if p := c.Param("pid"); bson.IsObjectIdHex(p) {
-		q["_id"] = bson.ObjectIdHex(p)
-	} else {
+	if err := q.Id(c.Param("pid")); err != nil {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
