@@ -23,11 +23,11 @@ func NewCustomerHandler(db *mgo.Database) *CustomerHandler {
 	c := db.C("customers")
 	h := &CustomerHandler{c, r}
 
-	r.HandleFunc(router.Read, "/customers", h.list)
-	r.HandleFunc(router.Read, "/customers/:id", h.show)
-	r.HandleFunc(router.Create, "/customers", h.create)
-	r.HandleFunc(router.Update, "/customers/:id", h.update)
-	r.HandleFunc(router.Destroy, "/customers/:id", h.destroy)
+	r.HandleFunc("GET", "/customers", h.list)
+	r.HandleFunc("GET", "/customers/:cid", h.show)
+	r.HandleFunc("POST", "/customers", h.create)
+	r.HandleFunc("PUT", "/customers/:cid", h.update)
+	r.HandleFunc("DELETE", "/customers/:cid", h.destroy)
 
 	return h
 }
@@ -58,7 +58,7 @@ func (h *CustomerHandler) show(c *context.Context) {
 	q := bson.M{}
 	m := model.Customer{}
 
-	if p := c.Param("id"); bson.IsObjectIdHex(p) {
+	if p := c.Param("cid"); bson.IsObjectIdHex(p) {
 		q["_id"] = bson.ObjectIdHex(p)
 	} else {
 		c.Error(nil, http.StatusBadRequest)
@@ -118,7 +118,7 @@ func (h *CustomerHandler) update(c *context.Context) {
 func (h *CustomerHandler) destroy(c *context.Context) {
 	q := bson.M{}
 
-	if p := c.Param("id"); bson.IsObjectIdHex(p) {
+	if p := c.Param("cid"); bson.IsObjectIdHex(p) {
 		q["_id"] = bson.ObjectIdHex(p)
 	} else {
 		c.Error(nil, http.StatusBadRequest)
