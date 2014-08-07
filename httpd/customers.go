@@ -10,7 +10,7 @@ import (
 	"github.com/satisfeet/go-router"
 	"github.com/satisfeet/go-validation"
 	"github.com/satisfeet/hoopoe/model"
-	"github.com/satisfeet/hoopoe/utils"
+	"github.com/satisfeet/hoopoe/store"
 )
 
 type CustomerHandler struct {
@@ -33,19 +33,10 @@ func NewCustomerHandler(db *mgo.Database) *CustomerHandler {
 }
 
 func (h *CustomerHandler) list(c *context.Context) {
-	q := bson.M{}
 	m := []model.Customer{}
 
-	if s := c.Query("search"); len(s) > 0 {
-		q["$or"] = make([]bson.M, 0)
-
-		for k, _ := range utils.GetStructInfo(m) {
-			m := bson.M{}
-			m[k] = bson.RegEx{s, "i"}
-
-			q["$or"] = append(q["$or"].([]bson.M), m)
-		}
-	}
+	q := store.Query{}
+	q.Search(c.Query("search"), m)
 
 	if err := h.store.Find(q).All(&m); err != nil {
 		c.Error(err, http.StatusNotFound)
@@ -55,12 +46,11 @@ func (h *CustomerHandler) list(c *context.Context) {
 }
 
 func (h *CustomerHandler) show(c *context.Context) {
-	q := bson.M{}
 	m := model.Customer{}
 
-	if p := c.Param("cid"); bson.IsObjectIdHex(p) {
-		q["_id"] = bson.ObjectIdHex(p)
-	} else {
+	q := store.Query{}
+
+	if err := q.Id(c.Param("cid")); err != nil {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
@@ -81,6 +71,7 @@ func (h *CustomerHandler) create(c *context.Context) {
 
 		return
 	}
+
 	if err := validation.Validate(m); err != nil {
 		c.Error(err, http.StatusBadRequest)
 
@@ -102,6 +93,7 @@ func (h *CustomerHandler) update(c *context.Context) {
 
 		return
 	}
+
 	if err := validation.Validate(m); err != nil {
 		c.Error(err, http.StatusBadRequest)
 
@@ -116,11 +108,9 @@ func (h *CustomerHandler) update(c *context.Context) {
 }
 
 func (h *CustomerHandler) destroy(c *context.Context) {
-	q := bson.M{}
+	q := store.Query{}
 
-	if p := c.Param("cid"); bson.IsObjectIdHex(p) {
-		q["_id"] = bson.ObjectIdHex(p)
-	} else {
+	if err := q.Id(c.Param("cid")); err != nil {
 		c.Error(nil, http.StatusBadRequest)
 
 		return

@@ -11,6 +11,7 @@ import (
 	"github.com/satisfeet/go-router"
 	"github.com/satisfeet/go-validation"
 	"github.com/satisfeet/hoopoe/model"
+	"github.com/satisfeet/hoopoe/store"
 )
 
 type ProductHandler struct {
@@ -48,12 +49,10 @@ func (h *ProductHandler) list(c *context.Context) {
 }
 
 func (h *ProductHandler) show(c *context.Context) {
-	q := bson.M{}
 	m := model.Product{}
+	q := store.Query{}
 
-	if p := c.Param("pid"); bson.IsObjectIdHex(p) {
-		q["_id"] = bson.ObjectIdHex(p)
-	} else {
+	if err := q.Id(c.Param("pid")); err != nil {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
@@ -74,6 +73,7 @@ func (h *ProductHandler) create(c *context.Context) {
 
 		return
 	}
+
 	if err := validation.Validate(m); err != nil {
 		c.Error(err, http.StatusBadRequest)
 
@@ -95,6 +95,7 @@ func (h *ProductHandler) update(c *context.Context) {
 
 		return
 	}
+
 	if err := validation.Validate(m); err != nil {
 		c.Error(err, http.StatusBadRequest)
 
@@ -109,11 +110,9 @@ func (h *ProductHandler) update(c *context.Context) {
 }
 
 func (h *ProductHandler) destroy(c *context.Context) {
-	q := bson.M{}
+	q := store.Query{}
 
-	if p := c.Param("pid"); bson.IsObjectIdHex(p) {
-		q["_id"] = bson.ObjectIdHex(p)
-	} else {
+	if err := q.Id(c.Param("pid")); err != nil {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
