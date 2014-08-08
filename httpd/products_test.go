@@ -13,6 +13,9 @@ import (
 var product = model.Product{
 	Id:   bson.NewObjectId(),
 	Name: "Summer Socks",
+	Images: []bson.ObjectId{
+		bson.NewObjectId(),
+	},
 	Pricing: model.Pricing{
 		Retail: 299,
 	},
@@ -133,4 +136,96 @@ func (s *Suite) TestProductHandlerDestroy(c *check.C) {
 
 	c.Check(res1.Code, check.Equals, http.StatusNoContent)
 	c.Check(res2.Code, check.Equals, http.StatusNotFound)
+}
+
+func (s *Suite) TestProductHandlerShowImage(c *check.C) {
+	h := NewProductHandler(s.db)
+
+	ctx1, res1 := s.Context("GET", "/", nil)
+	ctx1.Params = map[string]string{
+		"pid": product.Id.Hex(),
+		"iid": product.Images[0].Hex(),
+	}
+	ctx2, res2 := s.Context("GET", "/", nil)
+	ctx2.Params = map[string]string{
+		"pid": "1234",
+		"iid": product.Images[0].Hex(),
+	}
+	ctx3, res3 := s.Context("GET", "/", nil)
+	ctx3.Params = map[string]string{
+		"pid": product.Id.Hex(),
+		"iid": "1234",
+	}
+	ctx4, res4 := s.Context("GET", "/", nil)
+	ctx4.Params = map[string]string{
+		"pid": product.Id.Hex(),
+		"iid": bson.NewObjectId().Hex(),
+	}
+
+	h.ShowImage(ctx1)
+	h.ShowImage(ctx2)
+	h.ShowImage(ctx3)
+	h.ShowImage(ctx4)
+
+	c.Check(res1.Code, check.Equals, http.StatusOK)
+	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
+	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
+	c.Check(res4.Code, check.Equals, http.StatusNotFound)
+
+	c.Check(res1.Body.String(), check.Equals, "Hello World")
+}
+
+func (s *Suite) TestProductHandlerCreateImage(c *check.C) {
+	h := NewProductHandler(s.db)
+
+	ctx1, res1 := s.Context("POST", "/", strings.NewReader("Foo"))
+	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
+	ctx2, res2 := s.Context("POST", "/", strings.NewReader("Foo"))
+	ctx2.Params = map[string]string{"pid": bson.NewObjectId().Hex()}
+	ctx3, res3 := s.Context("POST", "/", strings.NewReader("Foo"))
+	ctx3.Params = map[string]string{"pid": "1234"}
+
+	h.CreateImage(ctx1)
+	h.CreateImage(ctx2)
+	h.CreateImage(ctx3)
+
+	c.Check(res1.Code, check.Equals, http.StatusNoContent)
+	c.Check(res2.Code, check.Equals, http.StatusNotFound)
+	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
+}
+
+func (s *Suite) TestProductHandlerDestroyImage(c *check.C) {
+	h := NewProductHandler(s.db)
+
+	ctx1, res1 := s.Context("DELETE", "/", nil)
+	ctx1.Params = map[string]string{
+		"pid": product.Id.Hex(),
+		"iid": product.Images[0].Hex(),
+	}
+	ctx2, res2 := s.Context("DELETE", "/", nil)
+	ctx2.Params = map[string]string{
+		"pid": "1234",
+		"iid": product.Images[0].Hex(),
+	}
+	ctx3, res3 := s.Context("DELETE", "/", nil)
+	ctx3.Params = map[string]string{
+		"pid": product.Id.Hex(),
+		"iid": "1234",
+	}
+	ctx4, res4 := s.Context("DELETE", "/", nil)
+	ctx4.Params = map[string]string{
+		"pid": product.Id.Hex(),
+		"iid": bson.NewObjectId().Hex(),
+	}
+
+	h.DestroyImage(ctx1)
+	h.DestroyImage(ctx2)
+	h.DestroyImage(ctx3)
+	h.DestroyImage(ctx4)
+
+	c.Check(res1.Code, check.Equals, http.StatusNoContent)
+	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
+	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
+	c.Check(res4.Code, check.Equals, http.StatusNotFound)
+
 }

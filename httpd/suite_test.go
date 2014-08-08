@@ -43,6 +43,14 @@ func (s *Suite) SetUpSuite(c *check.C) {
 func (s *Suite) SetUpTest(c *check.C) {
 	c.Assert(s.db.C("products").Insert(product), check.IsNil)
 	c.Assert(s.db.C("customers").Insert(customer), check.IsNil)
+
+	file, err := s.db.GridFS("products").Create("")
+	c.Assert(err, check.IsNil)
+	file.SetId(product.Images[0])
+	_, err = file.Write([]byte("Hello World"))
+	c.Assert(err, check.IsNil)
+	err = file.Close()
+	c.Assert(err, check.IsNil)
 }
 
 func (s *Suite) TearDownSuite(c *check.C) {
@@ -52,8 +60,12 @@ func (s *Suite) TearDownSuite(c *check.C) {
 func (s *Suite) TearDownTest(c *check.C) {
 	var err error
 
+	_, err = s.db.C("customers").RemoveAll(nil)
+	c.Assert(err, check.IsNil)
 	_, err = s.db.C("products").RemoveAll(nil)
 	c.Assert(err, check.IsNil)
-	_, err = s.db.C("customers").RemoveAll(nil)
+	_, err = s.db.C("products.files").RemoveAll(nil)
+	c.Assert(err, check.IsNil)
+	_, err = s.db.C("products.chunks").RemoveAll(nil)
 	c.Assert(err, check.IsNil)
 }
