@@ -35,7 +35,6 @@ func NewCustomerHandler(db *mgo.Database) *CustomerHandler {
 
 func (h *CustomerHandler) List(c *context.Context) {
 	m := []model.Customer{}
-
 	q := store.Query{}
 	q.Search(c.Query("search"), m)
 
@@ -47,11 +46,13 @@ func (h *CustomerHandler) List(c *context.Context) {
 }
 
 func (h *CustomerHandler) Show(c *context.Context) {
+	id := store.ParseId(c.Param("cid"))
+
 	m := model.Customer{}
-
 	q := store.Query{}
+	q.Id(id)
 
-	if err := q.Id(c.Param("cid")); err != nil {
+	if !id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
@@ -109,9 +110,12 @@ func (h *CustomerHandler) Update(c *context.Context) {
 }
 
 func (h *CustomerHandler) Destroy(c *context.Context) {
-	q := store.Query{}
+	id := store.ParseId(c.Param("cid"))
 
-	if err := q.Id(c.Param("cid")); err != nil {
+	q := store.Query{}
+	q.Id(id)
+
+	if !id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return

@@ -50,10 +50,13 @@ func (h *ProductHandler) List(c *context.Context) {
 }
 
 func (h *ProductHandler) Show(c *context.Context) {
+	id := store.ParseId(c.Param("pid"))
+
 	m := model.Product{}
 	q := store.Query{}
+	q.Id(id)
 
-	if err := q.Id(c.Param("pid")); err != nil {
+	if !id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
@@ -111,9 +114,12 @@ func (h *ProductHandler) Update(c *context.Context) {
 }
 
 func (h *ProductHandler) Destroy(c *context.Context) {
-	q := store.Query{}
+	id := store.ParseId(c.Param("pid"))
 
-	if err := q.Id(c.Param("pid")); err != nil {
+	q := store.Query{}
+	q.Id(id)
+
+	if !id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
@@ -127,14 +133,17 @@ func (h *ProductHandler) Destroy(c *context.Context) {
 }
 
 func (h *ProductHandler) ShowImage(c *context.Context) {
-	q := store.Query{}
+	pid := store.ParseId(c.Param("pid"))
+	iid := store.ParseId(c.Param("iid"))
 
-	if err := q.Id(c.Param("pid")); err != nil {
+	q := store.Query{}
+	q.Id(pid)
+
+	if !pid.Valid() || !iid.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
 	}
-	q["images"] = bson.M{"$in": []string{c.Param("iid")}}
 
 	if err := h.store.Find(q).One(nil); err != nil {
 		c.Error(err, http.StatusNotFound)
@@ -142,7 +151,7 @@ func (h *ProductHandler) ShowImage(c *context.Context) {
 		return
 	}
 
-	file, err := h.files.OpenId(bson.ObjectIdHex(c.Param("iid")))
+	file, err := h.files.OpenId(iid)
 
 	if err != nil {
 		c.Error(nil, http.StatusNotFound)
@@ -156,9 +165,16 @@ func (h *ProductHandler) ShowImage(c *context.Context) {
 }
 
 func (h *ProductHandler) CreateImage(c *context.Context) {
-	q := store.Query{}
+	pid := store.ParseId(c.Param("pid"))
+	iid := bson.NewObjectId()
 
-	if err := q.Id(c.Param("pid")); err != nil {
+	q := store.Query{}
+	q.Id(pid)
+
+	u := store.Update{}
+	u.Push("images", iid)
+
+	if !pid.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
@@ -170,8 +186,6 @@ func (h *ProductHandler) CreateImage(c *context.Context) {
 		return
 	}
 
-	id := bson.NewObjectId()
-
 	file, err := h.files.Create("")
 
 	if err != nil {
@@ -180,7 +194,7 @@ func (h *ProductHandler) CreateImage(c *context.Context) {
 		return
 	}
 
-	file.SetId(id)
+	file.SetId(iid)
 	defer file.Close()
 
 	if _, err := io.Copy(file, c.Request.Body); err != nil {
@@ -189,7 +203,7 @@ func (h *ProductHandler) CreateImage(c *context.Context) {
 		return
 	}
 
-	if _, err := h.store.Upsert(q, bson.M{"$push": bson.M{"images": id}}); err != nil {
+	if _, err := h.store.Upsert(q, u); err != nil {
 		c.Error(err, http.StatusInternalServerError)
 
 		return
@@ -199,23 +213,29 @@ func (h *ProductHandler) CreateImage(c *context.Context) {
 }
 
 func (h *ProductHandler) DestroyImage(c *context.Context) {
-	q := store.Query{}
+	pid := store.ParseId(c.Param("pid"))
+	iid := store.ParseId(c.Param("iid"))
 
-	if err := q.Id(c.Param("pid")); err != nil {
+	q := store.Query{}
+	q.Id(pid)
+	q.In("images", iid)
+
+	u := store.Update{}
+	u.Pull("images", iid)
+
+	if !pid.Valid() || !iid.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
 	}
-	q["images"] = bson.M{"$in": []string{c.Param("iid")}}
-	b := bson.M{"$pull": bson.M{"images": c.Param("iid")}}
 
-	if err := h.store.Update(q, b); err != nil {
+	if err := h.store.Update(q, u); err != nil {
 		c.Error(nil, http.StatusNotFound)
 
 		return
 	}
 
-	if err := h.files.RemoveId(bson.ObjectIdHex(c.Param("iid"))); err != nil {
+	if err := h.files.RemoveId(iid); err != nil {
 		c.Error(nil, http.StatusNotFound)
 	} else {
 		c.Respond(nil, http.StatusNoContent)
