@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"gopkg.in/check.v1"
+	"gopkg.in/mgo.v2/bson"
 )
 
 func TestSuite(t *testing.T) {
@@ -11,8 +12,14 @@ func TestSuite(t *testing.T) {
 	check.TestingT(t)
 }
 
-type Suite struct{}
+type Suite struct {
+	id bson.ObjectId
+}
 
 type model struct {
 	Name string `store:"index"`
+}
+
+func (s *Suite) SetUpTest(c *check.C) {
+	s.id = bson.NewObjectId()
 }

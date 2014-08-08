@@ -1,8 +1,6 @@
 package store
 
 import (
-	"errors"
-
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/hoopoe/utils"
@@ -11,23 +9,23 @@ import (
 // Query is a helper for common mgo queries.
 type Query bson.M
 
-var ErrBadParam = errors.New("bad param")
-
 // Sets an equals id condition if id is valid else error is returned.
 func (q Query) Id(id interface{}) error {
-	switch t := id.(type) {
-	case string:
-		if bson.IsObjectIdHex(t) {
-			q["_id"] = bson.ObjectIdHex(t)
+	if oid := ParseId(id); oid.Valid() {
+		q["_id"] = oid
 
-			return nil
-		}
-	case bson.ObjectId:
-		if t.Valid() {
-			q["_id"] = t
+		return nil
+	}
 
-			return nil
-		}
+	return ErrBadParam
+}
+
+// Sets an in array condition for id types.
+func (q Query) HasId(field string, id interface{}) error {
+	if oid := ParseId(id); oid.Valid() {
+		q[field] = bson.M{"$in": []bson.ObjectId{oid}}
+
+		return nil
 	}
 
 	return ErrBadParam

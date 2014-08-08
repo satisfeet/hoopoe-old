@@ -8,18 +8,19 @@ import (
 func (s *Suite) TestQueryId(c *check.C) {
 	q := Query{}
 
-	c.Check(q.Id(1), check.Equals, ErrBadParam)
 	c.Check(q.Id(nil), check.Equals, ErrBadParam)
-	c.Check(q.Id("123"), check.Equals, ErrBadParam)
+	c.Check(q["_id"], check.IsNil)
+	c.Check(q.Id(s.id), check.IsNil)
+	c.Check(q["_id"], check.Equals, s.id)
+}
 
-	id := bson.NewObjectId()
+func (s *Suite) TestQueryHasId(c *check.C) {
+	q := Query{}
 
-	q = Query{}
-	c.Check(q.Id(id), check.IsNil)
-	c.Check(q["_id"], check.Equals, id)
-	q = Query{}
-	c.Check(q.Id(id.Hex()), check.IsNil)
-	c.Check(q["_id"], check.Equals, id)
+	c.Check(q.HasId("foo", nil), check.Equals, ErrBadParam)
+	c.Check(q["foo"], check.IsNil)
+	c.Check(q.HasId("foo", s.id), check.IsNil)
+	c.Check(q["foo"], check.NotNil)
 }
 
 func (s *Suite) TestQuerySearch(c *check.C) {
