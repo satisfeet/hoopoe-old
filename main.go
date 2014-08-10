@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"net/http"
+	"strings"
 
 	"gopkg.in/mgo.v2"
 
@@ -21,18 +22,28 @@ func main() {
 
 	s, err := mgo.Dial(mongo)
 	if err != nil {
-		fmt.Printf("Error connecting to database: %s.\n", err)
+		log.Printf("Error connecting to database: %s.\n", err)
 
 		return
 	}
 
-	m := http.NewServeMux()
-	m.Handle("/", httpd.NewCustomerHandler(s.DB("")))
-
-	h := handler.Logger(m)
-	h = handler.Auth(auth, h)
-
-	if err := http.ListenAndServe(host, h); err != nil {
-		fmt.Printf("Error starting http server: %s.\n", err)
+	if err := http.ListenAndServe(host, Handle(s.DB(""))); err != nil {
+		log.Printf("Error starting http server: %s.\n", err)
 	}
+}
+
+func Handle(db *mgo.Database) http.Handler {
+	p := httpd.NewProductHandler(db)
+	c := httpd.NewCustomerHandler(db)
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/products"):
+			p.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, "/customers"):
+			c.ServeHTTP(w, r)
+		}
+	})
+
+	return handler.Logger(handler.Auth(auth, h))
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/satisfeet/go-router"
 	"github.com/satisfeet/go-validation"
 	"github.com/satisfeet/hoopoe/model"
-	"github.com/satisfeet/hoopoe/utils"
+	"github.com/satisfeet/hoopoe/store"
 )
 
 type CustomerHandler struct {
@@ -19,33 +19,24 @@ type CustomerHandler struct {
 }
 
 func NewCustomerHandler(db *mgo.Database) *CustomerHandler {
-	r := router.NewRouter()
-	c := db.C("customers")
-	h := &CustomerHandler{c, r}
+	h := &CustomerHandler{
+		store:  db.C("customers"),
+		router: router.NewRouter(),
+	}
 
-	r.HandleFunc(router.Read, "/customers", h.list)
-	r.HandleFunc(router.Read, "/customers/:id", h.show)
-	r.HandleFunc(router.Create, "/customers", h.create)
-	r.HandleFunc(router.Update, "/customers/:id", h.update)
-	r.HandleFunc(router.Destroy, "/customers/:id", h.destroy)
+	h.router.HandleFunc("GET", "/customers", h.List)
+	h.router.HandleFunc("GET", "/customers/:cid", h.Show)
+	h.router.HandleFunc("POST", "/customers", h.Create)
+	h.router.HandleFunc("PUT", "/customers/:cid", h.Update)
+	h.router.HandleFunc("DELETE", "/customers/:cid", h.Destroy)
 
 	return h
 }
 
-func (h *CustomerHandler) list(c *context.Context) {
-	q := bson.M{}
+func (h *CustomerHandler) List(c *context.Context) {
 	m := []model.Customer{}
-
-	if s := c.Query("search"); len(s) > 0 {
-		q["$or"] = make([]bson.M, 0)
-
-		for k, _ := range utils.GetStructInfo(m) {
-			m := bson.M{}
-			m[k] = bson.RegEx{s, "i"}
-
-			q["$or"] = append(q["$or"].([]bson.M), m)
-		}
-	}
+	q := store.Query{}
+	q.Search(c.Query("search"), m)
 
 	if err := h.store.Find(q).All(&m); err != nil {
 		c.Error(err, http.StatusNotFound)
@@ -54,13 +45,14 @@ func (h *CustomerHandler) list(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) show(c *context.Context) {
-	q := bson.M{}
-	m := model.Customer{}
+func (h *CustomerHandler) Show(c *context.Context) {
+	id := store.ParseId(c.Param("cid"))
 
-	if p := c.Param("id"); bson.IsObjectIdHex(p) {
-		q["_id"] = bson.ObjectIdHex(p)
-	} else {
+	m := model.Customer{}
+	q := store.Query{}
+	q.Id(id)
+
+	if !id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
@@ -73,7 +65,7 @@ func (h *CustomerHandler) show(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) create(c *context.Context) {
+func (h *CustomerHandler) Create(c *context.Context) {
 	m := model.Customer{Id: bson.NewObjectId()}
 
 	if err := c.Parse(&m); err != nil {
@@ -81,6 +73,7 @@ func (h *CustomerHandler) create(c *context.Context) {
 
 		return
 	}
+
 	if err := validation.Validate(m); err != nil {
 		c.Error(err, http.StatusBadRequest)
 
@@ -94,7 +87,7 @@ func (h *CustomerHandler) create(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) update(c *context.Context) {
+func (h *CustomerHandler) Update(c *context.Context) {
 	m := model.Customer{}
 
 	if err := c.Parse(&m); err != nil {
@@ -102,6 +95,7 @@ func (h *CustomerHandler) update(c *context.Context) {
 
 		return
 	}
+
 	if err := validation.Validate(m); err != nil {
 		c.Error(err, http.StatusBadRequest)
 
@@ -115,12 +109,13 @@ func (h *CustomerHandler) update(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) destroy(c *context.Context) {
-	q := bson.M{}
+func (h *CustomerHandler) Destroy(c *context.Context) {
+	id := store.ParseId(c.Param("cid"))
 
-	if p := c.Param("id"); bson.IsObjectIdHex(p) {
-		q["_id"] = bson.ObjectIdHex(p)
-	} else {
+	q := store.Query{}
+	q.Id(id)
+
+	if !id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return

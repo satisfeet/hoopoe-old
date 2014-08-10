@@ -2,7 +2,6 @@ package httpd
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"strings"
 
 	"gopkg.in/check.v1"
@@ -20,129 +19,108 @@ var customer = model.Customer{
 	},
 }
 
-type customerTest struct {
-	Path   string
-	Method string
-	Status int
-	Body   string
+func (s *Suite) TestCustomerHandlerList(c *check.C) {
+	h := NewCustomerHandler(s.db)
+
+	ctx1, res1 := s.Context("GET", "/customers", nil)
+	ctx2, res2 := s.Context("GET", "/customers?search=mar", nil)
+	ctx3, res3 := s.Context("GET", "/customers?search=foobar", nil)
+
+	h.List(ctx1)
+	h.List(ctx2)
+	h.List(ctx3)
+
+	c.Check(res1.Code, check.Equals, http.StatusOK)
+	c.Check(res2.Code, check.Equals, http.StatusOK)
+	c.Check(res3.Code, check.Equals, http.StatusOK)
+
+	c.Check(strings.HasPrefix(res1.Body.String(), "[{"), check.Equals, true)
+	c.Check(strings.HasPrefix(res2.Body.String(), "[{"), check.Equals, true)
+	c.Check(strings.HasPrefix(res3.Body.String(), "[]"), check.Equals, true)
 }
 
-var customerTests = []customerTest{
-	customerTest{
-		Path:   "/customers",
-		Method: "GET",
-		Status: http.StatusOK,
-	},
-	customerTest{
-		Path:   "/customers?search=mar",
-		Method: "GET",
-		Status: http.StatusOK,
-	},
-	customerTest{
-		Path:   "/customers?search=foobar",
-		Method: "GET",
-		Status: http.StatusOK,
-	},
-	customerTest{
-		Path:   "/customers",
-		Method: "POST",
-		Status: http.StatusOK,
-		Body: `{
-			"name": "Edison T.",
-			"email": "edison@t.com",
-			"address": {
-				"city": "Leeds"
-			}
-		}`,
-	},
-	customerTest{
-		Path:   "/customers",
-		Method: "POST",
-		Status: http.StatusBadRequest,
-		Body: `{
-			"email": "edison@t.com",
-			"address": {
-				"city": "Leeds"
-			}
-		}`,
-	},
-	customerTest{
-		Path:   "/customers/" + customer.Id.Hex(),
-		Method: "GET",
-		Status: http.StatusOK,
-	},
-	customerTest{
-		Path:   "/customers/" + bson.NewObjectId().Hex(),
-		Method: "GET",
-		Status: http.StatusNotFound,
-	},
-	customerTest{
-		Path:   "/customers/1234",
-		Method: "GET",
-		Status: http.StatusBadRequest,
-	},
-	customerTest{
-		Path:   "/customers/" + customer.Id.Hex(),
-		Method: "PUT",
-		Status: http.StatusNoContent,
-		Body: `{
-			"id": "` + customer.Id.Hex() + `",
-			"name": "Bob Marley",
-			"email": "bob@marley.com",
-			"address": {
-				"city": "New York"
-			}
-		}`,
-	},
-	customerTest{
-		Path:   "/customers/" + customer.Id.Hex(),
-		Method: "PUT",
-		Status: http.StatusBadRequest,
-		Body: `{
-			"id": "` + customer.Id.Hex() + `",
-			"name": "Bob Marley",
-			"address": {
-				"city": "New York"
-			}
-		}`,
-	},
-	customerTest{
-		Path:   "/customers/" + customer.Id.Hex(),
-		Method: "DELETE",
-		Status: http.StatusNoContent,
-	},
-	customerTest{
-		Path:   "/customers/" + bson.NewObjectId().Hex(),
-		Method: "DELETE",
-		Status: http.StatusNotFound,
-	},
+func (s *Suite) TestCustomerHandlerShow(c *check.C) {
+	h := NewCustomerHandler(s.db)
+
+	ctx1, res1 := s.Context("GET", "/", nil)
+	ctx1.Params = map[string]string{"cid": customer.Id.Hex()}
+	ctx2, res2 := s.Context("GET", "/", nil)
+	ctx2.Params = map[string]string{"cid": bson.NewObjectId().Hex()}
+	ctx3, res3 := s.Context("GET", "/", nil)
+	ctx3.Params = map[string]string{"cid": "1234"}
+
+	h.Show(ctx1)
+	h.Show(ctx2)
+	h.Show(ctx3)
+
+	c.Check(res1.Code, check.Equals, http.StatusOK)
+	c.Check(res2.Code, check.Equals, http.StatusNotFound)
+	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestCustomerHandler(c *check.C) {
-	coll := s.db.C("customers")
+func (s *Suite) TestCustomerHandlerCreate(c *check.C) {
+	h := NewCustomerHandler(s.db)
 
-	for i, t := range customerTests {
-		c.Assert(coll.Insert(customer), check.IsNil)
-
-		var req *http.Request
-
-		if len(t.Body) != 0 {
-			req, _ = http.NewRequest(t.Method, t.Path, strings.NewReader(t.Body))
-		} else {
-			req, _ = http.NewRequest(t.Method, t.Path, nil)
+	ctx1, res1 := s.Context("POST", "/customers", strings.NewReader(`{
+		"name": "Edison T.",
+		"email": "edison@t.com",
+		"address": {
+			"city": "Leeds"
 		}
-
-		res := httptest.NewRecorder()
-
-		NewCustomerHandler(s.db).ServeHTTP(res, req)
-
-		if v := res.Code; v != t.Status {
-			b := res.Body.String()
-
-			c.Errorf("Expected #%d %s %s to respond with %d but it had %d %s", i, t.Method, t.Path, t.Status, v, b)
+	}`))
+	ctx2, res2 := s.Context("POST", "/customers", strings.NewReader(`{
+		"email": "edison@t.com",
+		"address": {
+			"city": "Leeds"
 		}
+	}`))
 
-		_, err := coll.RemoveAll(nil)
-		c.Assert(err, check.IsNil)
-	}
+	h.Create(ctx1)
+	h.Create(ctx2)
+
+	c.Check(res1.Code, check.Equals, http.StatusOK)
+	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
+}
+
+func (s *Suite) TestCustomerHandlerUpdate(c *check.C) {
+	h := NewCustomerHandler(s.db)
+
+	ctx1, res1 := s.Context("PUT", "/", strings.NewReader(`{
+		"id": "`+customer.Id.Hex()+`",
+		"name": "Bob Marley",
+		"email": "bob@marley.com",
+		"address": {
+			"city": "New York"
+		}
+	}`))
+	ctx1.Params = map[string]string{"cid": customer.Id.Hex()}
+	ctx2, res2 := s.Context("PUT", "/", strings.NewReader(`{
+		"id": "`+customer.Id.Hex()+`",
+		"name": "Bob Marley",
+		"address": {
+			"city": "New York"
+		}
+	}`))
+	ctx2.Params = map[string]string{"cid": customer.Id.Hex()}
+
+	h.Update(ctx1)
+	h.Update(ctx2)
+
+	c.Check(res1.Code, check.Equals, http.StatusNoContent)
+	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
+}
+
+func (s *Suite) TestCustomerHandlerDestroy(c *check.C) {
+	h := NewCustomerHandler(s.db)
+
+	ctx1, res1 := s.Context("DELETE", "/", nil)
+	ctx1.Params = map[string]string{"cid": customer.Id.Hex()}
+	ctx2, res2 := s.Context("DELETE", "/", nil)
+	ctx2.Params = map[string]string{"cid": bson.NewObjectId().Hex()}
+
+	h.Destroy(ctx1)
+	h.Destroy(ctx2)
+
+	c.Check(res1.Code, check.Equals, http.StatusNoContent)
+	c.Check(res2.Code, check.Equals, http.StatusNotFound)
 }
