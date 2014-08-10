@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -22,25 +22,25 @@ func main() {
 
 	s, err := mgo.Dial(mongo)
 	if err != nil {
-		fmt.Printf("Error connecting to database: %s.\n", err)
+		log.Printf("Error connecting to database: %s.\n", err)
 
 		return
 	}
 
-	if err := http.ListenAndServe(host, handle(s.DB(""))); err != nil {
-		fmt.Printf("Error starting http server: %s.\n", err)
+	if err := http.ListenAndServe(host, Handle(s.DB(""))); err != nil {
+		log.Printf("Error starting http server: %s.\n", err)
 	}
 }
 
-func handle(db *mgo.Database) http.Handler {
+func Handle(db *mgo.Database) http.Handler {
 	p := httpd.NewProductHandler(db)
 	c := httpd.NewCustomerHandler(db)
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case strings.HasPrefix("/products", r.URL.Path):
+		case strings.HasPrefix(r.URL.Path, "/products"):
 			p.ServeHTTP(w, r)
-		case strings.HasPrefix("/customers", r.URL.Path):
+		case strings.HasPrefix(r.URL.Path, "/customers"):
 			c.ServeHTTP(w, r)
 		}
 	})
