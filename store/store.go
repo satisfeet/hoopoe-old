@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/util"
+	"github.com/satisfeet/hoopoe/utils"
 )
 
 var ErrBadParam = errors.New("bad param")
@@ -41,7 +41,7 @@ func (q Query) Search(query string, model interface{}) {
 	if len(query) > 0 {
 		q["$or"] = make([]bson.M, 0)
 
-		for k, _ := range util.GetStructInfo(model) {
+		for k, _ := range utils.GetStructInfo(model) {
 			m := bson.M{}
 			m[k] = bson.RegEx{query, "i"}
 

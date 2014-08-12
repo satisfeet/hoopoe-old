@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/util"
+	"github.com/satisfeet/hoopoe/utils"
 )
 
 type Customer struct {
@@ -17,5 +17,5 @@ type Customer struct {
 }
 
 func (c Customer) MarshalJSON() ([]byte, error) {
-	return json.Marshal(util.GetFieldValues(c))
+	return json.Marshal(utils.GetFieldValues(c))
 }

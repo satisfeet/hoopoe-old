@@ -2,14 +2,6 @@
 Rechnung {{.Id.Hex}} vom 21.04.2014
 {{end}}
 
-{{define "customer"}}
-{{.Customer.Name}}
-{{if $address := .Customer.Address}} 
-{{$address.Street}}
-{{$address.ZipCode}} {{$address.City}}
-{{end}}
-{{end}}
-
 {{define "content"}}
 Sehr geehrte(r) Frau/Herr {{.Customer.Name}},
 vielen Dank für Ihren Einkauf bei satisfeet.

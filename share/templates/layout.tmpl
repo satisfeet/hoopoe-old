@@ -1,0 +1,24 @@
+{{define "customer"}}
+{{.Customer.Name}}
+{{if $address := .Customer.Address}} 
+{{$address.Street}}
+{{$address.ZipCode}} {{$address.City}}
+{{end}}
+{{end}}
+
+{{define "company"}}
+Bodo Kaiser
+
+Geiserichstr. 3
+12105 Berlin
+{{end}}
+
+{{define "account"}}
+Bodo Kaiser
+
+IBAN: DE67100900002451723009 - BIC: BEVODEBB
+{{end}}
+
+{{define "pages"}}
+Seite {{.Page}} von {nb}
+{{end}}
