@@ -23,14 +23,14 @@ func NewInvoice(m model.Order) io.WriterTo {
 		"Artikel", "Größe", "Farbe", "Anzahl", "Stückpreis", "Gesamtpreis",
 	})
 
-	for _, oi := range m.Items {
+	for _, i := range m.Items {
 		d.TableRow(10, 180, styleTableBody, []interface{}{
-			oi.Product.Name,
-			oi.Variation.Size,
-			oi.Variation.Color,
-			oi.Quantity,
-			oi.Product.Pricing.String(),
-			oi.Pricing.String(),
+			i.Product.Name,
+			i.Variation.Size,
+			i.Variation.Color,
+			i.Quantity,
+			i.Product.Pricing.String(),
+			i.Pricing.String(),
 		})
 	}
 
@@ -45,9 +45,9 @@ func header(d *pdf.Document) {
 	p := "+49 162 2635327"
 
 	d.Text(160, 40, styleSm, render("company", nil))
-	d.Link(160, 58, styleLink, e, "mailto:"+e)
-	d.Link(160, 62, styleLink, w, "http://"+w)
-	d.Link(160, 70, styleLink, p, "tel:"+p)
+	d.Link(160, 64, styleLink, e, "mailto:"+e)
+	d.Link(160, 68, styleLink, w, "http://"+w)
+	d.Link(160, 72, styleLink, p, "tel:"+p)
 }
 
 func footer(d *pdf.Document) {
