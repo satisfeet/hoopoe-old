@@ -7,20 +7,20 @@ import (
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/model"
+	"github.com/satisfeet/hoopoe/store"
 )
 
-var product = model.Product{
+var product = store.Product{
 	Id:   bson.NewObjectId(),
 	Name: "Summer Socks",
 	Images: []bson.ObjectId{
 		bson.NewObjectId(),
 	},
-	Pricing: model.Pricing{
+	Pricing: store.Pricing{
 		Retail: 299,
 	},
-	Variations: []model.Variation{
-		model.Variation{
+	Variations: []store.Variation{
+		store.Variation{
 			Size:  "42-44",
 			Color: "black",
 		},

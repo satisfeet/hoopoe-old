@@ -4,10 +4,10 @@ import (
 	"io"
 
 	"github.com/satisfeet/go-pdf"
-	"github.com/satisfeet/hoopoe/model"
+	"github.com/satisfeet/hoopoe/store"
 )
 
-func NewInvoice(m model.Order) io.WriterTo {
+func NewInvoice(m store.Order) io.WriterTo {
 	d := pdf.NewDocument(pdf.DocumentInfo{
 		Title:   "Invoice",
 		Author:  "Bodo Kaiser",

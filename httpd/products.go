@@ -10,18 +10,17 @@ import (
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-router"
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
 
 type ProductHandler struct {
-	store  *store.Product
+	store  *store.ProductStore
 	router *router.Router
 }
 
 func NewProductHandler(db *mgo.Database) *ProductHandler {
 	h := &ProductHandler{
-		store:  store.NewProduct(db),
+		store:  store.NewProductStore(db),
 		router: router.NewRouter(),
 	}
 
@@ -38,7 +37,7 @@ func NewProductHandler(db *mgo.Database) *ProductHandler {
 }
 
 func (h *ProductHandler) List(c *context.Context) {
-	m := []model.Product{}
+	m := []store.Product{}
 
 	if err := h.store.Find(&m); err != nil {
 		c.Error(err, http.StatusNotFound)
@@ -48,7 +47,7 @@ func (h *ProductHandler) List(c *context.Context) {
 }
 
 func (h *ProductHandler) Show(c *context.Context) {
-	m := model.Product{}
+	m := store.Product{}
 	m.Id = store.ParseId(c.Param("pid"))
 
 	if !m.Id.Valid() {
@@ -65,7 +64,7 @@ func (h *ProductHandler) Show(c *context.Context) {
 }
 
 func (h *ProductHandler) Create(c *context.Context) {
-	m := model.Product{Id: bson.NewObjectId()}
+	m := store.Product{Id: bson.NewObjectId()}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -87,7 +86,7 @@ func (h *ProductHandler) Create(c *context.Context) {
 }
 
 func (h *ProductHandler) Update(c *context.Context) {
-	m := model.Product{}
+	m := store.Product{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -109,7 +108,7 @@ func (h *ProductHandler) Update(c *context.Context) {
 }
 
 func (h *ProductHandler) Destroy(c *context.Context) {
-	m := model.Product{}
+	m := store.Product{}
 	m.Id = store.ParseId(c.Param("pid"))
 
 	if !m.Id.Valid() {
@@ -126,7 +125,7 @@ func (h *ProductHandler) Destroy(c *context.Context) {
 }
 
 func (h *ProductHandler) ShowImage(c *context.Context) {
-	m := model.Product{}
+	m := store.Product{}
 	m.Id = store.ParseId(c.Param("pid"))
 
 	iid := store.ParseId(c.Param("iid"))
@@ -146,7 +145,7 @@ func (h *ProductHandler) ShowImage(c *context.Context) {
 }
 
 func (h *ProductHandler) CreateImage(c *context.Context) {
-	m := model.Product{}
+	m := store.Product{}
 	m.Id = store.ParseId(c.Param("pid"))
 
 	if !m.Id.Valid() {
@@ -170,7 +169,7 @@ func (h *ProductHandler) CreateImage(c *context.Context) {
 }
 
 func (h *ProductHandler) DestroyImage(c *context.Context) {
-	m := model.Product{}
+	m := store.Product{}
 	m.Id = store.ParseId(c.Param("pid"))
 	iid := store.ParseId(c.Param("iid"))
 

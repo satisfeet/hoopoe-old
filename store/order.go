@@ -1,6 +1,8 @@
-package model
+package store
 
 import (
+	"fmt"
+
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -19,4 +21,16 @@ type OrderItem struct {
 	Quantity   int        `json:"quantity" validate:"required"`
 	Pricing    Pricing    `json:"price" validate:"nested"`
 	Variation  Variation  `json:"variation" validate:"nested"`
+}
+
+type Pricing struct {
+	Retail int64 `json:"retail" validate:"required,min=1"`
+}
+
+func (p Pricing) Float() float64 {
+	return float64(p.Retail) / 100
+}
+
+func (p Pricing) String() string {
+	return fmt.Sprintf("%.2f €", p.Float())
 }

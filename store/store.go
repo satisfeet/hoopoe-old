@@ -4,9 +4,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/satisfeet/hoopoe/utils"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/satisfeet/hoopoe/utils"
 )
 
 var ErrBadParam = errors.New("bad param")

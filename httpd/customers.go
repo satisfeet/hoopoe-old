@@ -9,18 +9,17 @@ import (
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-router"
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
 
 type CustomerHandler struct {
-	store  *store.Customer
+	store  *store.CustomerStore
 	router *router.Router
 }
 
 func NewCustomerHandler(db *mgo.Database) *CustomerHandler {
 	h := &CustomerHandler{
-		store:  store.NewCustomer(db),
+		store:  store.NewCustomerStore(db),
 		router: router.NewRouter(),
 	}
 
@@ -34,7 +33,7 @@ func NewCustomerHandler(db *mgo.Database) *CustomerHandler {
 }
 
 func (h *CustomerHandler) List(c *context.Context) {
-	m := []model.Customer{}
+	m := []store.Customer{}
 
 	if err := h.store.Search(c.Query("search"), &m); err != nil {
 		c.Error(err, http.StatusNotFound)
@@ -44,7 +43,7 @@ func (h *CustomerHandler) List(c *context.Context) {
 }
 
 func (h *CustomerHandler) Show(c *context.Context) {
-	m := model.Customer{}
+	m := store.Customer{}
 	m.Id = store.ParseId(c.Param("cid"))
 
 	if !m.Id.Valid() {
@@ -61,7 +60,7 @@ func (h *CustomerHandler) Show(c *context.Context) {
 }
 
 func (h *CustomerHandler) Create(c *context.Context) {
-	m := model.Customer{Id: bson.NewObjectId()}
+	m := store.Customer{Id: bson.NewObjectId()}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -83,7 +82,7 @@ func (h *CustomerHandler) Create(c *context.Context) {
 }
 
 func (h *CustomerHandler) Update(c *context.Context) {
-	m := model.Customer{}
+	m := store.Customer{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -105,7 +104,7 @@ func (h *CustomerHandler) Update(c *context.Context) {
 }
 
 func (h *CustomerHandler) Destroy(c *context.Context) {
-	m := model.Customer{}
+	m := store.Customer{}
 	m.Id = store.ParseId(c.Param("cid"))
 
 	if !m.Id.Valid() {
