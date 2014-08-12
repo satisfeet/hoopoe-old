@@ -5,62 +5,122 @@ import (
 
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 type model struct {
-	Name string `store:"index"`
+	Id   bson.ObjectId `bson:"_id"`
+	Name string        `store:"index"`
+}
+
+var models = []model{
+	model{bson.NewObjectId(), "Foo"},
+	model{bson.NewObjectId(), "Bar"},
 }
 
 func TestSuite(t *testing.T) {
-	check.Suite(&Suite{})
+	check.Suite(&Suite{
+		url: "localhost/test",
+	})
 	check.TestingT(t)
 }
 
 type Suite struct {
-	id bson.ObjectId
+	url      string
+	mongo    *mongo.Store
+	store    *store
+	customer *CustomerStore
+	product  *ProductStore
+}
+
+func (s *Suite) SetUpSuite(c *check.C) {
+	s.mongo = &mongo.Store{}
+
+	err := s.mongo.Dial(s.url)
+	c.Assert(err, check.IsNil)
+
+	s.store = &store{s.mongo}
+	s.customer = NewCustomerStore(s.mongo)
+	s.product = NewProductStore(s.mongo)
 }
 
 func (s *Suite) SetUpTest(c *check.C) {
-	s.id = bson.NewObjectId()
+	err := s.mongo.Insert("models", &models[0])
+	c.Assert(err, check.IsNil)
+	err = s.mongo.Insert("models", &models[1])
+	c.Assert(err, check.IsNil)
+
+	err = s.mongo.Insert("products", &products[0])
+	c.Assert(err, check.IsNil)
+
+	err = s.mongo.Insert("customers", &customers[0])
+	c.Assert(err, check.IsNil)
+	err = s.mongo.Insert("customers", &customers[1])
+	c.Assert(err, check.IsNil)
 }
 
-func (s *Suite) TestQueryId(c *check.C) {
-	q := query{}
-	q.Id(s.id)
+func (s *Suite) TearDownTest(c *check.C) {
+	err := s.mongo.RemoveAll("models", mongo.Query{})
+	c.Assert(err, check.IsNil)
 
-	c.Check(q["_id"], check.Equals, s.id)
+	err = s.mongo.RemoveAll("products", mongo.Query{})
+	c.Assert(err, check.IsNil)
+	err = s.mongo.RemoveAll("products.files", mongo.Query{})
+	c.Assert(err, check.IsNil)
+	err = s.mongo.RemoveAll("products.chunks", mongo.Query{})
+	c.Assert(err, check.IsNil)
+
+	err = s.mongo.RemoveAll("customers", mongo.Query{})
+	c.Assert(err, check.IsNil)
 }
 
-func (s *Suite) TestQueryIn(c *check.C) {
-	q := query{}
-	q.In("foo", 123)
-
-	c.Check(q["foo"], check.DeepEquals, bson.M{
-		"$in": []interface{}{123},
-	})
+func (s *Suite) TearDownSuite(c *check.C) {
+	err := s.mongo.Close()
+	c.Assert(err, check.IsNil)
 }
 
-func (s *Suite) TestQueryPush(c *check.C) {
-	u := query{}
-	u.Push("foo", "bar")
+func (s *Suite) TestStoreFind(c *check.C) {
+	m := []model{}
 
-	c.Check(u["$push"], check.DeepEquals, bson.M{"foo": "bar"})
+	err := s.store.Find(&m)
+	c.Assert(err, check.IsNil)
+
+	c.Check(m, check.DeepEquals, models)
 }
 
-func (s *Suite) TestQueryPull(c *check.C) {
-	u := query{}
-	u.Pull("foo", "bar")
+func (s *Suite) TestStoreFindId(c *check.C) {
+	m := model{}
 
-	c.Check(u["$pull"], check.DeepEquals, bson.M{"foo": "bar"})
+	err := s.store.FindId(models[0].Id, &m)
+	c.Assert(err, check.IsNil)
+
+	c.Check(m, check.DeepEquals, models[0])
 }
 
-func (s *Suite) TestParseId(c *check.C) {
-	id := bson.NewObjectId()
+func (s *Suite) TestStoreInsert(c *check.C) {
+	m1 := model{Name: "Bodo"}
+	m2 := model{}
 
-	c.Check(ParseId(id).Valid(), check.Equals, true)
-	c.Check(ParseId(id.Hex()).Valid(), check.Equals, true)
+	err := s.store.Insert(&m1)
+	c.Assert(err, check.IsNil)
 
-	c.Check(ParseId(1).Valid(), check.Equals, false)
-	c.Check(ParseId(nil).Valid(), check.Equals, false)
-	c.Check(ParseId("123").Valid(), check.Equals, false)
+	err = s.mongo.FindId("models", m1.Id, &m2)
+	c.Assert(err, check.IsNil)
+
+	c.Check(m1, check.DeepEquals, m2)
+}
+
+func (s *Suite) TestStoreUpdate(c *check.C) {
+	m := model{}
+
+	models[0].Name += "Foo"
+
+	err := s.store.Update(models[0])
+	c.Assert(err, check.IsNil)
+
+	err = s.mongo.FindId("models", models[0].Id, &m)
+	c.Assert(err, check.IsNil)
+
+	c.Check(m, check.DeepEquals, models[0])
 }

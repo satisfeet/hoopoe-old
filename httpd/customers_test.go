@@ -11,7 +11,6 @@ import (
 )
 
 var customer = store.Customer{
-	Id:    bson.NewObjectId(),
 	Name:  "Bob Marley",
 	Email: "bob@yahoo.com",
 	Address: store.Address{
@@ -20,7 +19,7 @@ var customer = store.Customer{
 }
 
 func (s *Suite) TestCustomerHandlerList(c *check.C) {
-	h := NewCustomerHandler(s.db)
+	h := NewCustomerHandler(s.mongo)
 
 	ctx1, res1 := s.Context("GET", "/customers", nil)
 	ctx2, res2 := s.Context("GET", "/customers?search=mar", nil)
@@ -40,7 +39,7 @@ func (s *Suite) TestCustomerHandlerList(c *check.C) {
 }
 
 func (s *Suite) TestCustomerHandlerShow(c *check.C) {
-	h := NewCustomerHandler(s.db)
+	h := NewCustomerHandler(s.mongo)
 
 	ctx1, res1 := s.Context("GET", "/", nil)
 	ctx1.Params = map[string]string{"cid": customer.Id.Hex()}
@@ -59,7 +58,7 @@ func (s *Suite) TestCustomerHandlerShow(c *check.C) {
 }
 
 func (s *Suite) TestCustomerHandlerCreate(c *check.C) {
-	h := NewCustomerHandler(s.db)
+	h := NewCustomerHandler(s.mongo)
 
 	ctx1, res1 := s.Context("POST", "/customers", strings.NewReader(`{
 		"name": "Edison T.",
@@ -83,7 +82,7 @@ func (s *Suite) TestCustomerHandlerCreate(c *check.C) {
 }
 
 func (s *Suite) TestCustomerHandlerUpdate(c *check.C) {
-	h := NewCustomerHandler(s.db)
+	h := NewCustomerHandler(s.mongo)
 
 	ctx1, res1 := s.Context("PUT", "/", strings.NewReader(`{
 		"id": "`+customer.Id.Hex()+`",
@@ -111,7 +110,7 @@ func (s *Suite) TestCustomerHandlerUpdate(c *check.C) {
 }
 
 func (s *Suite) TestCustomerHandlerDestroy(c *check.C) {
-	h := NewCustomerHandler(s.db)
+	h := NewCustomerHandler(s.mongo)
 
 	ctx1, res1 := s.Context("DELETE", "/", nil)
 	ctx1.Params = map[string]string{"cid": customer.Id.Hex()}

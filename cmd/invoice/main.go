@@ -9,24 +9,25 @@ import (
 
 	"github.com/satisfeet/hoopoe/files/pdf"
 	"github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
-var id, path, mongo string
+var id, path, mongodb string
 
 func main() {
 	flag.StringVar(&id, "id", "", "Order ID to lookup.")
 	flag.StringVar(&path, "path", "invoice.pdf", "Output file path.")
-	flag.StringVar(&mongo, "mongo", "localhost/test", "MongoDB to use.")
+	flag.StringVar(&mongodb, "mongo", "localhost/test", "MongoDB to use.")
 	flag.Parse()
 
 	o := store.Order{}
-	o.Id = store.ParseId(id)
+	o.Id = mongo.ParseId(id)
 
 	if !o.Id.Valid() {
 		log.Fatal("bad order id")
 	}
 
-	s, err := mgo.Dial(mongo)
+	s, err := mgo.Dial(mongodb)
 	if err != nil {
 		log.Fatal(err)
 	}

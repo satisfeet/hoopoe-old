@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"io"
 
-	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
+	"github.com/satisfeet/hoopoe/store/mongo"
 	"github.com/satisfeet/hoopoe/utils"
 )
 
@@ -32,25 +32,28 @@ type ProductStore struct {
 	*store
 }
 
-func NewProductStore(db *mgo.Database) *ProductStore {
+func NewProductStore(s *mongo.Store) *ProductStore {
 	return &ProductStore{
-		store: &store{db},
+		store: &store{s},
 	}
 }
 
-func (s *ProductStore) CreateImage(m Product) (io.ReadWriteCloser, error) {
-	image := bson.NewObjectId()
+func (s *ProductStore) RemoveId(id interface{}) error {
+	return s.mongo.RemoveId("products", id)
+}
 
-	f, err := s.filesystem(m).Create("")
+func (s *ProductStore) CreateImage(pid interface{}) (io.ReadWriteCloser, error) {
+	id := bson.NewObjectId()
+
+	f, err := s.mongo.CreateFile("products")
 	if err != nil {
 		return nil, err
 	}
-	f.SetId(image)
 
-	u := query{}
-	u.Push("images", image)
+	u := mongo.Query{}
+	u.Push("images", id)
 
-	if err := s.collection(m).UpdateId(m.Id, u); err != nil {
+	if err := s.mongo.UpdateId("products", pid, u); err != nil {
 		f.Close()
 
 		return nil, err
@@ -59,21 +62,21 @@ func (s *ProductStore) CreateImage(m Product) (io.ReadWriteCloser, error) {
 	return f, nil
 }
 
-func (s *ProductStore) OpenImage(m Product, image bson.ObjectId) (io.ReadWriteCloser, error) {
-	if err := s.collection(m).FindId(m.Id).One(nil); err != nil {
+func (s *ProductStore) OpenImage(pid interface{}, iid interface{}) (io.ReadWriteCloser, error) {
+	if err := s.mongo.FindId("products", pid, nil); err != nil {
 		return nil, err
 	}
 
-	return s.filesystem(m).OpenId(image)
+	return s.mongo.OpenFileId("products", iid)
 }
 
-func (s *ProductStore) RemoveImage(m Product, image bson.ObjectId) error {
-	u := query{}
-	u.Pull("images", image)
+func (s *ProductStore) RemoveImage(pid interface{}, iid interface{}) error {
+	u := mongo.Query{}
+	u.Pull("images", iid)
 
-	if err := s.collection(m).UpdateId(m.Id, u); err != nil {
+	if err := s.mongo.UpdateId("products", pid, u); err != nil {
 		return err
 	}
 
-	return s.filesystem(m).RemoveId(image)
+	return s.mongo.RemoveFileId("products", iid)
 }

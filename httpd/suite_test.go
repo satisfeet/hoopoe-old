@@ -6,9 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/satisfeet/go-context"
 	"gopkg.in/check.v1"
-	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+
+	"github.com/satisfeet/go-context"
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 func TestHttpd(t *testing.T) {
@@ -19,8 +21,8 @@ func TestHttpd(t *testing.T) {
 }
 
 type Suite struct {
-	url string
-	db  *mgo.Database
+	url   string
+	mongo *mongo.Store
 }
 
 func (s *Suite) Context(m, p string, b io.Reader) (*context.Context, *httptest.ResponseRecorder) {
@@ -34,38 +36,32 @@ func (s *Suite) Context(m, p string, b io.Reader) (*context.Context, *httptest.R
 }
 
 func (s *Suite) SetUpSuite(c *check.C) {
-	sess, err := mgo.Dial(s.url)
+	s.mongo = &mongo.Store{}
+	err := s.mongo.Dial(s.url)
 	c.Assert(err, check.IsNil)
-
-	s.db = sess.DB("")
 }
 
 func (s *Suite) SetUpTest(c *check.C) {
-	c.Assert(s.db.C("products").Insert(product), check.IsNil)
-	c.Assert(s.db.C("customers").Insert(customer), check.IsNil)
+	c.Assert(s.mongo.Insert("products", &product), check.IsNil)
+	c.Assert(s.mongo.Insert("customers", &customer), check.IsNil)
 
-	file, err := s.db.GridFS("products").Create("")
+	f, err := s.mongo.CreateFile("products")
 	c.Assert(err, check.IsNil)
-	file.SetId(product.Images[0])
-	_, err = file.Write([]byte("Hello World"))
+	product.Images = []bson.ObjectId{f.Id}
+
+	_, err = f.Write([]byte("Hello World"))
 	c.Assert(err, check.IsNil)
-	err = file.Close()
+	err = f.Close()
 	c.Assert(err, check.IsNil)
 }
 
 func (s *Suite) TearDownSuite(c *check.C) {
-	s.db.Session.Close()
+	c.Assert(s.mongo.Close(), check.IsNil)
 }
 
 func (s *Suite) TearDownTest(c *check.C) {
-	var err error
-
-	_, err = s.db.C("customers").RemoveAll(nil)
-	c.Assert(err, check.IsNil)
-	_, err = s.db.C("products").RemoveAll(nil)
-	c.Assert(err, check.IsNil)
-	_, err = s.db.C("products.files").RemoveAll(nil)
-	c.Assert(err, check.IsNil)
-	_, err = s.db.C("products.chunks").RemoveAll(nil)
-	c.Assert(err, check.IsNil)
+	c.Assert(s.mongo.RemoveAll("products", nil), check.IsNil)
+	c.Assert(s.mongo.RemoveAll("products.files", nil), check.IsNil)
+	c.Assert(s.mongo.RemoveAll("products.chunks", nil), check.IsNil)
+	c.Assert(s.mongo.RemoveAll("customers", nil), check.IsNil)
 }

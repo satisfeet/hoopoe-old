@@ -4,13 +4,10 @@ import (
 	"io"
 	"net/http"
 
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-router"
-	"github.com/satisfeet/go-validation"
 	"github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 type ProductHandler struct {
@@ -18,9 +15,9 @@ type ProductHandler struct {
 	router *router.Router
 }
 
-func NewProductHandler(db *mgo.Database) *ProductHandler {
+func NewProductHandler(s *mongo.Store) *ProductHandler {
 	h := &ProductHandler{
-		store:  store.NewProductStore(db),
+		store:  store.NewProductStore(s),
 		router: router.NewRouter(),
 	}
 
@@ -40,7 +37,7 @@ func (h *ProductHandler) List(c *context.Context) {
 	m := []store.Product{}
 
 	if err := h.store.Find(&m); err != nil {
-		c.Error(err, http.StatusNotFound)
+		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
@@ -48,23 +45,16 @@ func (h *ProductHandler) List(c *context.Context) {
 
 func (h *ProductHandler) Show(c *context.Context) {
 	m := store.Product{}
-	m.Id = store.ParseId(c.Param("pid"))
 
-	if !m.Id.Valid() {
-		c.Error(nil, http.StatusBadRequest)
-
-		return
-	}
-
-	if err := h.store.FindId(m.Id, &m); err != nil {
-		c.Error(err, http.StatusNotFound)
+	if err := h.store.FindId(c.Param("pid"), &m); err != nil {
+		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
 }
 
 func (h *ProductHandler) Create(c *context.Context) {
-	m := store.Product{Id: bson.NewObjectId()}
+	m := store.Product{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -72,14 +62,8 @@ func (h *ProductHandler) Create(c *context.Context) {
 		return
 	}
 
-	if err := validation.Validate(m); err != nil {
-		c.Error(err, http.StatusBadRequest)
-
-		return
-	}
-
-	if err := h.store.Insert(m); err != nil {
-		c.Error(err, http.StatusInternalServerError)
+	if err := h.store.Insert(&m); err != nil {
+		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
@@ -94,93 +78,48 @@ func (h *ProductHandler) Update(c *context.Context) {
 		return
 	}
 
-	if err := validation.Validate(m); err != nil {
-		c.Error(err, http.StatusBadRequest)
-
-		return
-	}
-
 	if err := h.store.Update(&m); err != nil {
-		c.Error(err, http.StatusNotFound)
+		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)
 	}
 }
 
 func (h *ProductHandler) Destroy(c *context.Context) {
-	m := store.Product{}
-	m.Id = store.ParseId(c.Param("pid"))
-
-	if !m.Id.Valid() {
-		c.Error(nil, http.StatusBadRequest)
-
-		return
-	}
-
-	if err := h.store.Remove(m); err != nil {
-		c.Error(err, http.StatusNotFound)
+	if err := h.store.RemoveId(c.Param("pid")); err != nil {
+		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)
 	}
 }
 
 func (h *ProductHandler) ShowImage(c *context.Context) {
-	m := store.Product{}
-	m.Id = store.ParseId(c.Param("pid"))
-
-	iid := store.ParseId(c.Param("iid"))
-
-	if !m.Id.Valid() || !iid.Valid() {
-		c.Error(nil, http.StatusBadRequest)
-
-		return
-	}
-
-	f, err := h.store.OpenImage(m, store.ParseId(c.Param("iid")))
+	f, err := h.store.OpenImage(c.Param("pid"), c.Param("iid"))
 	if err != nil {
-		c.Error(nil, http.StatusNotFound)
+		c.Error(err, ErrorCode(err))
 	} else {
 		io.Copy(c.Response, f)
 	}
 }
 
 func (h *ProductHandler) CreateImage(c *context.Context) {
-	m := store.Product{}
-	m.Id = store.ParseId(c.Param("pid"))
-
-	if !m.Id.Valid() {
-		c.Error(nil, http.StatusBadRequest)
-
-		return
-	}
-
-	f, err := h.store.CreateImage(m)
+	f, err := h.store.CreateImage(c.Param("pid"))
 	if err != nil {
-		c.Error(err, http.StatusNotFound)
+		c.Error(err, ErrorCode(err))
 
 		return
 	}
 
 	if _, err := io.Copy(f, c.Request.Body); err != nil {
-		c.Error(err, http.StatusBadRequest)
+		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)
 	}
 }
 
 func (h *ProductHandler) DestroyImage(c *context.Context) {
-	m := store.Product{}
-	m.Id = store.ParseId(c.Param("pid"))
-	iid := store.ParseId(c.Param("iid"))
-
-	if !m.Id.Valid() || !iid.Valid() {
-		c.Error(nil, http.StatusBadRequest)
-
-		return
-	}
-
-	if err := h.store.RemoveImage(m, iid); err != nil {
-		c.Error(nil, http.StatusNotFound)
+	if err := h.store.RemoveImage(c.Param("pid"), c.Param("iid")); err != nil {
+		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)
 	}

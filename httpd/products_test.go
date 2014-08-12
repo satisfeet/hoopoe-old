@@ -11,11 +11,8 @@ import (
 )
 
 var product = store.Product{
-	Id:   bson.NewObjectId(),
-	Name: "Summer Socks",
-	Images: []bson.ObjectId{
-		bson.NewObjectId(),
-	},
+	Name:   "Summer Socks",
+	Images: []bson.ObjectId{},
 	Pricing: store.Pricing{
 		Retail: 299,
 	},
@@ -29,7 +26,7 @@ var product = store.Product{
 }
 
 func (s *Suite) TestProductHandlerList(c *check.C) {
-	h := NewProductHandler(s.db)
+	h := NewProductHandler(s.mongo)
 
 	ctx1, res1 := s.Context("GET", "/products", nil)
 
@@ -40,7 +37,7 @@ func (s *Suite) TestProductHandlerList(c *check.C) {
 }
 
 func (s *Suite) TestProductHandlerShow(c *check.C) {
-	h := NewProductHandler(s.db)
+	h := NewProductHandler(s.mongo)
 
 	ctx1, res1 := s.Context("GET", "/", nil)
 	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
@@ -59,7 +56,7 @@ func (s *Suite) TestProductHandlerShow(c *check.C) {
 }
 
 func (s *Suite) TestProductHandlerCreate(c *check.C) {
-	h := NewProductHandler(s.db)
+	h := NewProductHandler(s.mongo)
 
 	ctx1, res1 := s.Context("POST", "/products", strings.NewReader(`{
 		"name": "Winter Socks",
@@ -89,7 +86,7 @@ func (s *Suite) TestProductHandlerCreate(c *check.C) {
 }
 
 func (s *Suite) TestProductHandlerUpdate(c *check.C) {
-	h := NewProductHandler(s.db)
+	h := NewProductHandler(s.mongo)
 
 	ctx1, res1 := s.Context("PUT", "/", strings.NewReader(`{
 		"id": "`+product.Id.Hex()+`",
@@ -124,7 +121,7 @@ func (s *Suite) TestProductHandlerUpdate(c *check.C) {
 }
 
 func (s *Suite) TestProductHandlerDestroy(c *check.C) {
-	h := NewProductHandler(s.db)
+	h := NewProductHandler(s.mongo)
 
 	ctx1, res1 := s.Context("DELETE", "/", nil)
 	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
@@ -139,7 +136,7 @@ func (s *Suite) TestProductHandlerDestroy(c *check.C) {
 }
 
 func (s *Suite) TestProductHandlerShowImage(c *check.C) {
-	h := NewProductHandler(s.db)
+	h := NewProductHandler(s.mongo)
 
 	ctx1, res1 := s.Context("GET", "/", nil)
 	ctx1.Params = map[string]string{
@@ -176,7 +173,7 @@ func (s *Suite) TestProductHandlerShowImage(c *check.C) {
 }
 
 func (s *Suite) TestProductHandlerCreateImage(c *check.C) {
-	h := NewProductHandler(s.db)
+	h := NewProductHandler(s.mongo)
 
 	ctx1, res1 := s.Context("POST", "/", strings.NewReader("Foo"))
 	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
@@ -195,7 +192,7 @@ func (s *Suite) TestProductHandlerCreateImage(c *check.C) {
 }
 
 func (s *Suite) TestProductHandlerDestroyImage(c *check.C) {
-	h := NewProductHandler(s.db)
+	h := NewProductHandler(s.mongo)
 
 	ctx1, res1 := s.Context("DELETE", "/", nil)
 	ctx1.Params = map[string]string{

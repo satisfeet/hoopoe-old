@@ -3,9 +3,9 @@ package store
 import (
 	"encoding/json"
 
-	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
+	"github.com/satisfeet/hoopoe/store/mongo"
 	"github.com/satisfeet/hoopoe/utils"
 )
 
@@ -31,14 +31,14 @@ type CustomerStore struct {
 	*store
 }
 
-func NewCustomerStore(db *mgo.Database) *CustomerStore {
+func NewCustomerStore(s *mongo.Store) *CustomerStore {
 	return &CustomerStore{
-		store: &store{db},
+		store: &store{s},
 	}
 }
 
 func (s *CustomerStore) Search(keyword string, m *[]Customer) error {
-	q := query{}
+	q := mongo.Query{}
 
 	if len(keyword) > 0 {
 		or := []bson.M{}
@@ -53,5 +53,9 @@ func (s *CustomerStore) Search(keyword string, m *[]Customer) error {
 		q["$or"] = or
 	}
 
-	return s.collection(m).Find(q).All(m)
+	return s.mongo.Find(getName(m), q, m)
+}
+
+func (s *CustomerStore) RemoveId(id interface{}) error {
+	return s.mongo.RemoveId("customers", id)
 }

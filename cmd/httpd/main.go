@@ -6,35 +6,34 @@ import (
 	"net/http"
 	"strings"
 
-	"gopkg.in/mgo.v2"
-
 	"github.com/satisfeet/go-handler"
 	"github.com/satisfeet/hoopoe/httpd"
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
-var host, auth, mongo string
+var host, auth, mongodb string
 
 func main() {
 	flag.StringVar(&host, "host", ":3000", "")
 	flag.StringVar(&auth, "auth", "bodokaiser:secret", "")
-	flag.StringVar(&mongo, "mongo", "localhost/satisfeet", "")
+	flag.StringVar(&mongodb, "mongo", "localhost/satisfeet", "")
 	flag.Parse()
 
-	s, err := mgo.Dial(mongo)
-	if err != nil {
+	s := &mongo.Store{}
+	if err := s.Dial(mongodb); err != nil {
 		log.Printf("Error connecting to database: %s.\n", err)
 
 		return
 	}
 
-	if err := http.ListenAndServe(host, Handle(s.DB(""))); err != nil {
+	if err := http.ListenAndServe(host, Handle(s)); err != nil {
 		log.Printf("Error starting http server: %s.\n", err)
 	}
 }
 
-func Handle(db *mgo.Database) http.Handler {
-	p := httpd.NewProductHandler(db)
-	c := httpd.NewCustomerHandler(db)
+func Handle(s *mongo.Store) http.Handler {
+	p := httpd.NewProductHandler(s)
+	c := httpd.NewCustomerHandler(s)
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
