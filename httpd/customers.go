@@ -14,13 +14,13 @@ import (
 )
 
 type CustomerHandler struct {
-	store  *mgo.Collection
+	store  *store.Customer
 	router *router.Router
 }
 
 func NewCustomerHandler(db *mgo.Database) *CustomerHandler {
 	h := &CustomerHandler{
-		store:  db.C("customers"),
+		store:  store.NewCustomer(db),
 		router: router.NewRouter(),
 	}
 
@@ -35,10 +35,8 @@ func NewCustomerHandler(db *mgo.Database) *CustomerHandler {
 
 func (h *CustomerHandler) List(c *context.Context) {
 	m := []model.Customer{}
-	q := store.Query{}
-	q.Search(c.Query("search"), m)
 
-	if err := h.store.Find(q).All(&m); err != nil {
+	if err := h.store.Search(c.Query("search"), &m); err != nil {
 		c.Error(err, http.StatusNotFound)
 	} else {
 		c.Respond(m, http.StatusOK)
@@ -46,19 +44,16 @@ func (h *CustomerHandler) List(c *context.Context) {
 }
 
 func (h *CustomerHandler) Show(c *context.Context) {
-	id := store.ParseId(c.Param("cid"))
-
 	m := model.Customer{}
-	q := store.Query{}
-	q.Id(id)
+	m.Id = store.ParseId(c.Param("cid"))
 
-	if !id.Valid() {
+	if !m.Id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
 	}
 
-	if err := h.store.Find(q).One(&m); err != nil {
+	if err := h.store.FindId(m.Id, &m); err != nil {
 		c.Error(err, http.StatusNotFound)
 	} else {
 		c.Respond(m, http.StatusOK)
@@ -102,7 +97,7 @@ func (h *CustomerHandler) Update(c *context.Context) {
 		return
 	}
 
-	if err := h.store.UpdateId(m.Id, &m); err != nil {
+	if err := h.store.Update(&m); err != nil {
 		c.Error(err, http.StatusNotFound)
 	} else {
 		c.Respond(nil, http.StatusNoContent)
@@ -110,18 +105,16 @@ func (h *CustomerHandler) Update(c *context.Context) {
 }
 
 func (h *CustomerHandler) Destroy(c *context.Context) {
-	id := store.ParseId(c.Param("cid"))
+	m := model.Customer{}
+	m.Id = store.ParseId(c.Param("cid"))
 
-	q := store.Query{}
-	q.Id(id)
-
-	if !id.Valid() {
+	if !m.Id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
 	}
 
-	if err := h.store.Remove(q); err != nil {
+	if err := h.store.Remove(m); err != nil {
 		c.Error(err, http.StatusNotFound)
 	} else {
 		c.Respond(nil, http.StatusNoContent)

@@ -15,15 +15,13 @@ import (
 )
 
 type ProductHandler struct {
-	files  *mgo.GridFS
-	store  *mgo.Collection
+	store  *store.Product
 	router *router.Router
 }
 
 func NewProductHandler(db *mgo.Database) *ProductHandler {
 	h := &ProductHandler{
-		store:  db.C("products"),
-		files:  db.GridFS("products"),
+		store:  store.NewProduct(db),
 		router: router.NewRouter(),
 	}
 
@@ -42,7 +40,7 @@ func NewProductHandler(db *mgo.Database) *ProductHandler {
 func (h *ProductHandler) List(c *context.Context) {
 	m := []model.Product{}
 
-	if err := h.store.Find(nil).All(&m); err != nil {
+	if err := h.store.Find(&m); err != nil {
 		c.Error(err, http.StatusNotFound)
 	} else {
 		c.Respond(m, http.StatusOK)
@@ -50,19 +48,16 @@ func (h *ProductHandler) List(c *context.Context) {
 }
 
 func (h *ProductHandler) Show(c *context.Context) {
-	id := store.ParseId(c.Param("pid"))
-
 	m := model.Product{}
-	q := store.Query{}
-	q.Id(id)
+	m.Id = store.ParseId(c.Param("pid"))
 
-	if !id.Valid() {
+	if !m.Id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
 	}
 
-	if err := h.store.Find(q).One(&m); err != nil {
+	if err := h.store.FindId(m.Id, &m); err != nil {
 		c.Error(err, http.StatusNotFound)
 	} else {
 		c.Respond(m, http.StatusOK)
@@ -106,7 +101,7 @@ func (h *ProductHandler) Update(c *context.Context) {
 		return
 	}
 
-	if err := h.store.UpdateId(m.Id, &m); err != nil {
+	if err := h.store.Update(&m); err != nil {
 		c.Error(err, http.StatusNotFound)
 	} else {
 		c.Respond(nil, http.StatusNoContent)
@@ -114,18 +109,16 @@ func (h *ProductHandler) Update(c *context.Context) {
 }
 
 func (h *ProductHandler) Destroy(c *context.Context) {
-	id := store.ParseId(c.Param("pid"))
+	m := model.Product{}
+	m.Id = store.ParseId(c.Param("pid"))
 
-	q := store.Query{}
-	q.Id(id)
-
-	if !id.Valid() {
+	if !m.Id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
 	}
 
-	if err := h.store.Remove(q); err != nil {
+	if err := h.store.Remove(m); err != nil {
 		c.Error(err, http.StatusNotFound)
 	} else {
 		c.Respond(nil, http.StatusNoContent)
@@ -133,109 +126,61 @@ func (h *ProductHandler) Destroy(c *context.Context) {
 }
 
 func (h *ProductHandler) ShowImage(c *context.Context) {
-	pid := store.ParseId(c.Param("pid"))
+	m := model.Product{}
+	m.Id = store.ParseId(c.Param("pid"))
+
 	iid := store.ParseId(c.Param("iid"))
 
-	q := store.Query{}
-	q.Id(pid)
-
-	if !pid.Valid() || !iid.Valid() {
+	if !m.Id.Valid() || !iid.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
 	}
 
-	if err := h.store.Find(q).One(nil); err != nil {
-		c.Error(err, http.StatusNotFound)
-
-		return
-	}
-
-	file, err := h.files.OpenId(iid)
-
+	f, err := h.store.OpenImage(m, store.ParseId(c.Param("iid")))
 	if err != nil {
 		c.Error(nil, http.StatusNotFound)
-
-		return
+	} else {
+		io.Copy(c.Response, f)
 	}
-
-	defer file.Close()
-
-	io.Copy(c.Response, file)
 }
 
 func (h *ProductHandler) CreateImage(c *context.Context) {
-	pid := store.ParseId(c.Param("pid"))
-	iid := bson.NewObjectId()
+	m := model.Product{}
+	m.Id = store.ParseId(c.Param("pid"))
 
-	q := store.Query{}
-	q.Id(pid)
-
-	u := store.Update{}
-	u.Push("images", iid)
-
-	if !pid.Valid() {
+	if !m.Id.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
 	}
 
-	if err := h.store.Find(q).One(nil); err != nil {
+	f, err := h.store.CreateImage(m)
+	if err != nil {
 		c.Error(err, http.StatusNotFound)
 
 		return
 	}
 
-	file, err := h.files.Create("")
-
-	if err != nil {
-		c.Error(err, http.StatusInternalServerError)
-
-		return
-	}
-
-	file.SetId(iid)
-	defer file.Close()
-
-	if _, err := io.Copy(file, c.Request.Body); err != nil {
+	if _, err := io.Copy(f, c.Request.Body); err != nil {
 		c.Error(err, http.StatusBadRequest)
-
-		return
+	} else {
+		c.Respond(nil, http.StatusNoContent)
 	}
-
-	if _, err := h.store.Upsert(q, u); err != nil {
-		c.Error(err, http.StatusInternalServerError)
-
-		return
-	}
-
-	c.Respond(nil, http.StatusNoContent)
 }
 
 func (h *ProductHandler) DestroyImage(c *context.Context) {
-	pid := store.ParseId(c.Param("pid"))
+	m := model.Product{}
+	m.Id = store.ParseId(c.Param("pid"))
 	iid := store.ParseId(c.Param("iid"))
 
-	q := store.Query{}
-	q.Id(pid)
-	q.In("images", iid)
-
-	u := store.Update{}
-	u.Pull("images", iid)
-
-	if !pid.Valid() || !iid.Valid() {
+	if !m.Id.Valid() || !iid.Valid() {
 		c.Error(nil, http.StatusBadRequest)
 
 		return
 	}
 
-	if err := h.store.Update(q, u); err != nil {
-		c.Error(nil, http.StatusNotFound)
-
-		return
-	}
-
-	if err := h.files.RemoveId(iid); err != nil {
+	if err := h.store.RemoveImage(m, iid); err != nil {
 		c.Error(nil, http.StatusNotFound)
 	} else {
 		c.Respond(nil, http.StatusNoContent)
