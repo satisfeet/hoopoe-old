@@ -9,10 +9,11 @@ import (
 
 func NewInvoice(m model.Order) io.WriterTo {
 	d := pdf.NewDocument(pdf.DocumentInfo{
-		Title:  "Invoice",
-		Author: "Bodo Kaiser",
-		Header: header,
-		Footer: footer,
+		Title:   "Invoice",
+		Author:  "Bodo Kaiser",
+		Header:  header,
+		Footer:  footer,
+		FontDir: path + "fonts",
 	})
 
 	d.Text(56, 42, styleMd, render("customer", m))
