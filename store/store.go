@@ -8,6 +8,16 @@ import (
 	"github.com/satisfeet/hoopoe/utils"
 )
 
+type Store interface {
+	Find(model interface{}) error
+	FindId(id interface{}, model interface{}) error
+
+	Insert(model interface{}) error
+	Update(model interface{}) error
+	Remove(model interface{}) error
+	RemoveId(id interface{}) error
+}
+
 type store struct {
 	mongo *mongo.Store
 }

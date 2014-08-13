@@ -10,12 +10,17 @@ import (
 )
 
 type Customer struct {
+	*handler
+
 	store *store.Customer
 }
 
-func NewCustomer(s *mongo.Store) *Customer {
+func NewCustomer(m *mongo.Store) *Customer {
+	s := store.NewCustomer(m)
+
 	return &Customer{
-		store: store.NewCustomer(s),
+		handler: &handler{s},
+		store:   s,
 	}
 }
 
@@ -23,7 +28,7 @@ func (h *Customer) List(c *context.Context) {
 	m := []model.Customer{}
 
 	if err := h.store.Search(c.Query("search"), &m); err != nil {
-		c.Error(err, ErrorCode(err))
+		h.error(c, err)
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
@@ -33,7 +38,7 @@ func (h *Customer) Show(c *context.Context) {
 	m := model.Customer{}
 
 	if err := h.store.FindId(c.Param("customer"), &m); err != nil {
-		c.Error(err, ErrorCode(err))
+		h.error(c, err)
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
@@ -43,13 +48,13 @@ func (h *Customer) Create(c *context.Context) {
 	m := model.Customer{}
 
 	if err := c.Parse(&m); err != nil {
-		c.Error(err, http.StatusBadRequest)
+		h.error(c, err)
 
 		return
 	}
 
 	if err := h.store.Insert(&m); err != nil {
-		c.Error(err, ErrorCode(err))
+		h.error(c, err)
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
@@ -59,13 +64,13 @@ func (h *Customer) Update(c *context.Context) {
 	m := model.Customer{}
 
 	if err := c.Parse(&m); err != nil {
-		c.Error(err, http.StatusBadRequest)
+		h.error(c, err)
 
 		return
 	}
 
 	if err := h.store.Update(&m); err != nil {
-		c.Error(err, ErrorCode(err))
+		h.error(c, err)
 	} else {
 		c.Respond(nil, http.StatusNoContent)
 	}
@@ -73,7 +78,7 @@ func (h *Customer) Update(c *context.Context) {
 
 func (h *Customer) Destroy(c *context.Context) {
 	if err := h.store.RemoveId(c.Param("customer")); err != nil {
-		c.Error(err, ErrorCode(err))
+		h.error(c, err)
 	} else {
 		c.Respond(nil, http.StatusNoContent)
 	}
