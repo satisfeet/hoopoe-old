@@ -11,13 +11,13 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/hoopoe/model"
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 var order = model.Order{
 	Id: bson.NewObjectId(),
 	Items: []model.OrderItem{
 		model.OrderItem{
-			Product: product,
 			ProductRef: &mgo.DBRef{
 				Id:         product.Id,
 				Collection: "products",
@@ -27,8 +27,7 @@ var order = model.Order{
 			Quantity:  1,
 		},
 	},
-	Pricing:  pricing,
-	Customer: customer,
+	Pricing: pricing,
 	CustomerRef: &mgo.DBRef{
 		Id:         customer.Id,
 		Collection: "customers",
@@ -40,11 +39,9 @@ var pricing = model.Pricing{
 }
 
 var product = model.Product{
-	Id:   bson.NewObjectId(),
-	Name: "Summer socks",
-	Pricing: model.Pricing{
-		Retail: 599,
-	},
+	Id:      bson.NewObjectId(),
+	Name:    "Summer socks",
+	Pricing: pricing,
 	Variations: []model.Variation{
 		model.Variation{
 			Size:  "42-44",
@@ -72,35 +69,36 @@ func TestMain(t *testing.T) {
 }
 
 type Suite struct {
-	url      string
-	database *mgo.Database
+	url   string
+	mongo *mongo.Store
 }
 
 func (s *Suite) SetUpSuite(c *check.C) {
-	sess, err := mgo.Dial(s.url)
+	s.mongo = &mongo.Store{}
+
+	err := s.mongo.Dial(s.url)
 	c.Assert(err, check.IsNil)
 
-	s.database = sess.DB("")
-
-	err = s.database.C("orders").Insert(order)
+	err = s.mongo.Insert("orders", &order)
 	c.Assert(err, check.IsNil)
-	err = s.database.C("products").Insert(product)
+	err = s.mongo.Insert("products", &product)
 	c.Assert(err, check.IsNil)
-	err = s.database.C("customers").Insert(customer)
+	err = s.mongo.Insert("customers", &customer)
 	c.Assert(err, check.IsNil)
 
-	os.Args = append(os.Args, []string{"--id", order.Id.Hex()}...)
+	os.Args = append(os.Args, []string{"--order", order.Id.Hex()}...)
 }
 
 func (s *Suite) TearDownSuite(c *check.C) {
-	_, err := s.database.C("orders").RemoveAll(nil)
+	err := s.mongo.RemoveAll("orders", mongo.Query{})
 	c.Assert(err, check.IsNil)
-	_, err = s.database.C("products").RemoveAll(nil)
+	err = s.mongo.RemoveAll("products", mongo.Query{})
 	c.Assert(err, check.IsNil)
-	_, err = s.database.C("customers").RemoveAll(nil)
+	err = s.mongo.RemoveAll("customers", mongo.Query{})
 	c.Assert(err, check.IsNil)
 
-	s.database.Session.Close()
+	err = s.mongo.Close()
+	c.Assert(err, check.IsNil)
 }
 
 func (s *Suite) TestMain(c *check.C) {

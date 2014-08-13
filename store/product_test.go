@@ -4,13 +4,16 @@ import (
 	"io/ioutil"
 
 	"gopkg.in/check.v1"
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/hoopoe/model"
 )
 
 var products = []model.Product{
 	model.Product{
-		Name: "Summer socks",
+		Id:     bson.NewObjectId(),
+		Name:   "Summer socks",
+		Images: []bson.ObjectId{},
 		Pricing: model.Pricing{
 			Retail: 599,
 		},

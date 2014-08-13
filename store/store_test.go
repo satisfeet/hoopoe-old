@@ -32,6 +32,7 @@ type Suite struct {
 	store    *store
 	customer *Customer
 	product  *Product
+	order    *Order
 }
 
 func (s *Suite) SetUpSuite(c *check.C) {
@@ -43,6 +44,7 @@ func (s *Suite) SetUpSuite(c *check.C) {
 	s.store = &store{s.mongo}
 	s.customer = NewCustomer(s.mongo)
 	s.product = NewProduct(s.mongo)
+	s.order = NewOrder(s.mongo)
 }
 
 func (s *Suite) SetUpTest(c *check.C) {
@@ -50,6 +52,8 @@ func (s *Suite) SetUpTest(c *check.C) {
 	c.Assert(err, check.IsNil)
 	err = s.mongo.Insert("models", &Models[1])
 	c.Assert(err, check.IsNil)
+
+	err = s.mongo.Insert("orders", &order)
 
 	err = s.mongo.Insert("products", &products[0])
 	c.Assert(err, check.IsNil)
@@ -62,6 +66,9 @@ func (s *Suite) SetUpTest(c *check.C) {
 
 func (s *Suite) TearDownTest(c *check.C) {
 	err := s.mongo.RemoveAll("models", mongo.Query{})
+	c.Assert(err, check.IsNil)
+
+	err = s.mongo.RemoveAll("orders", mongo.Query{})
 	c.Assert(err, check.IsNil)
 
 	err = s.mongo.RemoveAll("products", mongo.Query{})

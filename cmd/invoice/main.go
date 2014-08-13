@@ -5,53 +5,56 @@ import (
 	"log"
 	"os"
 
-	"gopkg.in/mgo.v2"
-
 	"github.com/satisfeet/hoopoe/files/pdf"
 	"github.com/satisfeet/hoopoe/model"
+	"github.com/satisfeet/hoopoe/store"
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
-var id, path, mongodb string
-
 func main() {
-	flag.StringVar(&id, "id", "", "Order ID to lookup.")
-	flag.StringVar(&path, "path", "invoice.pdf", "Output file path.")
+	var orderId, output, mongodb string
+
+	flag.StringVar(&orderId, "order", "", "Order ID to lookup.")
+	flag.StringVar(&output, "output", "invoice.pdf", "Output file path.")
 	flag.StringVar(&mongodb, "mongo", "localhost/test", "MongoDB to use.")
 	flag.Parse()
 
 	o := model.Order{}
-	o.Id = mongo.ParseId(id)
+	o.Id = mongo.IdFromString(orderId)
 
-	if !o.Id.Valid() {
-		log.Fatal("bad order id")
-	}
+	m := &mongo.Store{}
 
-	s, err := mgo.Dial(mongodb)
-	if err != nil {
-		log.Fatal(err)
-	}
-	db := s.DB("")
-
-	if err := db.C("orders").FindId(o.Id).One(&o); err != nil {
-		log.Fatal(err)
-	}
-	for i, oi := range o.Items {
-		if err := db.FindRef(oi.ProductRef).One(&o.Items[i].Product); err != nil {
-			log.Fatal(err)
-		}
-	}
-	if err := db.FindRef(o.CustomerRef).One(&o.Customer); err != nil {
+	if err := m.Dial(mongodb); err != nil {
 		log.Fatal(err)
 	}
 
+	s := store.NewOrder(m)
+
+	if err := s.FindId(o.Id, &o); err != nil {
+		log.Fatal(err)
+	}
+	if err := s.FindCustomer(&o); err != nil {
+		log.Fatal(err)
+	}
+	if err := s.FindProducts(&o); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := writeInvoiceToFile(o, output); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func writeInvoiceToFile(o model.Order, path string) error {
 	f, err := os.Create(path)
+
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
 	defer f.Close()
 
-	if _, err := pdf.NewInvoice(o).WriteTo(f); err != nil {
-		log.Fatal(err)
-	}
+	_, err = pdf.NewInvoice(o).WriteTo(f)
+
+	return err
 }
