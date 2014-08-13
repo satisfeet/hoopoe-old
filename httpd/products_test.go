@@ -25,8 +25,8 @@ var product = model.Product{
 	Description: "These Summer Socks will make you really really happy.",
 }
 
-func (s *Suite) TestProductHandlerList(c *check.C) {
-	h := NewProductHandler(s.mongo)
+func (s *Suite) TestProductList(c *check.C) {
+	h := NewProduct(s.mongo)
 
 	ctx1, res1 := s.Context("GET", "/products", nil)
 
@@ -36,15 +36,15 @@ func (s *Suite) TestProductHandlerList(c *check.C) {
 	c.Check(strings.HasPrefix(res1.Body.String(), "[{"), check.Equals, true)
 }
 
-func (s *Suite) TestProductHandlerShow(c *check.C) {
-	h := NewProductHandler(s.mongo)
+func (s *Suite) TestProductShow(c *check.C) {
+	h := NewProduct(s.mongo)
 
 	ctx1, res1 := s.Context("GET", "/", nil)
-	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
+	ctx1.Params = map[string]string{"product": product.Id.Hex()}
 	ctx2, res2 := s.Context("GET", "/", nil)
-	ctx2.Params = map[string]string{"pid": bson.NewObjectId().Hex()}
+	ctx2.Params = map[string]string{"product": bson.NewObjectId().Hex()}
 	ctx3, res3 := s.Context("GET", "/", nil)
-	ctx3.Params = map[string]string{"pid": "1234"}
+	ctx3.Params = map[string]string{"product": "1234"}
 
 	h.Show(ctx1)
 	h.Show(ctx2)
@@ -55,8 +55,8 @@ func (s *Suite) TestProductHandlerShow(c *check.C) {
 	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestProductHandlerCreate(c *check.C) {
-	h := NewProductHandler(s.mongo)
+func (s *Suite) TestProductCreate(c *check.C) {
+	h := NewProduct(s.mongo)
 
 	ctx1, res1 := s.Context("POST", "/products", strings.NewReader(`{
 		"name": "Winter Socks",
@@ -85,8 +85,8 @@ func (s *Suite) TestProductHandlerCreate(c *check.C) {
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestProductHandlerUpdate(c *check.C) {
-	h := NewProductHandler(s.mongo)
+func (s *Suite) TestProductUpdate(c *check.C) {
+	h := NewProduct(s.mongo)
 
 	ctx1, res1 := s.Context("PUT", "/", strings.NewReader(`{
 		"id": "`+product.Id.Hex()+`",
@@ -102,7 +102,7 @@ func (s *Suite) TestProductHandlerUpdate(c *check.C) {
 		],
 		"description": "Getting cold again. Not with these socks anymore."
 	}`))
-	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
+	ctx1.Params = map[string]string{"product": product.Id.Hex()}
 	ctx2, res2 := s.Context("PUT", "/", strings.NewReader(`{
 		"id": "`+product.Id.Hex()+`",
 		"name": "Winter Socks",
@@ -111,7 +111,7 @@ func (s *Suite) TestProductHandlerUpdate(c *check.C) {
 		},
 		"description": "Getting cold again. Not with these socks anymore."
 	}`))
-	ctx2.Params = map[string]string{"pid": product.Id.Hex()}
+	ctx2.Params = map[string]string{"product": product.Id.Hex()}
 
 	h.Update(ctx1)
 	h.Update(ctx2)
@@ -120,13 +120,13 @@ func (s *Suite) TestProductHandlerUpdate(c *check.C) {
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestProductHandlerDestroy(c *check.C) {
-	h := NewProductHandler(s.mongo)
+func (s *Suite) TestProductDestroy(c *check.C) {
+	h := NewProduct(s.mongo)
 
 	ctx1, res1 := s.Context("DELETE", "/", nil)
-	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
+	ctx1.Params = map[string]string{"product": product.Id.Hex()}
 	ctx2, res2 := s.Context("DELETE", "/", nil)
-	ctx2.Params = map[string]string{"pid": bson.NewObjectId().Hex()}
+	ctx2.Params = map[string]string{"product": bson.NewObjectId().Hex()}
 
 	h.Destroy(ctx1)
 	h.Destroy(ctx2)
@@ -135,28 +135,28 @@ func (s *Suite) TestProductHandlerDestroy(c *check.C) {
 	c.Check(res2.Code, check.Equals, http.StatusNotFound)
 }
 
-func (s *Suite) TestProductHandlerShowImage(c *check.C) {
-	h := NewProductHandler(s.mongo)
+func (s *Suite) TestProductShowImage(c *check.C) {
+	h := NewProduct(s.mongo)
 
 	ctx1, res1 := s.Context("GET", "/", nil)
 	ctx1.Params = map[string]string{
-		"pid": product.Id.Hex(),
-		"iid": product.Images[0].Hex(),
+		"product": product.Id.Hex(),
+		"image":   product.Images[0].Hex(),
 	}
 	ctx2, res2 := s.Context("GET", "/", nil)
 	ctx2.Params = map[string]string{
-		"pid": "1234",
-		"iid": product.Images[0].Hex(),
+		"product": "1234",
+		"image":   product.Images[0].Hex(),
 	}
 	ctx3, res3 := s.Context("GET", "/", nil)
 	ctx3.Params = map[string]string{
-		"pid": product.Id.Hex(),
-		"iid": "1234",
+		"product": product.Id.Hex(),
+		"image":   "1234",
 	}
 	ctx4, res4 := s.Context("GET", "/", nil)
 	ctx4.Params = map[string]string{
-		"pid": product.Id.Hex(),
-		"iid": bson.NewObjectId().Hex(),
+		"product": product.Id.Hex(),
+		"image":   bson.NewObjectId().Hex(),
 	}
 
 	h.ShowImage(ctx1)
@@ -172,15 +172,15 @@ func (s *Suite) TestProductHandlerShowImage(c *check.C) {
 	c.Check(res1.Body.String(), check.Equals, "Hello World")
 }
 
-func (s *Suite) TestProductHandlerCreateImage(c *check.C) {
-	h := NewProductHandler(s.mongo)
+func (s *Suite) TestProductCreateImage(c *check.C) {
+	h := NewProduct(s.mongo)
 
 	ctx1, res1 := s.Context("POST", "/", strings.NewReader("Foo"))
-	ctx1.Params = map[string]string{"pid": product.Id.Hex()}
+	ctx1.Params = map[string]string{"product": product.Id.Hex()}
 	ctx2, res2 := s.Context("POST", "/", strings.NewReader("Foo"))
-	ctx2.Params = map[string]string{"pid": bson.NewObjectId().Hex()}
+	ctx2.Params = map[string]string{"product": bson.NewObjectId().Hex()}
 	ctx3, res3 := s.Context("POST", "/", strings.NewReader("Foo"))
-	ctx3.Params = map[string]string{"pid": "1234"}
+	ctx3.Params = map[string]string{"product": "1234"}
 
 	h.CreateImage(ctx1)
 	h.CreateImage(ctx2)
@@ -191,28 +191,28 @@ func (s *Suite) TestProductHandlerCreateImage(c *check.C) {
 	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestProductHandlerDestroyImage(c *check.C) {
-	h := NewProductHandler(s.mongo)
+func (s *Suite) TestProductDestroyImage(c *check.C) {
+	h := NewProduct(s.mongo)
 
 	ctx1, res1 := s.Context("DELETE", "/", nil)
 	ctx1.Params = map[string]string{
-		"pid": product.Id.Hex(),
-		"iid": product.Images[0].Hex(),
+		"product": product.Id.Hex(),
+		"image":   product.Images[0].Hex(),
 	}
 	ctx2, res2 := s.Context("DELETE", "/", nil)
 	ctx2.Params = map[string]string{
-		"pid": "1234",
-		"iid": product.Images[0].Hex(),
+		"product": "1234",
+		"image":   product.Images[0].Hex(),
 	}
 	ctx3, res3 := s.Context("DELETE", "/", nil)
 	ctx3.Params = map[string]string{
-		"pid": product.Id.Hex(),
-		"iid": "1234",
+		"product": product.Id.Hex(),
+		"image":   "1234",
 	}
 	ctx4, res4 := s.Context("DELETE", "/", nil)
 	ctx4.Params = map[string]string{
-		"pid": product.Id.Hex(),
-		"iid": bson.NewObjectId().Hex(),
+		"product": product.Id.Hex(),
+		"image":   bson.NewObjectId().Hex(),
 	}
 
 	h.DestroyImage(ctx1)

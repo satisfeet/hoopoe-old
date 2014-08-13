@@ -18,8 +18,8 @@ var customer = model.Customer{
 	},
 }
 
-func (s *Suite) TestCustomerHandlerList(c *check.C) {
-	h := NewCustomerHandler(s.mongo)
+func (s *Suite) TestCustomerList(c *check.C) {
+	h := NewCustomer(s.mongo)
 
 	ctx1, res1 := s.Context("GET", "/customers", nil)
 	ctx2, res2 := s.Context("GET", "/customers?search=mar", nil)
@@ -38,15 +38,15 @@ func (s *Suite) TestCustomerHandlerList(c *check.C) {
 	c.Check(strings.HasPrefix(res3.Body.String(), "[]"), check.Equals, true)
 }
 
-func (s *Suite) TestCustomerHandlerShow(c *check.C) {
-	h := NewCustomerHandler(s.mongo)
+func (s *Suite) TestCustomerShow(c *check.C) {
+	h := NewCustomer(s.mongo)
 
 	ctx1, res1 := s.Context("GET", "/", nil)
-	ctx1.Params = map[string]string{"cid": customer.Id.Hex()}
+	ctx1.Params = map[string]string{"customer": customer.Id.Hex()}
 	ctx2, res2 := s.Context("GET", "/", nil)
-	ctx2.Params = map[string]string{"cid": bson.NewObjectId().Hex()}
+	ctx2.Params = map[string]string{"customer": bson.NewObjectId().Hex()}
 	ctx3, res3 := s.Context("GET", "/", nil)
-	ctx3.Params = map[string]string{"cid": "1234"}
+	ctx3.Params = map[string]string{"customer": "1234"}
 
 	h.Show(ctx1)
 	h.Show(ctx2)
@@ -57,8 +57,8 @@ func (s *Suite) TestCustomerHandlerShow(c *check.C) {
 	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestCustomerHandlerCreate(c *check.C) {
-	h := NewCustomerHandler(s.mongo)
+func (s *Suite) TestCustomerCreate(c *check.C) {
+	h := NewCustomer(s.mongo)
 
 	ctx1, res1 := s.Context("POST", "/customers", strings.NewReader(`{
 		"name": "Edison T.",
@@ -81,8 +81,8 @@ func (s *Suite) TestCustomerHandlerCreate(c *check.C) {
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestCustomerHandlerUpdate(c *check.C) {
-	h := NewCustomerHandler(s.mongo)
+func (s *Suite) TestCustomerUpdate(c *check.C) {
+	h := NewCustomer(s.mongo)
 
 	ctx1, res1 := s.Context("PUT", "/", strings.NewReader(`{
 		"id": "`+customer.Id.Hex()+`",
@@ -92,7 +92,7 @@ func (s *Suite) TestCustomerHandlerUpdate(c *check.C) {
 			"city": "New York"
 		}
 	}`))
-	ctx1.Params = map[string]string{"cid": customer.Id.Hex()}
+	ctx1.Params = map[string]string{"customer": customer.Id.Hex()}
 	ctx2, res2 := s.Context("PUT", "/", strings.NewReader(`{
 		"id": "`+customer.Id.Hex()+`",
 		"name": "Bob Marley",
@@ -100,7 +100,7 @@ func (s *Suite) TestCustomerHandlerUpdate(c *check.C) {
 			"city": "New York"
 		}
 	}`))
-	ctx2.Params = map[string]string{"cid": customer.Id.Hex()}
+	ctx2.Params = map[string]string{"customer": customer.Id.Hex()}
 
 	h.Update(ctx1)
 	h.Update(ctx2)
@@ -109,13 +109,13 @@ func (s *Suite) TestCustomerHandlerUpdate(c *check.C) {
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestCustomerHandlerDestroy(c *check.C) {
-	h := NewCustomerHandler(s.mongo)
+func (s *Suite) TestCustomerDestroy(c *check.C) {
+	h := NewCustomer(s.mongo)
 
 	ctx1, res1 := s.Context("DELETE", "/", nil)
-	ctx1.Params = map[string]string{"cid": customer.Id.Hex()}
+	ctx1.Params = map[string]string{"customer": customer.Id.Hex()}
 	ctx2, res2 := s.Context("DELETE", "/", nil)
-	ctx2.Params = map[string]string{"cid": bson.NewObjectId().Hex()}
+	ctx2.Params = map[string]string{"customer": bson.NewObjectId().Hex()}
 
 	h.Destroy(ctx1)
 	h.Destroy(ctx2)

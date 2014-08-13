@@ -4,33 +4,22 @@ import (
 	"net/http"
 
 	"github.com/satisfeet/go-context"
-	"github.com/satisfeet/go-router"
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
-type CustomerHandler struct {
-	store  *store.Customer
-	router *router.Router
+type Customer struct {
+	store *store.Customer
 }
 
-func NewCustomerHandler(s *mongo.Store) *CustomerHandler {
-	h := &CustomerHandler{
-		store:  store.NewCustomer(s),
-		router: router.NewRouter(),
+func NewCustomer(s *mongo.Store) *Customer {
+	return &Customer{
+		store: store.NewCustomer(s),
 	}
-
-	h.router.HandleFunc("GET", "/customers", h.List)
-	h.router.HandleFunc("GET", "/customers/:cid", h.Show)
-	h.router.HandleFunc("POST", "/customers", h.Create)
-	h.router.HandleFunc("PUT", "/customers/:cid", h.Update)
-	h.router.HandleFunc("DELETE", "/customers/:cid", h.Destroy)
-
-	return h
 }
 
-func (h *CustomerHandler) List(c *context.Context) {
+func (h *Customer) List(c *context.Context) {
 	m := []model.Customer{}
 
 	if err := h.store.Search(c.Query("search"), &m); err != nil {
@@ -40,17 +29,17 @@ func (h *CustomerHandler) List(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) Show(c *context.Context) {
+func (h *Customer) Show(c *context.Context) {
 	m := model.Customer{}
 
-	if err := h.store.FindId(c.Param("cid"), &m); err != nil {
+	if err := h.store.FindId(c.Param("customer"), &m); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(m, http.StatusOK)
 	}
 }
 
-func (h *CustomerHandler) Create(c *context.Context) {
+func (h *Customer) Create(c *context.Context) {
 	m := model.Customer{}
 
 	if err := c.Parse(&m); err != nil {
@@ -66,7 +55,7 @@ func (h *CustomerHandler) Create(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) Update(c *context.Context) {
+func (h *Customer) Update(c *context.Context) {
 	m := model.Customer{}
 
 	if err := c.Parse(&m); err != nil {
@@ -82,14 +71,10 @@ func (h *CustomerHandler) Update(c *context.Context) {
 	}
 }
 
-func (h *CustomerHandler) Destroy(c *context.Context) {
-	if err := h.store.RemoveId(c.Param("cid")); err != nil {
+func (h *Customer) Destroy(c *context.Context) {
+	if err := h.store.RemoveId(c.Param("customer")); err != nil {
 		c.Error(err, ErrorCode(err))
 	} else {
 		c.Respond(nil, http.StatusNoContent)
 	}
-}
-
-func (h *CustomerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.router.ServeHTTP(w, r)
 }

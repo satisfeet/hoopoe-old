@@ -4,9 +4,9 @@ import (
 	"flag"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/satisfeet/go-handler"
+	"github.com/satisfeet/go-router"
 	"github.com/satisfeet/hoopoe/httpd"
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
@@ -26,23 +26,35 @@ func main() {
 		return
 	}
 
-	if err := http.ListenAndServe(host, Handle(s)); err != nil {
+	if err := http.ListenAndServe(host, Handler(s)); err != nil {
 		log.Printf("Error starting http server: %s.\n", err)
 	}
 }
 
-func Handle(s *mongo.Store) http.Handler {
-	p := httpd.NewProductHandler(s)
-	c := httpd.NewCustomerHandler(s)
+func Handler(s *mongo.Store) http.Handler {
+	p := httpd.NewProduct(s)
+	c := httpd.NewCustomer(s)
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case strings.HasPrefix(r.URL.Path, "/products"):
-			p.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, "/customers"):
-			c.ServeHTTP(w, r)
-		}
-	})
+	r := router.NewRouter()
 
-	return handler.Logger(handler.Auth(auth, h))
+	r.HandleFunc("GET", "/customers", c.List)
+	r.HandleFunc("GET", "/products", p.List)
+
+	r.HandleFunc("POST", "/customers", c.Create)
+	r.HandleFunc("POST", "/products", p.Create)
+
+	r.HandleFunc("GET", "/customers/:customer", c.Show)
+	r.HandleFunc("GET", "/products/:product", p.Show)
+
+	r.HandleFunc("PUT", "/customers/:customer", c.Update)
+	r.HandleFunc("PUT", "/products/:product", p.Update)
+
+	r.HandleFunc("DELETE", "/customers/:customer", c.Destroy)
+	r.HandleFunc("DELETE", "/products/:product", p.Destroy)
+
+	r.HandleFunc("POST", "/products/:product/images", p.CreateImage)
+	r.HandleFunc("GET", "/products/:product/images/:image", p.ShowImage)
+	r.HandleFunc("DELETE", "/products/:product/images/:image", p.DestroyImage)
+
+	return handler.Logger(handler.Auth(auth, r))
 }

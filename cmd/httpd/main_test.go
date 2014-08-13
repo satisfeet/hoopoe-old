@@ -5,8 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/satisfeet/hoopoe/store/mongo"
 	"gopkg.in/check.v1"
+
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 func TestMain(t *testing.T) {
@@ -32,8 +33,8 @@ func (s *Suite) SetUpSuite(c *check.C) {
 	auth = s.user + ":" + s.pass
 }
 
-func (s *Suite) TestHandle(c *check.C) {
-	h := Handle(s.mongo)
+func (s *Suite) TestHandler(c *check.C) {
+	h := Handler(s.mongo)
 
 	res1 := httptest.NewRecorder()
 	res2 := httptest.NewRecorder()
