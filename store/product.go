@@ -5,6 +5,7 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
+	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
@@ -18,14 +19,10 @@ func NewProduct(s *mongo.Store) *Product {
 	}
 }
 
-func (s *Product) RemoveId(id interface{}) error {
-	return s.mongo.RemoveId("products", id)
-}
-
-func (s *Product) CreateImage(pid interface{}) (io.ReadWriteCloser, error) {
+func (s *Product) CreateImage(m model.Product) (io.ReadWriteCloser, error) {
 	id := bson.NewObjectId()
 
-	f, err := s.mongo.CreateFile("products")
+	f, err := s.mongo.CreateFile(getName(m))
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +30,7 @@ func (s *Product) CreateImage(pid interface{}) (io.ReadWriteCloser, error) {
 	u := mongo.Query{}
 	u.Push("images", id)
 
-	if err := s.mongo.UpdateId("products", pid, u); err != nil {
+	if err := s.mongo.UpdateId(getName(m), m.Id, u); err != nil {
 		f.Close()
 
 		return nil, err
@@ -42,21 +39,21 @@ func (s *Product) CreateImage(pid interface{}) (io.ReadWriteCloser, error) {
 	return f, nil
 }
 
-func (s *Product) OpenImage(pid interface{}, iid interface{}) (io.ReadWriteCloser, error) {
-	if err := s.mongo.FindId("products", pid, nil); err != nil {
+func (s *Product) OpenImage(m model.Product, id interface{}) (io.ReadWriteCloser, error) {
+	if err := s.mongo.FindId(getName(m), m.Id, nil); err != nil {
 		return nil, err
 	}
 
-	return s.mongo.OpenFileId("products", iid)
+	return s.mongo.OpenFileId(getName(m), id)
 }
 
-func (s *Product) RemoveImage(pid interface{}, iid interface{}) error {
+func (s *Product) RemoveImage(m model.Product, id interface{}) error {
 	u := mongo.Query{}
-	u.Pull("images", iid)
+	u.Pull("images", id)
 
-	if err := s.mongo.UpdateId("products", pid, u); err != nil {
+	if err := s.mongo.UpdateId(getName(m), m.Id, u); err != nil {
 		return err
 	}
 
-	return s.mongo.RemoveFileId("products", iid)
+	return s.mongo.RemoveFileId(getName(m), id)
 }

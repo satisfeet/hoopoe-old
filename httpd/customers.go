@@ -77,7 +77,10 @@ func (h *Customer) Update(c *context.Context) {
 }
 
 func (h *Customer) Destroy(c *context.Context) {
-	if err := h.store.RemoveId(c.Param("customer")); err != nil {
+	m := model.Customer{}
+	m.Id = mongo.IdFromString(c.Param("customer"))
+
+	if err := h.store.Remove(m); err != nil {
 		h.error(c, err)
 	} else {
 		c.Respond(nil, http.StatusNoContent)

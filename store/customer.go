@@ -36,7 +36,3 @@ func (s *Customer) Search(keyword string, m *[]model.Customer) error {
 
 	return s.mongo.Find(getName(m), q, m)
 }
-
-func (s *Customer) RemoveId(id interface{}) error {
-	return s.mongo.RemoveId("customers", id)
-}

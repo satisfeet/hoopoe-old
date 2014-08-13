@@ -31,8 +31,3 @@ func (s *Suite) TestCustomerSearch(c *check.C) {
 
 	c.Check(m, check.DeepEquals, customers[1:])
 }
-
-func (s *Suite) TestCustomerRemoveId(c *check.C) {
-	err := s.customer.RemoveId(customers[0].Id)
-	c.Assert(err, check.IsNil)
-}

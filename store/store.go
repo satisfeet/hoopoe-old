@@ -15,7 +15,6 @@ type Store interface {
 	Insert(model interface{}) error
 	Update(model interface{}) error
 	Remove(model interface{}) error
-	RemoveId(id interface{}) error
 }
 
 type store struct {
