@@ -10,13 +10,13 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/model"
 )
 
-var order = store.Order{
+var order = model.Order{
 	Id: bson.NewObjectId(),
-	Items: []store.OrderItem{
-		store.OrderItem{
+	Items: []model.OrderItem{
+		model.OrderItem{
 			Product: product,
 			ProductRef: &mgo.DBRef{
 				Id:         product.Id,
@@ -35,29 +35,29 @@ var order = store.Order{
 	},
 }
 
-var pricing = store.Pricing{
+var pricing = model.Pricing{
 	Retail: 599,
 }
 
-var product = store.Product{
+var product = model.Product{
 	Id:   bson.NewObjectId(),
 	Name: "Summer socks",
-	Pricing: store.Pricing{
+	Pricing: model.Pricing{
 		Retail: 599,
 	},
-	Variations: []store.Variation{
-		store.Variation{
+	Variations: []model.Variation{
+		model.Variation{
 			Size:  "42-44",
 			Color: "black",
 		},
 	},
 }
 
-var customer = store.Customer{
+var customer = model.Customer{
 	Id:    bson.NewObjectId(),
 	Name:  "Haci Erdal",
 	Email: "haci@hotmail.de",
-	Address: store.Address{
+	Address: model.Address{
 		Street:  "Checkpoint Charlie 2",
 		City:    "Berlin",
 		ZipCode: 11001,

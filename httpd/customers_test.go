@@ -7,13 +7,13 @@ import (
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/model"
 )
 
-var customer = store.Customer{
+var customer = model.Customer{
 	Name:  "Bob Marley",
 	Email: "bob@yahoo.com",
-	Address: store.Address{
+	Address: model.Address{
 		City: "Honolulu",
 	},
 }

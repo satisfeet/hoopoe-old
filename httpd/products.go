@@ -6,18 +6,19 @@ import (
 
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-router"
+	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 type ProductHandler struct {
-	store  *store.ProductStore
+	store  *store.Product
 	router *router.Router
 }
 
 func NewProductHandler(s *mongo.Store) *ProductHandler {
 	h := &ProductHandler{
-		store:  store.NewProductStore(s),
+		store:  store.NewProduct(s),
 		router: router.NewRouter(),
 	}
 
@@ -34,7 +35,7 @@ func NewProductHandler(s *mongo.Store) *ProductHandler {
 }
 
 func (h *ProductHandler) List(c *context.Context) {
-	m := []store.Product{}
+	m := []model.Product{}
 
 	if err := h.store.Find(&m); err != nil {
 		c.Error(err, ErrorCode(err))
@@ -44,7 +45,7 @@ func (h *ProductHandler) List(c *context.Context) {
 }
 
 func (h *ProductHandler) Show(c *context.Context) {
-	m := store.Product{}
+	m := model.Product{}
 
 	if err := h.store.FindId(c.Param("pid"), &m); err != nil {
 		c.Error(err, ErrorCode(err))
@@ -54,7 +55,7 @@ func (h *ProductHandler) Show(c *context.Context) {
 }
 
 func (h *ProductHandler) Create(c *context.Context) {
-	m := store.Product{}
+	m := model.Product{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -70,7 +71,7 @@ func (h *ProductHandler) Create(c *context.Context) {
 }
 
 func (h *ProductHandler) Update(c *context.Context) {
-	m := store.Product{}
+	m := model.Product{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)

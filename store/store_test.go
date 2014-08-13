@@ -9,14 +9,14 @@ import (
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
-type model struct {
+type Model struct {
 	Id   bson.ObjectId `bson:"_id"`
 	Name string        `store:"index"`
 }
 
-var models = []model{
-	model{bson.NewObjectId(), "Foo"},
-	model{bson.NewObjectId(), "Bar"},
+var Models = []Model{
+	Model{bson.NewObjectId(), "Foo"},
+	Model{bson.NewObjectId(), "Bar"},
 }
 
 func TestSuite(t *testing.T) {
@@ -30,8 +30,8 @@ type Suite struct {
 	url      string
 	mongo    *mongo.Store
 	store    *store
-	customer *CustomerStore
-	product  *ProductStore
+	customer *Customer
+	product  *Product
 }
 
 func (s *Suite) SetUpSuite(c *check.C) {
@@ -41,14 +41,14 @@ func (s *Suite) SetUpSuite(c *check.C) {
 	c.Assert(err, check.IsNil)
 
 	s.store = &store{s.mongo}
-	s.customer = NewCustomerStore(s.mongo)
-	s.product = NewProductStore(s.mongo)
+	s.customer = NewCustomer(s.mongo)
+	s.product = NewProduct(s.mongo)
 }
 
 func (s *Suite) SetUpTest(c *check.C) {
-	err := s.mongo.Insert("models", &models[0])
+	err := s.mongo.Insert("models", &Models[0])
 	c.Assert(err, check.IsNil)
-	err = s.mongo.Insert("models", &models[1])
+	err = s.mongo.Insert("models", &Models[1])
 	c.Assert(err, check.IsNil)
 
 	err = s.mongo.Insert("products", &products[0])
@@ -81,26 +81,26 @@ func (s *Suite) TearDownSuite(c *check.C) {
 }
 
 func (s *Suite) TestStoreFind(c *check.C) {
-	m := []model{}
+	m := []Model{}
 
 	err := s.store.Find(&m)
 	c.Assert(err, check.IsNil)
 
-	c.Check(m, check.DeepEquals, models)
+	c.Check(m, check.DeepEquals, Models)
 }
 
 func (s *Suite) TestStoreFindId(c *check.C) {
-	m := model{}
+	m := Model{}
 
-	err := s.store.FindId(models[0].Id, &m)
+	err := s.store.FindId(Models[0].Id, &m)
 	c.Assert(err, check.IsNil)
 
-	c.Check(m, check.DeepEquals, models[0])
+	c.Check(m, check.DeepEquals, Models[0])
 }
 
 func (s *Suite) TestStoreInsert(c *check.C) {
-	m1 := model{Name: "Bodo"}
-	m2 := model{}
+	m1 := Model{Name: "Bodo"}
+	m2 := Model{}
 
 	err := s.store.Insert(&m1)
 	c.Assert(err, check.IsNil)
@@ -112,15 +112,15 @@ func (s *Suite) TestStoreInsert(c *check.C) {
 }
 
 func (s *Suite) TestStoreUpdate(c *check.C) {
-	m := model{}
+	m := Model{}
 
-	models[0].Name += "Foo"
+	Models[0].Name += "Foo"
 
-	err := s.store.Update(models[0])
+	err := s.store.Update(Models[0])
 	c.Assert(err, check.IsNil)
 
-	err = s.mongo.FindId("models", models[0].Id, &m)
+	err = s.mongo.FindId("models", Models[0].Id, &m)
 	c.Assert(err, check.IsNil)
 
-	c.Check(m, check.DeepEquals, models[0])
+	c.Check(m, check.DeepEquals, Models[0])
 }

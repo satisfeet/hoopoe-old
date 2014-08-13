@@ -1,26 +1,30 @@
 package store
 
-import "gopkg.in/check.v1"
+import (
+	"gopkg.in/check.v1"
 
-var customers = []Customer{
-	Customer{
+	"github.com/satisfeet/hoopoe/model"
+)
+
+var customers = []model.Customer{
+	model.Customer{
 		Name:  "Bodo Kaiser",
 		Email: "i@bodokaiser.io",
-		Address: Address{
+		Address: model.Address{
 			City: "Berlin",
 		},
 	},
-	Customer{
+	model.Customer{
 		Name:  "Denzel Washington",
 		Email: "denzel@example.com",
-		Address: Address{
+		Address: model.Address{
 			City: "Hollywood",
 		},
 	},
 }
 
 func (s *Suite) TestCustomerSearch(c *check.C) {
-	m := []Customer{}
+	m := []model.Customer{}
 
 	err := s.customer.Search("denzel", &m)
 	c.Assert(err, check.IsNil)

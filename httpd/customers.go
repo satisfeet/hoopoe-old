@@ -5,18 +5,19 @@ import (
 
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-router"
+	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 type CustomerHandler struct {
-	store  *store.CustomerStore
+	store  *store.Customer
 	router *router.Router
 }
 
 func NewCustomerHandler(s *mongo.Store) *CustomerHandler {
 	h := &CustomerHandler{
-		store:  store.NewCustomerStore(s),
+		store:  store.NewCustomer(s),
 		router: router.NewRouter(),
 	}
 
@@ -30,7 +31,7 @@ func NewCustomerHandler(s *mongo.Store) *CustomerHandler {
 }
 
 func (h *CustomerHandler) List(c *context.Context) {
-	m := []store.Customer{}
+	m := []model.Customer{}
 
 	if err := h.store.Search(c.Query("search"), &m); err != nil {
 		c.Error(err, ErrorCode(err))
@@ -40,7 +41,7 @@ func (h *CustomerHandler) List(c *context.Context) {
 }
 
 func (h *CustomerHandler) Show(c *context.Context) {
-	m := store.Customer{}
+	m := model.Customer{}
 
 	if err := h.store.FindId(c.Param("cid"), &m); err != nil {
 		c.Error(err, ErrorCode(err))
@@ -50,7 +51,7 @@ func (h *CustomerHandler) Show(c *context.Context) {
 }
 
 func (h *CustomerHandler) Create(c *context.Context) {
-	m := store.Customer{}
+	m := model.Customer{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)
@@ -66,7 +67,7 @@ func (h *CustomerHandler) Create(c *context.Context) {
 }
 
 func (h *CustomerHandler) Update(c *context.Context) {
-	m := store.Customer{}
+	m := model.Customer{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err, http.StatusBadRequest)

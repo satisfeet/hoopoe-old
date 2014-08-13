@@ -8,7 +8,7 @@ import (
 	"gopkg.in/mgo.v2"
 
 	"github.com/satisfeet/hoopoe/files/pdf"
-	"github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
@@ -20,7 +20,7 @@ func main() {
 	flag.StringVar(&mongodb, "mongo", "localhost/test", "MongoDB to use.")
 	flag.Parse()
 
-	o := store.Order{}
+	o := model.Order{}
 	o.Id = mongo.ParseId(id)
 
 	if !o.Id.Valid() {

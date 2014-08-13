@@ -4,16 +4,18 @@ import (
 	"io/ioutil"
 
 	"gopkg.in/check.v1"
+
+	"github.com/satisfeet/hoopoe/model"
 )
 
-var products = []Product{
-	Product{
+var products = []model.Product{
+	model.Product{
 		Name: "Summer socks",
-		Pricing: Pricing{
+		Pricing: model.Pricing{
 			Retail: 599,
 		},
-		Variations: []Variation{
-			Variation{
+		Variations: []model.Variation{
+			model.Variation{
 				Size:  "42-44",
 				Color: "black",
 			},
