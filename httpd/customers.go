@@ -36,8 +36,9 @@ func (h *Customer) List(c *context.Context) {
 
 func (h *Customer) Show(c *context.Context) {
 	m := model.Customer{}
+	m.Id = mongo.IdFromString(c.Param("customer"))
 
-	if err := h.store.FindId(c.Param("customer"), &m); err != nil {
+	if err := h.store.FindOne(&m); err != nil {
 		h.error(c, err)
 	} else {
 		c.Respond(m, http.StatusOK)

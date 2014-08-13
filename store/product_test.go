@@ -27,17 +27,17 @@ var products = []model.Product{
 }
 
 func (s *Suite) SkipTestProductImage(c *check.C) {
-	f, err := s.product.CreateImage(products[0])
+	f, err := s.product.CreateImage(&products[0])
 	c.Assert(err, check.IsNil)
 	_, err = f.Write([]byte("Hello"))
 	c.Assert(err, check.IsNil)
 	err = f.Close()
 	c.Assert(err, check.IsNil)
 
-	err = s.product.FindId(products[0].Id, &products[0])
+	err = s.product.FindOne(&products[0])
 	c.Assert(err, check.IsNil)
 
-	f, err = s.product.OpenImage(products[0], products[0].Images[0])
+	f, err = s.product.OpenImage(&products[0], products[0].Images[0])
 	c.Assert(err, check.IsNil)
 	b, err := ioutil.ReadAll(f)
 	c.Assert(err, check.IsNil)
@@ -45,6 +45,6 @@ func (s *Suite) SkipTestProductImage(c *check.C) {
 	c.Assert(err, check.IsNil)
 	c.Check(b, check.DeepEquals, []byte("Hello"))
 
-	err = s.product.RemoveImage(products[0], products[0].Images[0])
+	err = s.product.RemoveImage(&products[0], products[0].Images[0])
 	c.Assert(err, check.IsNil)
 }

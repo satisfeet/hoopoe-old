@@ -96,10 +96,10 @@ func (s *Suite) TestStoreFind(c *check.C) {
 	c.Check(m, check.DeepEquals, Models)
 }
 
-func (s *Suite) TestStoreFindId(c *check.C) {
-	m := Model{}
+func (s *Suite) TestStoreFindOne(c *check.C) {
+	m := Model{Id: Models[0].Id}
 
-	err := s.store.FindId(Models[0].Id, &m)
+	err := s.store.FindOne(&m)
 	c.Assert(err, check.IsNil)
 
 	c.Check(m, check.DeepEquals, Models[0])

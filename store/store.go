@@ -10,7 +10,7 @@ import (
 
 type Store interface {
 	Find(model interface{}) error
-	FindId(id interface{}, model interface{}) error
+	FindOne(model interface{}) error
 
 	Insert(model interface{}) error
 	Update(model interface{}) error
@@ -25,8 +25,8 @@ func (s *store) Find(model interface{}) error {
 	return s.mongo.Find(getName(model), nil, model)
 }
 
-func (s *store) FindId(id interface{}, model interface{}) error {
-	return s.mongo.FindId(getName(model), id, model)
+func (s *store) FindOne(model interface{}) error {
+	return s.mongo.FindId(getName(model), getId(model), model)
 }
 
 func (s *store) Insert(model interface{}) error {

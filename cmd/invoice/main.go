@@ -30,7 +30,7 @@ func main() {
 
 	s := store.NewOrder(m)
 
-	if err := s.FindId(o.Id, &o); err != nil {
+	if err := s.FindOne(&o); err != nil {
 		log.Fatal(err)
 	}
 	if err := s.FindCustomer(&o); err != nil {

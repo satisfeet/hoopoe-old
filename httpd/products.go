@@ -36,8 +36,9 @@ func (h *Product) List(c *context.Context) {
 
 func (h *Product) Show(c *context.Context) {
 	m := model.Product{}
+	m.Id = mongo.IdFromString(c.Param("product"))
 
-	if err := h.store.FindId(c.Param("product"), &m); err != nil {
+	if err := h.store.FindOne(&m); err != nil {
 		h.error(c, err)
 	} else {
 		c.Respond(m, http.StatusOK)
@@ -91,7 +92,7 @@ func (h *Product) ShowImage(c *context.Context) {
 	m := model.Product{}
 	m.Id = mongo.IdFromString(c.Param("product"))
 
-	f, err := h.store.OpenImage(m, c.Param("image"))
+	f, err := h.store.OpenImage(&m, c.Param("image"))
 	if err != nil {
 		h.error(c, err)
 	} else {
@@ -103,7 +104,7 @@ func (h *Product) CreateImage(c *context.Context) {
 	m := model.Product{}
 	m.Id = mongo.IdFromString(c.Param("product"))
 
-	f, err := h.store.CreateImage(m)
+	f, err := h.store.CreateImage(&m)
 	if err != nil {
 		h.error(c, err)
 
@@ -121,7 +122,7 @@ func (h *Product) DestroyImage(c *context.Context) {
 	m := model.Product{}
 	m.Id = mongo.IdFromString(c.Param("product"))
 
-	if err := h.store.RemoveImage(m, c.Param("image")); err != nil {
+	if err := h.store.RemoveImage(&m, c.Param("image")); err != nil {
 		h.error(c, err)
 	} else {
 		c.Respond(nil, http.StatusNoContent)

@@ -19,7 +19,7 @@ func NewProduct(s *mongo.Store) *Product {
 	}
 }
 
-func (s *Product) CreateImage(m model.Product) (io.ReadWriteCloser, error) {
+func (s *Product) CreateImage(m *model.Product) (io.ReadWriteCloser, error) {
 	id := bson.NewObjectId()
 
 	f, err := s.mongo.CreateFile(getName(m))
@@ -39,15 +39,15 @@ func (s *Product) CreateImage(m model.Product) (io.ReadWriteCloser, error) {
 	return f, nil
 }
 
-func (s *Product) OpenImage(m model.Product, id interface{}) (io.ReadWriteCloser, error) {
-	if err := s.mongo.FindId(getName(m), m.Id, nil); err != nil {
+func (s *Product) OpenImage(m *model.Product, id interface{}) (io.ReadWriteCloser, error) {
+	if err := s.FindOne(m); err != nil {
 		return nil, err
 	}
 
 	return s.mongo.OpenFileId(getName(m), id)
 }
 
-func (s *Product) RemoveImage(m model.Product, id interface{}) error {
+func (s *Product) RemoveImage(m *model.Product, id interface{}) error {
 	u := mongo.Query{}
 	u.Pull("images", id)
 
