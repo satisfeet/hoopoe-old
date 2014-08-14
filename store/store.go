@@ -1,87 +1,117 @@
 package store
 
 import (
+	"errors"
 	"strings"
 
-	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/store/mongo"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+
 	"github.com/satisfeet/hoopoe/utils"
 )
 
+var ErrBadId = errors.New("bad id")
+
+type Model interface {
+	Validate() error
+}
+
 type store struct {
-	mongo *mongo.Store
+	session  *mgo.Session
+	database *mgo.Database
 }
 
-func (s *store) Find(model interface{}) error {
-	return s.mongo.Find(getName(model), nil, model)
+func (s *store) files(model interface{}) *mgo.GridFS {
+	return s.database.GridFS(getName(model))
 }
 
-func (s *store) FindOne(model interface{}) error {
-	return s.mongo.FindId(getName(model), getId(model), model)
+func (s *store) collection(model interface{}) *mgo.Collection {
+	return s.database.C(getName(model))
 }
 
-func (s *store) Insert(model interface{}) error {
-	if err := validation.Validate(model); err != nil {
+func (s *store) Find(models interface{}) error {
+	c := s.session.Clone()
+	defer c.Close()
+
+	return s.collection(models).With(c).Find(nil).All(models)
+}
+
+func (s *store) FindOne(model Model) error {
+	c := s.session.Clone()
+	defer c.Close()
+
+	id := getId(model)
+
+	if !id.Valid() {
+		return ErrBadId
+	}
+
+	return s.collection(model).With(c).FindId(id).One(model)
+}
+
+func (s *store) Insert(model Model) error {
+	c := s.session.Clone()
+	defer c.Close()
+
+	if id := getId(model); !id.Valid() {
+		setId(model, bson.NewObjectId())
+	}
+
+	if err := model.Validate(); err != nil {
 		return err
 	}
 
-	return s.mongo.Insert(getName(model), model)
+	return s.collection(model).With(c).Insert(model)
 }
 
-func (s *store) Index(model interface{}) error {
-	n := getName(model)
-	i, u := getIndex(model)
+func (s *store) Update(model Model) error {
+	c := s.session.Clone()
+	defer c.Close()
 
-	if len(i) > 0 {
-		if err := s.mongo.Index(n, i); err != nil {
-			return err
-		}
-	}
-	if len(u) > 0 {
-		return s.mongo.Unique(n, u)
+	id := getId(model)
+
+	if !id.Valid() {
+		return ErrBadId
 	}
 
-	return nil
-}
-
-func (s *store) Update(model interface{}) error {
-	q := mongo.Query{}
-	q.Id(getId(model))
-
-	if err := validation.Validate(model); err != nil {
+	if err := model.Validate(); err != nil {
 		return err
 	}
 
-	return s.mongo.Update(getName(model), q, model)
+	return s.collection(model).With(c).UpdateId(id, model)
 }
 
-func (s *store) Remove(model interface{}) error {
-	q := mongo.Query{}
-	q.Id(getId(model))
+func (s *store) Remove(model Model) error {
+	c := s.session.Clone()
+	defer c.Close()
 
-	return s.mongo.Remove(getName(model), q)
+	id := getId(model)
+
+	if !id.Valid() {
+		return ErrBadId
+	}
+
+	return s.collection(model).With(c).RemoveId(id)
 }
 
-func getId(model interface{}) interface{} {
-	return utils.GetFieldValue(model, "Id")
+func setId(model interface{}, id bson.ObjectId) {
+	utils.SetFieldValue(model, "Id", id)
+}
+
+func getId(model interface{}) bson.ObjectId {
+	return utils.GetFieldValue(model, "Id").(bson.ObjectId)
 }
 
 func getName(model interface{}) string {
 	return strings.ToLower(utils.GetTypeName(model)) + "s"
 }
 
-func getIndex(model interface{}) ([]string, []string) {
-	u := []string{}
-	i := []string{}
+func IdFromString(id string) bson.ObjectId {
+	var oid bson.ObjectId
 
-	for _, f := range utils.GetStructInfo(model) {
-		if f.Unique {
-			u = append(u, f.Name)
-		}
-		if f.Index {
-			i = append(i, f.Name)
-		}
+	if bson.IsObjectIdHex(id) {
+		oid = bson.ObjectIdHex(id)
 	}
 
-	return i, u
+	return oid
 }

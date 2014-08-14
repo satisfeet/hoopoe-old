@@ -12,6 +12,7 @@ import (
 )
 
 var customer = model.Customer{
+	Id:    bson.NewObjectId(),
 	Name:  "Bob Marley",
 	Email: "bob@yahoo.com",
 	Address: model.Address{
@@ -34,9 +35,9 @@ type CustomerSuite struct {
 }
 
 func (s *CustomerSuite) SetUpTest(c *check.C) {
-	s.handler = NewCustomer(s.mongo)
+	s.handler = NewCustomer(s.session)
 
-	err := s.mongo.Insert("customers", &customer)
+	err := s.database.C("customers").Insert(customer)
 	c.Assert(err, check.IsNil)
 }
 
@@ -140,6 +141,6 @@ func (s *CustomerSuite) TestDestroy(c *check.C) {
 }
 
 func (s *CustomerSuite) TearDownTest(c *check.C) {
-	err := s.mongo.RemoveAll("customers", nil)
+	_, err := s.database.C("customers").RemoveAll(nil)
 	c.Assert(err, check.IsNil)
 }

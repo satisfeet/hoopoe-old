@@ -3,48 +3,46 @@ package store
 import (
 	"io"
 
-	"github.com/satisfeet/hoopoe/model"
-	"github.com/satisfeet/hoopoe/store/mongo"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+
+	"github.com/satisfeet/hoopoe/model"
 )
 
 type Order struct {
 	*store
 }
 
-func NewOrder(m *mongo.Store) *Order {
-	s := &store{m}
-
+func NewOrder(s *mgo.Session) *Order {
 	return &Order{
-		store: s,
+		store: &store{
+			session:  s,
+			database: s.DB(""),
+		},
 	}
 }
 
 func (s *Order) FindCustomer(o *model.Order) error {
-	id := o.CustomerRef.Id
-
-	return s.mongo.FindId(getName(o.Customer), id, &o.Customer)
+	return s.database.FindRef(o.CustomerRef).One(&o.Customer)
 }
 
 func (s *Order) FindProducts(o *model.Order) error {
-	q := mongo.Query{}
-	or := []mongo.Query{}
+	q := bson.M{}
+	or := []bson.M{}
 
 	for _, i := range o.Items {
-		q := mongo.Query{}
-		q.Id(i.ProductRef.Id)
+		q := bson.M{}
+		q["_id"] = i.ProductRef.Id
 
 		or = append(or, q)
 	}
-
 	q["$or"] = or
 
 	p := []model.Product{}
 
-	if err := s.mongo.Find(getName(p), q, &p); err != nil {
+	if err := s.collection(p).Find(q).All(&p); err != nil {
 		return err
 	}
-
 	for i, p := range p {
 		o.Items[i].Product = p
 	}
@@ -52,16 +50,31 @@ func (s *Order) FindProducts(o *model.Order) error {
 	return nil
 }
 
-func (s *Order) ReadInvoice(o *model.Order) (io.ReadCloser, error) {
-	return s.mongo.OpenFileId(getName(o), o.Id)
-}
+func (s *Order) ReadInvoice(o *model.Order, w io.Writer) error {
+	f, err := s.files(o).OpenId(o.Id)
 
-func (s *Order) WriteInvoice(o *model.Order) (io.WriteCloser, error) {
-	f, err := s.mongo.OpenFileId(getName(o), o.Id)
-
-	if err == mgo.ErrNotFound {
-		f, err = s.mongo.CreateFile(getName(o))
+	if err != nil {
+		return err
 	}
 
-	return f, err
+	if _, err := io.Copy(w, f); err != nil {
+		return err
+	}
+
+	return f.Close()
+}
+
+func (s *Order) WriteInvoice(o *model.Order, r io.Reader) error {
+	f, err := s.files(o).Create("")
+	f.SetId(o.Id)
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := io.Copy(f, r); err != nil {
+		return err
+	}
+
+	return f.Close()
 }

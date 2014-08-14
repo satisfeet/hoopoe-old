@@ -6,8 +6,7 @@ import (
 	"testing"
 
 	"gopkg.in/check.v1"
-
-	"github.com/satisfeet/hoopoe/store/mongo"
+	"gopkg.in/mgo.v2"
 )
 
 func TestMain(t *testing.T) {
@@ -20,21 +19,23 @@ func TestMain(t *testing.T) {
 }
 
 type Suite struct {
-	url   string
-	user  string
-	pass  string
-	mongo *mongo.Store
+	url     string
+	user    string
+	pass    string
+	session *mgo.Session
 }
 
 func (s *Suite) SetUpSuite(c *check.C) {
-	s.mongo = &mongo.Store{}
-	c.Assert(s.mongo.Dial(s.url), check.IsNil)
+	sess, err := mgo.Dial(s.url)
+	c.Assert(err, check.IsNil)
+
+	s.session = sess
 
 	auth = s.user + ":" + s.pass
 }
 
 func (s *Suite) TestHandler(c *check.C) {
-	h := Handler(s.mongo)
+	h := Handler(s.session)
 
 	res1 := httptest.NewRecorder()
 	res2 := httptest.NewRecorder()

@@ -5,6 +5,8 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
+	"github.com/satisfeet/go-validation"
+
 	"github.com/satisfeet/hoopoe/utils"
 )
 
@@ -15,6 +17,10 @@ type Product struct {
 	Pricing     Pricing         `validate:"required,nested"`
 	Variations  []Variation     `validate:"required,nested"`
 	Description string          `validate:"required,min=40"`
+}
+
+func (p Product) Validate() error {
+	return validation.Validate(p)
 }
 
 func (p Product) MarshalJSON() ([]byte, error) {

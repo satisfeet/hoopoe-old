@@ -1,26 +1,22 @@
 package httpd
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
-	"github.com/satisfeet/hoopoe/store/mongo"
+	"gopkg.in/mgo.v2"
 )
 
 type Order struct {
 	*handler
-
 	store *store.Order
 }
 
-func NewOrder(m *mongo.Store) *Order {
-	s := store.NewOrder(m)
-
+func NewOrder(s *mgo.Session) *Order {
 	return &Order{
-		store: s,
+		store: store.NewOrder(s),
 	}
 }
 
@@ -36,7 +32,7 @@ func (h *Order) List(c *context.Context) {
 
 func (h *Order) Show(c *context.Context) {
 	m := model.Order{}
-	m := mongo.IdFromString(c.Param("order"))
+	m.Id = store.IdFromString(c.Param("order"))
 
 	if err := h.store.FindOne(&m); err != nil {
 		h.error(c, err)
@@ -75,7 +71,7 @@ func (h *Order) Update(c *context.Context) {
 
 func (h *Order) Destroy(c *context.Context) {
 	m := model.Order{}
-	m.Id = mongo.IdFromString(c.Param("order"))
+	m.Id = store.IdFromString(c.Param("order"))
 
 	if err := h.store.Remove(&m); err != nil {
 		h.error(c, err)
@@ -86,30 +82,18 @@ func (h *Order) Destroy(c *context.Context) {
 
 func (h *Order) ReadInvoice(c *context.Context) {
 	m := model.Order{}
-	m.Id = mongo.IdFromString(c.Param("order"))
+	m.Id = store.IdFromString(c.Param("order"))
 
-	rc, err := h.store.ReadInvoice(&m)
-
-	if err != nil {
+	if err := h.store.ReadInvoice(&m, c.Response); err != nil {
 		h.error(c, err)
 	}
-	defer rc.Close()
-
-	io.Copy(c.Response, rc)
 }
 
 func (h *Order) WriteInvoice(c *context.Context) {
 	m := model.Order{}
-	m.Id = mongo.IdFromString(c.Param("order"))
+	m.Id = store.IdFromString(c.Param("order"))
 
-	wc, err := h.store.WriteInvoice(&m)
-
-	if err != nil {
-		h.error(c, err)
-	}
-	defer wc.Close()
-
-	if _, err := io.Copy(wc, c.Request.Body); err != nil {
+	if err := h.store.WriteInvoice(&m, c.Request.Body); err != nil {
 		h.error(c, err)
 	} else {
 		c.Respond(nil, http.StatusNoContent)

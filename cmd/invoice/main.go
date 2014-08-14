@@ -5,10 +5,11 @@ import (
 	"log"
 	"os"
 
+	"gopkg.in/mgo.v2"
+
 	"github.com/satisfeet/hoopoe/files/pdf"
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
-	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 func main() {
@@ -20,13 +21,15 @@ func main() {
 	flag.Parse()
 
 	o := model.Order{}
-	o.Id = mongo.IdFromString(orderId)
+	o.Id = store.IdFromString(orderId)
 
-	m := &mongo.Store{}
+	m, err := mgo.Dial(mongodb)
 
-	if err := m.Dial(mongodb); err != nil {
+	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer m.Close()
 
 	s := store.NewOrder(m)
 

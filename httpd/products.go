@@ -1,13 +1,14 @@
 package httpd
 
 import (
-	"io"
 	"net/http"
+
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
-	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 type Product struct {
@@ -15,9 +16,9 @@ type Product struct {
 	store *store.Product
 }
 
-func NewProduct(m *mongo.Store) *Product {
+func NewProduct(s *mgo.Session) *Product {
 	return &Product{
-		store: store.NewProduct(m),
+		store: store.NewProduct(s),
 	}
 }
 
@@ -33,7 +34,7 @@ func (h *Product) List(c *context.Context) {
 
 func (h *Product) Show(c *context.Context) {
 	m := model.Product{}
-	m.Id = mongo.IdFromString(c.Param("product"))
+	m.Id = store.IdFromString(c.Param("product"))
 
 	if err := h.store.FindOne(&m); err != nil {
 		h.error(c, err)
@@ -76,7 +77,7 @@ func (h *Product) Update(c *context.Context) {
 
 func (h *Product) Destroy(c *context.Context) {
 	m := model.Product{}
-	m.Id = mongo.IdFromString(c.Param("product"))
+	m.Id = store.IdFromString(c.Param("product"))
 
 	if err := h.store.Remove(m); err != nil {
 		h.error(c, err)
@@ -86,29 +87,23 @@ func (h *Product) Destroy(c *context.Context) {
 }
 
 func (h *Product) ShowImage(c *context.Context) {
-	m := model.Product{}
-	m.Id = mongo.IdFromString(c.Param("product"))
+	id := store.IdFromString(c.Param("image"))
 
-	f, err := h.store.OpenImage(&m, c.Param("image"))
-	if err != nil {
+	m := model.Product{}
+	m.Id = store.IdFromString(c.Param("product"))
+
+	if err := h.store.ReadImage(&m, id, c.Response); err != nil {
 		h.error(c, err)
-	} else {
-		io.Copy(c.Response, f)
 	}
 }
 
 func (h *Product) CreateImage(c *context.Context) {
+	id := bson.NewObjectId()
+
 	m := model.Product{}
-	m.Id = mongo.IdFromString(c.Param("product"))
+	m.Id = store.IdFromString(c.Param("product"))
 
-	f, err := h.store.CreateImage(&m)
-	if err != nil {
-		h.error(c, err)
-
-		return
-	}
-
-	if _, err := io.Copy(f, c.Request.Body); err != nil {
+	if err := h.store.WriteImage(&m, id, c.Request.Body); err != nil {
 		h.error(c, err)
 	} else {
 		c.Respond(nil, http.StatusNoContent)
@@ -116,10 +111,12 @@ func (h *Product) CreateImage(c *context.Context) {
 }
 
 func (h *Product) DestroyImage(c *context.Context) {
-	m := model.Product{}
-	m.Id = mongo.IdFromString(c.Param("product"))
+	id := store.IdFromString(c.Param("image"))
 
-	if err := h.store.RemoveImage(&m, c.Param("image")); err != nil {
+	m := model.Product{}
+	m.Id = store.IdFromString(c.Param("product"))
+
+	if err := h.store.RemoveImage(&m, id); err != nil {
 		h.error(c, err)
 	} else {
 		c.Respond(nil, http.StatusNoContent)

@@ -5,10 +5,11 @@ import (
 	"log"
 	"net/http"
 
+	"gopkg.in/mgo.v2"
+
 	"github.com/satisfeet/go-handler"
 	"github.com/satisfeet/go-router"
 	"github.com/satisfeet/hoopoe/httpd"
-	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 var host, auth, mongodb string
@@ -19,8 +20,9 @@ func main() {
 	flag.StringVar(&mongodb, "mongo", "localhost/satisfeet", "")
 	flag.Parse()
 
-	s := &mongo.Store{}
-	if err := s.Dial(mongodb); err != nil {
+	s, err := mgo.Dial(mongodb)
+
+	if err != nil {
 		log.Printf("Error connecting to database: %s.\n", err)
 
 		return
@@ -31,7 +33,7 @@ func main() {
 	}
 }
 
-func Handler(s *mongo.Store) http.Handler {
+func Handler(s *mgo.Session) http.Handler {
 	p := httpd.NewProduct(s)
 	c := httpd.NewCustomer(s)
 

@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"gopkg.in/check.v1"
+	"gopkg.in/mgo.v2"
 
 	"github.com/satisfeet/go-context"
-	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 var hs = &HandlerSuite{
@@ -22,19 +22,21 @@ func TestHandler(t *testing.T) {
 }
 
 type HandlerSuite struct {
-	url   string
-	mongo *mongo.Store
+	url      string
+	session  *mgo.Session
+	database *mgo.Database
 }
 
 func (s *HandlerSuite) SetUpSuite(c *check.C) {
-	s.mongo = &mongo.Store{}
-
-	err := s.mongo.Dial(s.url)
+	sess, err := mgo.Dial(s.url)
 	c.Assert(err, check.IsNil)
+
+	s.session = sess
+	s.database = sess.DB("")
 }
 
 func (s *HandlerSuite) TearDownSuite(c *check.C) {
-	c.Assert(s.mongo.Close(), check.IsNil)
+	s.session.Close()
 }
 
 func ctx(m, p string, b io.Reader) (*context.Context, *httptest.ResponseRecorder) {

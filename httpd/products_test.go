@@ -12,6 +12,7 @@ import (
 )
 
 var product = model.Product{
+	Id:     bson.NewObjectId(),
 	Name:   "Summer Socks",
 	Images: []bson.ObjectId{},
 	Pricing: model.Pricing{
@@ -41,14 +42,14 @@ type ProductSuite struct {
 }
 
 func (s *ProductSuite) SetUpTest(c *check.C) {
-	s.handler = NewProduct(s.mongo)
+	s.handler = NewProduct(s.session)
 
-	err := s.mongo.Insert("products", &product)
+	err := s.database.C("products").Insert(product)
 	c.Assert(err, check.IsNil)
 
-	f, err := s.mongo.CreateFile("products")
+	f, err := s.database.GridFS("products").Create("")
 	c.Assert(err, check.IsNil)
-	product.Images = []bson.ObjectId{f.Id}
+	product.Images = []bson.ObjectId{f.Id().(bson.ObjectId)}
 	_, err = f.Write([]byte("Hello World"))
 	c.Assert(err, check.IsNil)
 	err = f.Close()
@@ -56,19 +57,15 @@ func (s *ProductSuite) SetUpTest(c *check.C) {
 }
 
 func (s *ProductSuite) TestList(c *check.C) {
-	h := NewProduct(s.mongo)
-
 	ctx1, res1 := ctx("GET", "/products", nil)
 
-	h.List(ctx1)
+	s.handler.List(ctx1)
 
 	c.Check(res1.Code, check.Equals, http.StatusOK)
 	c.Check(strings.HasPrefix(res1.Body.String(), "[{"), check.Equals, true)
 }
 
 func (s *ProductSuite) TestShow(c *check.C) {
-	h := NewProduct(s.mongo)
-
 	ctx1, res1 := ctx("GET", "/", nil)
 	ctx1.Params = map[string]string{"product": product.Id.Hex()}
 	ctx2, res2 := ctx("GET", "/", nil)
@@ -76,9 +73,9 @@ func (s *ProductSuite) TestShow(c *check.C) {
 	ctx3, res3 := ctx("GET", "/", nil)
 	ctx3.Params = map[string]string{"product": "1234"}
 
-	h.Show(ctx1)
-	h.Show(ctx2)
-	h.Show(ctx3)
+	s.handler.Show(ctx1)
+	s.handler.Show(ctx2)
+	s.handler.Show(ctx3)
 
 	c.Check(res1.Code, check.Equals, http.StatusOK)
 	c.Check(res2.Code, check.Equals, http.StatusNotFound)
@@ -86,8 +83,6 @@ func (s *ProductSuite) TestShow(c *check.C) {
 }
 
 func (s *ProductSuite) TestCreate(c *check.C) {
-	h := NewProduct(s.mongo)
-
 	ctx1, res1 := ctx("POST", "/products", strings.NewReader(`{
 		"name": "Winter Socks",
 		"pricing": {
@@ -108,16 +103,14 @@ func (s *ProductSuite) TestCreate(c *check.C) {
 		}
 	}`))
 
-	h.Create(ctx1)
-	h.Create(ctx2)
+	s.handler.Create(ctx1)
+	s.handler.Create(ctx2)
 
 	c.Check(res1.Code, check.Equals, http.StatusOK)
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
 }
 
 func (s *ProductSuite) TestUpdate(c *check.C) {
-	h := NewProduct(s.mongo)
-
 	ctx1, res1 := ctx("PUT", "/", strings.NewReader(`{
 		"id": "`+product.Id.Hex()+`",
 		"name": "Winter Socks",
@@ -143,31 +136,27 @@ func (s *ProductSuite) TestUpdate(c *check.C) {
 	}`))
 	ctx2.Params = map[string]string{"product": product.Id.Hex()}
 
-	h.Update(ctx1)
-	h.Update(ctx2)
+	s.handler.Update(ctx1)
+	s.handler.Update(ctx2)
 
 	c.Check(res1.Code, check.Equals, http.StatusNoContent)
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
 }
 
 func (s *ProductSuite) TestDestroy(c *check.C) {
-	h := NewProduct(s.mongo)
-
 	ctx1, res1 := ctx("DELETE", "/", nil)
 	ctx1.Params = map[string]string{"product": product.Id.Hex()}
 	ctx2, res2 := ctx("DELETE", "/", nil)
 	ctx2.Params = map[string]string{"product": bson.NewObjectId().Hex()}
 
-	h.Destroy(ctx1)
-	h.Destroy(ctx2)
+	s.handler.Destroy(ctx1)
+	s.handler.Destroy(ctx2)
 
 	c.Check(res1.Code, check.Equals, http.StatusNoContent)
 	c.Check(res2.Code, check.Equals, http.StatusNotFound)
 }
 
 func (s *ProductSuite) TestShowImage(c *check.C) {
-	h := NewProduct(s.mongo)
-
 	ctx1, res1 := ctx("GET", "/", nil)
 	ctx1.Params = map[string]string{
 		"product": product.Id.Hex(),
@@ -189,10 +178,10 @@ func (s *ProductSuite) TestShowImage(c *check.C) {
 		"image":   bson.NewObjectId().Hex(),
 	}
 
-	h.ShowImage(ctx1)
-	h.ShowImage(ctx2)
-	h.ShowImage(ctx3)
-	h.ShowImage(ctx4)
+	s.handler.ShowImage(ctx1)
+	s.handler.ShowImage(ctx2)
+	s.handler.ShowImage(ctx3)
+	s.handler.ShowImage(ctx4)
 
 	c.Check(res1.Code, check.Equals, http.StatusOK)
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
@@ -203,8 +192,6 @@ func (s *ProductSuite) TestShowImage(c *check.C) {
 }
 
 func (s *ProductSuite) TestCreateImage(c *check.C) {
-	h := NewProduct(s.mongo)
-
 	ctx1, res1 := ctx("POST", "/", strings.NewReader("Foo"))
 	ctx1.Params = map[string]string{"product": product.Id.Hex()}
 	ctx2, res2 := ctx("POST", "/", strings.NewReader("Foo"))
@@ -212,18 +199,17 @@ func (s *ProductSuite) TestCreateImage(c *check.C) {
 	ctx3, res3 := ctx("POST", "/", strings.NewReader("Foo"))
 	ctx3.Params = map[string]string{"product": "1234"}
 
-	h.CreateImage(ctx1)
-	h.CreateImage(ctx2)
-	h.CreateImage(ctx3)
+	s.handler.CreateImage(ctx1)
+	s.handler.CreateImage(ctx2)
+	s.handler.CreateImage(ctx3)
 
 	c.Check(res1.Code, check.Equals, http.StatusNoContent)
 	c.Check(res2.Code, check.Equals, http.StatusNotFound)
 	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
+	c.Logf("error nessage: %s\n", res3.Body.String())
 }
 
 func (s *ProductSuite) TestDestroyImage(c *check.C) {
-	h := NewProduct(s.mongo)
-
 	ctx1, res1 := ctx("DELETE", "/", nil)
 	ctx1.Params = map[string]string{
 		"product": product.Id.Hex(),
@@ -245,20 +231,22 @@ func (s *ProductSuite) TestDestroyImage(c *check.C) {
 		"image":   bson.NewObjectId().Hex(),
 	}
 
-	h.DestroyImage(ctx1)
-	h.DestroyImage(ctx2)
-	h.DestroyImage(ctx3)
-	h.DestroyImage(ctx4)
+	s.handler.DestroyImage(ctx1)
+	s.handler.DestroyImage(ctx2)
+	s.handler.DestroyImage(ctx3)
+	s.handler.DestroyImage(ctx4)
 
 	c.Check(res1.Code, check.Equals, http.StatusNoContent)
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
 	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
 	c.Check(res4.Code, check.Equals, http.StatusNotFound)
-
 }
 
 func (s *ProductSuite) TearDownTest(c *check.C) {
-	c.Assert(s.mongo.RemoveAll("products", nil), check.IsNil)
-	c.Assert(s.mongo.RemoveAll("products.files", nil), check.IsNil)
-	c.Assert(s.mongo.RemoveAll("products.chunks", nil), check.IsNil)
+	_, err := s.database.C("products").RemoveAll(nil)
+	c.Assert(err, check.IsNil)
+	_, err = s.database.C("products.files").RemoveAll(nil)
+	c.Assert(err, check.IsNil)
+	_, err = s.database.C("products.chunks").RemoveAll(nil)
+	c.Assert(err, check.IsNil)
 }

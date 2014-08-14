@@ -5,6 +5,8 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
+	"github.com/satisfeet/go-validation"
+
 	"github.com/satisfeet/hoopoe/utils"
 )
 
@@ -14,6 +16,10 @@ type Customer struct {
 	Email   string        `validate:"required,email" store:"unique"`
 	Company string        `validate:"min=5,max=40" store:"index"`
 	Address Address       `validate:"required,nested"`
+}
+
+func (c Customer) Validate() error {
+	return validation.Validate(c)
 }
 
 func (c Customer) MarshalJSON() ([]byte, error) {

@@ -6,18 +6,17 @@ import (
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
-	"github.com/satisfeet/hoopoe/store/mongo"
+	"gopkg.in/mgo.v2"
 )
 
 type Customer struct {
 	*handler
-
 	store *store.Customer
 }
 
-func NewCustomer(m *mongo.Store) *Customer {
+func NewCustomer(s *mgo.Session) *Customer {
 	return &Customer{
-		store: store.NewCustomer(m),
+		store: store.NewCustomer(s),
 	}
 }
 
@@ -33,7 +32,7 @@ func (h *Customer) List(c *context.Context) {
 
 func (h *Customer) Show(c *context.Context) {
 	m := model.Customer{}
-	m.Id = mongo.IdFromString(c.Param("customer"))
+	m.Id = store.IdFromString(c.Param("customer"))
 
 	if err := h.store.FindOne(&m); err != nil {
 		h.error(c, err)
@@ -76,7 +75,7 @@ func (h *Customer) Update(c *context.Context) {
 
 func (h *Customer) Destroy(c *context.Context) {
 	m := model.Customer{}
-	m.Id = mongo.IdFromString(c.Param("customer"))
+	m.Id = store.IdFromString(c.Param("customer"))
 
 	if err := h.store.Remove(m); err != nil {
 		h.error(c, err)

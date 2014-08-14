@@ -8,7 +8,8 @@ import (
 
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/store/mongo"
+
+	"github.com/satisfeet/hoopoe/store"
 )
 
 type handler struct{}
@@ -19,7 +20,7 @@ func (h *handler) error(c *context.Context, err error) {
 	switch err {
 	case mgo.ErrNotFound:
 		s = http.StatusNotFound
-	case mongo.ErrBadId:
+	case store.ErrBadId:
 		s = http.StatusBadRequest
 	}
 

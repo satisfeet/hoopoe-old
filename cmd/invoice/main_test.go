@@ -11,7 +11,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/hoopoe/model"
-	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 var order = model.Order{
@@ -69,36 +68,26 @@ func TestMain(t *testing.T) {
 }
 
 type Suite struct {
-	url   string
-	mongo *mongo.Store
+	url      string
+	session  *mgo.Session
+	database *mgo.Database
 }
 
 func (s *Suite) SetUpSuite(c *check.C) {
-	s.mongo = &mongo.Store{}
-
-	err := s.mongo.Dial(s.url)
+	sess, err := mgo.Dial(s.url)
 	c.Assert(err, check.IsNil)
 
-	err = s.mongo.Insert("orders", &order)
+	s.session = sess
+	s.database = sess.DB("")
+
+	err = s.database.C("orders").Insert(&order)
 	c.Assert(err, check.IsNil)
-	err = s.mongo.Insert("products", &product)
+	err = s.database.C("products").Insert(&product)
 	c.Assert(err, check.IsNil)
-	err = s.mongo.Insert("customers", &customer)
+	err = s.database.C("customers").Insert(&customer)
 	c.Assert(err, check.IsNil)
 
 	os.Args = append(os.Args, []string{"--order", order.Id.Hex()}...)
-}
-
-func (s *Suite) TearDownSuite(c *check.C) {
-	err := s.mongo.RemoveAll("orders", mongo.Query{})
-	c.Assert(err, check.IsNil)
-	err = s.mongo.RemoveAll("products", mongo.Query{})
-	c.Assert(err, check.IsNil)
-	err = s.mongo.RemoveAll("customers", mongo.Query{})
-	c.Assert(err, check.IsNil)
-
-	err = s.mongo.Close()
-	c.Assert(err, check.IsNil)
 }
 
 func (s *Suite) TestMain(c *check.C) {
@@ -118,4 +107,15 @@ func (s *Suite) TestMain(c *check.C) {
 
 	err = os.Remove("invoice.pdf")
 	c.Assert(err, check.IsNil)
+}
+
+func (s *Suite) TearDownSuite(c *check.C) {
+	_, err := s.database.C("orders").RemoveAll(nil)
+	c.Assert(err, check.IsNil)
+	_, err = s.database.C("products").RemoveAll(nil)
+	c.Assert(err, check.IsNil)
+	_, err = s.database.C("customers").RemoveAll(nil)
+	c.Assert(err, check.IsNil)
+
+	s.session.Close()
 }
