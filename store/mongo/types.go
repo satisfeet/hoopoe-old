@@ -12,18 +12,11 @@ type File struct {
 	io.ReadWriteCloser
 }
 
-func ParseId(id interface{}) bson.ObjectId {
+func IdFromString(id string) bson.ObjectId {
 	var oid bson.ObjectId
 
-	switch t := id.(type) {
-	case string:
-		if bson.IsObjectIdHex(t) {
-			oid = bson.ObjectIdHex(t)
-		}
-	case bson.ObjectId:
-		if t.Valid() {
-			oid = t
-		}
+	if bson.IsObjectIdHex(id) {
+		oid = bson.ObjectIdHex(id)
 	}
 
 	return oid

@@ -1,10 +1,13 @@
 package store
 
 import (
+	"testing"
+
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/hoopoe/model"
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 var customers = []model.Customer{
@@ -26,11 +29,43 @@ var customers = []model.Customer{
 	},
 }
 
-func (s *Suite) TestCustomerSearch(c *check.C) {
+var cs = &CustomerSuite{
+	StoreSuite: ss,
+}
+
+func TestCustomer(t *testing.T) {
+	check.Suite(cs)
+	check.TestingT(t)
+}
+
+type CustomerSuite struct {
+	*StoreSuite
+	store *Customer
+}
+
+func (s *CustomerSuite) SetUpSuite(c *check.C) {
+	s.StoreSuite.SetUpSuite(c)
+
+	s.store = NewCustomer(s.mongo)
+}
+
+func (s *CustomerSuite) SetUpTest(c *check.C) {
+	err := s.mongo.Insert("customers", &customers[0])
+	c.Assert(err, check.IsNil)
+	err = s.mongo.Insert("customers", &customers[1])
+	c.Assert(err, check.IsNil)
+}
+
+func (s *CustomerSuite) TestSearch(c *check.C) {
 	m := []model.Customer{}
 
-	err := s.customer.Search("denzel", &m)
+	err := s.store.Search("denzel", &m)
 	c.Assert(err, check.IsNil)
 
 	c.Check(m, check.DeepEquals, customers[1:])
+}
+
+func (s *CustomerSuite) TearDownTest(c *check.C) {
+	err := s.mongo.RemoveAll("customers", mongo.Query{})
+	c.Assert(err, check.IsNil)
 }

@@ -2,11 +2,13 @@ package store
 
 import (
 	"io/ioutil"
+	"testing"
 
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/hoopoe/model"
+	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 var products = []model.Product{
@@ -26,18 +28,43 @@ var products = []model.Product{
 	},
 }
 
-func (s *Suite) SkipTestProductImage(c *check.C) {
-	f, err := s.product.CreateImage(&products[0])
+var ps = &ProductSuite{
+	StoreSuite: ss,
+}
+
+func TestProduct(t *testing.T) {
+	check.Suite(ps)
+	check.TestingT(t)
+}
+
+type ProductSuite struct {
+	*StoreSuite
+	store *Product
+}
+
+func (s *ProductSuite) SetUpSuite(c *check.C) {
+	s.StoreSuite.SetUpSuite(c)
+
+	s.store = NewProduct(s.mongo)
+}
+
+func (s *ProductSuite) SetUpTest(c *check.C) {
+	err := s.mongo.Insert("products", &products[0])
+	c.Assert(err, check.IsNil)
+}
+
+func (s *ProductSuite) SkipTestProductImage(c *check.C) {
+	f, err := s.store.CreateImage(&products[0])
 	c.Assert(err, check.IsNil)
 	_, err = f.Write([]byte("Hello"))
 	c.Assert(err, check.IsNil)
 	err = f.Close()
 	c.Assert(err, check.IsNil)
 
-	err = s.product.FindOne(&products[0])
+	err = s.store.FindOne(&products[0])
 	c.Assert(err, check.IsNil)
 
-	f, err = s.product.OpenImage(&products[0], products[0].Images[0])
+	f, err = s.store.OpenImage(&products[0], products[0].Images[0])
 	c.Assert(err, check.IsNil)
 	b, err := ioutil.ReadAll(f)
 	c.Assert(err, check.IsNil)
@@ -45,6 +72,15 @@ func (s *Suite) SkipTestProductImage(c *check.C) {
 	c.Assert(err, check.IsNil)
 	c.Check(b, check.DeepEquals, []byte("Hello"))
 
-	err = s.product.RemoveImage(&products[0], products[0].Images[0])
+	err = s.store.RemoveImage(&products[0], products[0].Images[0])
+	c.Assert(err, check.IsNil)
+}
+
+func (s *ProductSuite) TearDownTest(c *check.C) {
+	err := s.mongo.RemoveAll("products", mongo.Query{})
+	c.Assert(err, check.IsNil)
+	err = s.mongo.RemoveAll("products.files", mongo.Query{})
+	c.Assert(err, check.IsNil)
+	err = s.mongo.RemoveAll("products.chunks", mongo.Query{})
 	c.Assert(err, check.IsNil)
 }

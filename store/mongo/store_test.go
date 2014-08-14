@@ -18,21 +18,22 @@ var models = []model{
 	model{bson.NewObjectId(), "Bar"},
 }
 
-func TestSuite(t *testing.T) {
-	check.Suite(&Suite{
-		url: "localhost/test",
-	})
+var ss = &StoreSuite{
+	url: "localhost/test",
+}
+
+func TestStore(t *testing.T) {
+	check.Suite(ss)
 	check.TestingT(t)
 }
 
-type Suite struct {
-	id    bson.ObjectId
+type StoreSuite struct {
 	url   string
 	store *Store
 	mongo *mgo.Database
 }
 
-func (s *Suite) SetUpSuite(c *check.C) {
+func (s *StoreSuite) SetUpSuite(c *check.C) {
 	sess, err := mgo.Dial(s.url)
 	c.Assert(err, check.IsNil)
 
@@ -44,25 +45,14 @@ func (s *Suite) SetUpSuite(c *check.C) {
 	s.mongo = sess.DB("")
 }
 
-func (s *Suite) SetUpTest(c *check.C) {
-	s.id = bson.NewObjectId()
-
+func (s *StoreSuite) SetUpTest(c *check.C) {
 	err := s.mongo.C("models").Insert(models[0])
 	c.Assert(err, check.IsNil)
 	err = s.mongo.C("models").Insert(models[1])
 	c.Assert(err, check.IsNil)
 }
 
-func (s *Suite) TearDownSuite(c *check.C) {
-	s.mongo.Session.Close()
-}
-
-func (s *Suite) TearDownTest(c *check.C) {
-	_, err := s.mongo.C("models").RemoveAll(nil)
-	c.Assert(err, check.IsNil)
-}
-
-func (s *Suite) TestStoreDialAndClose(c *check.C) {
+func (s *StoreSuite) TestDialAndClose(c *check.C) {
 	store := &Store{}
 
 	err := store.Dial(s.url)
@@ -71,7 +61,7 @@ func (s *Suite) TestStoreDialAndClose(c *check.C) {
 	c.Assert(err, check.IsNil)
 }
 
-func (s *Suite) TestStoreFind(c *check.C) {
+func (s *StoreSuite) TestFind(c *check.C) {
 	m := []model{}
 
 	err := s.store.Find("models", Query{}, &m)
@@ -80,7 +70,7 @@ func (s *Suite) TestStoreFind(c *check.C) {
 	c.Check(m, check.DeepEquals, models)
 }
 
-func (s *Suite) TestStoreFindId(c *check.C) {
+func (s *StoreSuite) TestFindId(c *check.C) {
 	m1 := model{}
 	m2 := model{}
 	m3 := model{}
@@ -97,7 +87,7 @@ func (s *Suite) TestStoreFindId(c *check.C) {
 	c.Check(m3, check.DeepEquals, models[0])
 }
 
-func (s *Suite) TestStoreFindOne(c *check.C) {
+func (s *StoreSuite) TestFindOne(c *check.C) {
 	q := Query{}
 	q.Id(models[0].Id)
 
@@ -109,7 +99,7 @@ func (s *Suite) TestStoreFindOne(c *check.C) {
 	c.Check(m, check.DeepEquals, models[0])
 }
 
-func (s *Suite) TestStoreInsert(c *check.C) {
+func (s *StoreSuite) TestInsert(c *check.C) {
 	m1 := model{Name: "Baz"}
 	m2 := model{}
 
@@ -122,12 +112,12 @@ func (s *Suite) TestStoreInsert(c *check.C) {
 	c.Check(m1, check.DeepEquals, m2)
 }
 
-func (s *Suite) TestStoreUpdate(c *check.C) {
+func (s *StoreSuite) TestUpdate(c *check.C) {
 	m := model{}
 
-	models[0].Name += "Foo"
+	models[0].Name = "FooFoo"
 
-	err := s.store.Update("models", Query{"name": "Foo"}, models[0])
+	err := s.store.Update("models", Query{"_id": models[0].Id}, models[0])
 	c.Assert(err, check.IsNil)
 
 	err = s.mongo.C("models").FindId(models[0].Id).One(&m)
@@ -136,7 +126,7 @@ func (s *Suite) TestStoreUpdate(c *check.C) {
 	c.Check(m, check.DeepEquals, models[0])
 }
 
-func (s *Suite) TestStoreUpdateId(c *check.C) {
+func (s *StoreSuite) TestUpdateId(c *check.C) {
 	m := model{}
 
 	models[0].Name += "Foo"
@@ -154,7 +144,7 @@ func (s *Suite) TestStoreUpdateId(c *check.C) {
 	c.Check(m, check.DeepEquals, models[0])
 }
 
-func (s *Suite) TestStoreRemove(c *check.C) {
+func (s *StoreSuite) TestRemove(c *check.C) {
 	m := []model{}
 
 	err := s.store.Remove("models", Query{"name": "Bar"})
@@ -166,7 +156,7 @@ func (s *Suite) TestStoreRemove(c *check.C) {
 	c.Check(m, check.DeepEquals, models[:1])
 }
 
-func (s *Suite) TestStoreRemoveId(c *check.C) {
+func (s *StoreSuite) TestRemoveId(c *check.C) {
 	m := []model{}
 
 	err := s.store.RemoveId("models", models[1].Id)
@@ -178,7 +168,7 @@ func (s *Suite) TestStoreRemoveId(c *check.C) {
 	c.Check(m, check.DeepEquals, models[:1])
 }
 
-func (s *Suite) TestStoreRemoveAll(c *check.C) {
+func (s *StoreSuite) TestRemoveAll(c *check.C) {
 	m := []model{}
 
 	err := s.store.RemoveAll("models", Query{})
@@ -188,4 +178,13 @@ func (s *Suite) TestStoreRemoveAll(c *check.C) {
 	c.Assert(err, check.IsNil)
 
 	c.Check(m, check.DeepEquals, []model{})
+}
+
+func (s *StoreSuite) TearDownTest(c *check.C) {
+	_, err := s.mongo.C("models").RemoveAll(nil)
+	c.Assert(err, check.IsNil)
+}
+
+func (s *StoreSuite) TearDownStoreSuite(c *check.C) {
+	s.mongo.Session.Close()
 }

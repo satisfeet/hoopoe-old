@@ -205,13 +205,3 @@ func castId(id interface{}) (bson.ObjectId, error) {
 
 	return oid, ErrBadId
 }
-
-func IdFromString(id string) bson.ObjectId {
-	var oid bson.ObjectId
-
-	if bson.IsObjectIdHex(id) {
-		oid = bson.ObjectIdHex(id)
-	}
-
-	return oid
-}

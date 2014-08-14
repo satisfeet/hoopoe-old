@@ -1,11 +1,26 @@
 package mongo
 
 import (
+	"testing"
+
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2/bson"
 )
 
-func (s *Suite) TestQueryId(c *check.C) {
+func TestQuery(t *testing.T) {
+	check.Suite(&QuerySuite{})
+	check.TestingT(t)
+}
+
+type QuerySuite struct {
+	id bson.ObjectId
+}
+
+func (s *QuerySuite) SetUpTest(c *check.C) {
+	s.id = bson.NewObjectId()
+}
+
+func (s *QuerySuite) TestId(c *check.C) {
 	q1 := Query{}
 	q2 := Query{}
 	q3 := Query{}
@@ -19,7 +34,7 @@ func (s *Suite) TestQueryId(c *check.C) {
 	c.Check(q3["_id"], check.IsNil)
 }
 
-func (s *Suite) TestQueryIn(c *check.C) {
+func (s *QuerySuite) TestIn(c *check.C) {
 	q := Query{}
 	q.In("foo", 123)
 
@@ -28,14 +43,14 @@ func (s *Suite) TestQueryIn(c *check.C) {
 	})
 }
 
-func (s *Suite) TestQueryPush(c *check.C) {
+func (s *QuerySuite) TestPush(c *check.C) {
 	u := Query{}
 	u.Push("foo", "bar")
 
 	c.Check(u["$push"], check.DeepEquals, bson.M{"foo": "bar"})
 }
 
-func (s *Suite) TestQueryPull(c *check.C) {
+func (s *QuerySuite) TestPull(c *check.C) {
 	u := Query{}
 	u.Pull("foo", "bar")
 

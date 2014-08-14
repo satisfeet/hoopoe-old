@@ -3,6 +3,7 @@ package httpd
 import (
 	"net/http"
 	"strings"
+	"testing"
 
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2/bson"
@@ -18,16 +19,35 @@ var customer = model.Customer{
 	},
 }
 
-func (s *Suite) TestCustomerList(c *check.C) {
-	h := NewCustomer(s.mongo)
+var cs = &CustomerSuite{
+	HandlerSuite: hs,
+}
 
-	ctx1, res1 := s.Context("GET", "/customers", nil)
-	ctx2, res2 := s.Context("GET", "/customers?search=mar", nil)
-	ctx3, res3 := s.Context("GET", "/customers?search=foobar", nil)
+func TestCustomer(t *testing.T) {
+	check.Suite(hs)
+	check.TestingT(t)
+}
 
-	h.List(ctx1)
-	h.List(ctx2)
-	h.List(ctx3)
+type CustomerSuite struct {
+	*HandlerSuite
+	handler *Customer
+}
+
+func (s *CustomerSuite) SetUpTest(c *check.C) {
+	s.handler = NewCustomer(s.mongo)
+
+	err := s.mongo.Insert("customers", &customer)
+	c.Assert(err, check.IsNil)
+}
+
+func (s *CustomerSuite) TestList(c *check.C) {
+	ctx1, res1 := ctx("GET", "/customers", nil)
+	ctx2, res2 := ctx("GET", "/customers?search=mar", nil)
+	ctx3, res3 := ctx("GET", "/customers?search=foobar", nil)
+
+	s.handler.List(ctx1)
+	s.handler.List(ctx2)
+	s.handler.List(ctx3)
 
 	c.Check(res1.Code, check.Equals, http.StatusOK)
 	c.Check(res2.Code, check.Equals, http.StatusOK)
@@ -38,53 +58,48 @@ func (s *Suite) TestCustomerList(c *check.C) {
 	c.Check(strings.HasPrefix(res3.Body.String(), "[]"), check.Equals, true)
 }
 
-func (s *Suite) TestCustomerShow(c *check.C) {
-	h := NewCustomer(s.mongo)
+func (s *CustomerSuite) TestShow(c *check.C) {
+	ctx1, res1 := ctx("GET", "/", nil)
+	ctx2, res2 := ctx("GET", "/", nil)
+	ctx3, res3 := ctx("GET", "/", nil)
 
-	ctx1, res1 := s.Context("GET", "/", nil)
 	ctx1.Params = map[string]string{"customer": customer.Id.Hex()}
-	ctx2, res2 := s.Context("GET", "/", nil)
 	ctx2.Params = map[string]string{"customer": bson.NewObjectId().Hex()}
-	ctx3, res3 := s.Context("GET", "/", nil)
 	ctx3.Params = map[string]string{"customer": "1234"}
 
-	h.Show(ctx1)
-	h.Show(ctx2)
-	h.Show(ctx3)
+	s.handler.Show(ctx1)
+	s.handler.Show(ctx2)
+	s.handler.Show(ctx3)
 
 	c.Check(res1.Code, check.Equals, http.StatusOK)
 	c.Check(res2.Code, check.Equals, http.StatusNotFound)
 	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestCustomerCreate(c *check.C) {
-	h := NewCustomer(s.mongo)
-
-	ctx1, res1 := s.Context("POST", "/customers", strings.NewReader(`{
+func (s *CustomerSuite) TestCreate(c *check.C) {
+	ctx1, res1 := ctx("POST", "/customers", strings.NewReader(`{
 		"name": "Edison T.",
 		"email": "edison@t.com",
 		"address": {
 			"city": "Leeds"
 		}
 	}`))
-	ctx2, res2 := s.Context("POST", "/customers", strings.NewReader(`{
+	ctx2, res2 := ctx("POST", "/customers", strings.NewReader(`{
 		"email": "edison@t.com",
 		"address": {
 			"city": "Leeds"
 		}
 	}`))
 
-	h.Create(ctx1)
-	h.Create(ctx2)
+	s.handler.Create(ctx1)
+	s.handler.Create(ctx2)
 
 	c.Check(res1.Code, check.Equals, http.StatusOK)
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestCustomerUpdate(c *check.C) {
-	h := NewCustomer(s.mongo)
-
-	ctx1, res1 := s.Context("PUT", "/", strings.NewReader(`{
+func (s *CustomerSuite) TestUpdate(c *check.C) {
+	ctx1, res1 := ctx("PUT", "/", strings.NewReader(`{
 		"id": "`+customer.Id.Hex()+`",
 		"name": "Bob Marley",
 		"email": "bob@marley.com",
@@ -92,34 +107,39 @@ func (s *Suite) TestCustomerUpdate(c *check.C) {
 			"city": "New York"
 		}
 	}`))
-	ctx1.Params = map[string]string{"customer": customer.Id.Hex()}
-	ctx2, res2 := s.Context("PUT", "/", strings.NewReader(`{
+	ctx2, res2 := ctx("PUT", "/", strings.NewReader(`{
 		"id": "`+customer.Id.Hex()+`",
 		"name": "Bob Marley",
 		"address": {
 			"city": "New York"
 		}
 	}`))
+
+	ctx1.Params = map[string]string{"customer": customer.Id.Hex()}
 	ctx2.Params = map[string]string{"customer": customer.Id.Hex()}
 
-	h.Update(ctx1)
-	h.Update(ctx2)
+	s.handler.Update(ctx1)
+	s.handler.Update(ctx2)
 
 	c.Check(res1.Code, check.Equals, http.StatusNoContent)
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
 }
 
-func (s *Suite) TestCustomerDestroy(c *check.C) {
-	h := NewCustomer(s.mongo)
+func (s *CustomerSuite) TestDestroy(c *check.C) {
+	ctx1, res1 := ctx("DELETE", "/", nil)
+	ctx2, res2 := ctx("DELETE", "/", nil)
 
-	ctx1, res1 := s.Context("DELETE", "/", nil)
 	ctx1.Params = map[string]string{"customer": customer.Id.Hex()}
-	ctx2, res2 := s.Context("DELETE", "/", nil)
 	ctx2.Params = map[string]string{"customer": bson.NewObjectId().Hex()}
 
-	h.Destroy(ctx1)
-	h.Destroy(ctx2)
+	s.handler.Destroy(ctx1)
+	s.handler.Destroy(ctx2)
 
 	c.Check(res1.Code, check.Equals, http.StatusNoContent)
 	c.Check(res2.Code, check.Equals, http.StatusNotFound)
+}
+
+func (s *CustomerSuite) TearDownTest(c *check.C) {
+	err := s.mongo.RemoveAll("customers", nil)
+	c.Assert(err, check.IsNil)
 }
