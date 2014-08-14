@@ -132,6 +132,22 @@ func (s *Store) RemoveAll(name string, q Query) error {
 	return err
 }
 
+func (s *Store) Index(name string, keys []string) error {
+	sess := s.clone()
+	defer sess.Close()
+
+	return s.collection(name).With(sess).EnsureIndexKey(keys...)
+}
+
+func (s *Store) Unique(name string, keys []string) error {
+	sess := s.clone()
+	defer sess.Close()
+
+	index := mgo.Index{Key: keys, Unique: true}
+
+	return s.collection(name).With(sess).EnsureIndex(index)
+}
+
 func (s *Store) CreateFile(name string) (*File, error) {
 	f, err := s.filesystem(name).Create("")
 

@@ -28,6 +28,22 @@ func (s *store) Insert(model interface{}) error {
 	return s.mongo.Insert(getName(model), model)
 }
 
+func (s *store) Index(model interface{}) error {
+	n := getName(model)
+	i, u := getIndex(model)
+
+	if len(i) > 0 {
+		if err := s.mongo.Index(n, i); err != nil {
+			return err
+		}
+	}
+	if len(u) > 0 {
+		return s.mongo.Unique(n, u)
+	}
+
+	return nil
+}
+
 func (s *store) Update(model interface{}) error {
 	q := mongo.Query{}
 	q.Id(getId(model))
@@ -52,4 +68,20 @@ func getId(model interface{}) interface{} {
 
 func getName(model interface{}) string {
 	return strings.ToLower(utils.GetTypeName(model)) + "s"
+}
+
+func getIndex(model interface{}) ([]string, []string) {
+	u := []string{}
+	i := []string{}
+
+	for _, f := range utils.GetStructInfo(model) {
+		if f.Unique {
+			u = append(u, f.Name)
+		}
+		if f.Index {
+			i = append(i, f.Name)
+		}
+	}
+
+	return i, u
 }

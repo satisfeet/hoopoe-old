@@ -13,9 +13,11 @@ type Product struct {
 	*store
 }
 
-func NewProduct(s *mongo.Store) *Product {
+func NewProduct(m *mongo.Store) *Product {
+	s := &store{m}
+
 	return &Product{
-		store: &store{s},
+		store: s,
 	}
 }
 

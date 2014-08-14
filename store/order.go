@@ -9,9 +9,11 @@ type Order struct {
 	*store
 }
 
-func NewOrder(s *mongo.Store) *Order {
+func NewOrder(m *mongo.Store) *Order {
+	s := &store{m}
+
 	return &Order{
-		store: &store{s},
+		store: s,
 	}
 }
 

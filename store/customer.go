@@ -12,9 +12,11 @@ type Customer struct {
 	*store
 }
 
-func NewCustomer(s *mongo.Store) *Customer {
+func NewCustomer(m *mongo.Store) *Customer {
+	s := &store{m}
+
 	return &Customer{
-		store: &store{s},
+		store: s,
 	}
 }
 

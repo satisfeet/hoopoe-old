@@ -50,6 +50,8 @@ func (s *CustomerSuite) SetUpSuite(c *check.C) {
 }
 
 func (s *CustomerSuite) SetUpTest(c *check.C) {
+	c.Logf("setup test\n")
+
 	err := s.mongo.Insert("customers", &customers[0])
 	c.Assert(err, check.IsNil)
 	err = s.mongo.Insert("customers", &customers[1])
@@ -66,6 +68,8 @@ func (s *CustomerSuite) TestSearch(c *check.C) {
 }
 
 func (s *CustomerSuite) TearDownTest(c *check.C) {
+	c.Logf("teardown test\n")
+
 	err := s.mongo.RemoveAll("customers", mongo.Query{})
 	c.Assert(err, check.IsNil)
 }
