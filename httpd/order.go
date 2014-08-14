@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/satisfeet/go-context"
@@ -83,6 +84,34 @@ func (h *Order) Destroy(c *context.Context) {
 	}
 }
 
-func (h *Order) ShowInvoice(c *context.Context) {
+func (h *Order) ReadInvoice(c *context.Context) {
+	m := model.Order{}
+	m.Id = mongo.IdFromString(c.Param("order"))
 
+	rc, err := h.store.ReadInvoice(&m)
+
+	if err != nil {
+		h.error(c, err)
+	}
+	defer rc.Close()
+
+	io.Copy(c.Response, rc)
+}
+
+func (h *Order) WriteInvoice(c *context.Context) {
+	m := model.Order{}
+	m.Id = mongo.IdFromString(c.Param("order"))
+
+	wc, err := h.store.WriteInvoice(&m)
+
+	if err != nil {
+		h.error(c, err)
+	}
+	defer wc.Close()
+
+	if _, err := io.Copy(wc, c.Request.Body); err != nil {
+		h.error(c, err)
+	} else {
+		c.Respond(nil, http.StatusNoContent)
+	}
 }

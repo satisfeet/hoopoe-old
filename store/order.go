@@ -1,8 +1,11 @@
 package store
 
 import (
+	"io"
+
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store/mongo"
+	"gopkg.in/mgo.v2"
 )
 
 type Order struct {
@@ -47,4 +50,18 @@ func (s *Order) FindProducts(o *model.Order) error {
 	}
 
 	return nil
+}
+
+func (s *Order) ReadInvoice(o *model.Order) (io.ReadCloser, error) {
+	return s.mongo.OpenFileId(getName(o), o.Id)
+}
+
+func (s *Order) WriteInvoice(o *model.Order) (io.WriteCloser, error) {
+	f, err := s.mongo.OpenFileId(getName(o), o.Id)
+
+	if err == mgo.ErrNotFound {
+		f, err = s.mongo.CreateFile(getName(o))
+	}
+
+	return f, err
 }
