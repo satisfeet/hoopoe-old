@@ -16,11 +16,8 @@ type Customer struct {
 }
 
 func NewCustomer(m *mongo.Store) *Customer {
-	s := store.NewCustomer(m)
-
 	return &Customer{
-		handler: &handler{s},
-		store:   s,
+		store: store.NewCustomer(m),
 	}
 }
 

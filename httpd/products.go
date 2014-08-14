@@ -16,11 +16,8 @@ type Product struct {
 }
 
 func NewProduct(m *mongo.Store) *Product {
-	s := store.NewProduct(m)
-
 	return &Product{
-		store:   s,
-		handler: &handler{s},
+		store: store.NewProduct(m),
 	}
 }
 
