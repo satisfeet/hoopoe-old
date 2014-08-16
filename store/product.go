@@ -13,9 +13,21 @@ type Product struct {
 	*store
 }
 
+var ProductUnique = []string{
+	"name",
+}
+
+var ProductName = "products"
+
 func NewProduct(s *mgo.Session) *Product {
+	info := storeInfo{
+		Name:   ProductName,
+		Unique: ProductUnique,
+	}
+
 	return &Product{
 		store: &store{
+			info:     info,
 			session:  s,
 			database: s.DB(""),
 		},
@@ -32,7 +44,7 @@ func (s *Product) pushImage(p *model.Product, id bson.ObjectId) error {
 	c := s.session.Clone()
 	defer c.Close()
 
-	return s.collection(p).With(c).UpdateId(p.Id, u)
+	return s.collection().With(c).UpdateId(p.Id, u)
 }
 
 func (s *Product) pullImage(p *model.Product, id bson.ObjectId) error {
@@ -45,7 +57,7 @@ func (s *Product) pullImage(p *model.Product, id bson.ObjectId) error {
 	c := s.session.Clone()
 	defer c.Close()
 
-	return s.collection(p).With(c).UpdateId(p.Id, u)
+	return s.collection().With(c).UpdateId(p.Id, u)
 }
 
 func (s *Product) ReadImage(p *model.Product, id bson.ObjectId, w io.Writer) error {
@@ -56,11 +68,11 @@ func (s *Product) ReadImage(p *model.Product, id bson.ObjectId, w io.Writer) err
 		return ErrBadId
 	}
 
-	if err := s.collection(p).FindId(p.Id).One(nil); err != nil {
+	if err := s.collection().FindId(p.Id).One(nil); err != nil {
 		return err
 	}
 
-	f, err := s.files(p).OpenId(id)
+	f, err := s.files().OpenId(id)
 
 	if err != nil {
 		return err
@@ -78,7 +90,7 @@ func (s *Product) WriteImage(p *model.Product, id bson.ObjectId, r io.Reader) er
 		return ErrBadId
 	}
 
-	f, err := s.files(p).Create("")
+	f, err := s.files().Create("")
 	f.SetId(id)
 
 	if err != nil {
@@ -103,5 +115,5 @@ func (s *Product) RemoveImage(p *model.Product, id bson.ObjectId) error {
 		return err
 	}
 
-	return s.files(p).RemoveId(id)
+	return s.files().RemoveId(id)
 }

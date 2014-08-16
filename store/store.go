@@ -2,7 +2,6 @@ package store
 
 import (
 	"errors"
-	"strings"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -16,24 +15,51 @@ type Model interface {
 	Validate() error
 }
 
+type storeInfo struct {
+	Name   string
+	Index  []string
+	Unique []string
+}
+
 type store struct {
+	info     storeInfo
 	session  *mgo.Session
 	database *mgo.Database
 }
 
-func (s *store) files(model interface{}) *mgo.GridFS {
-	return s.database.GridFS(getName(model))
+func (s *store) files() *mgo.GridFS {
+	return s.database.GridFS(s.info.Name)
 }
 
-func (s *store) collection(model interface{}) *mgo.Collection {
-	return s.database.C(getName(model))
+func (s *store) collection() *mgo.Collection {
+	return s.database.C(s.info.Name)
+}
+
+func (s *store) Index() error {
+	if i := s.info.Index; len(i) > 0 {
+		if err := s.collection().EnsureIndexKey(i...); err != nil {
+			return err
+		}
+	}
+	if i := s.info.Unique; len(i) > 0 {
+		err := s.collection().EnsureIndex(mgo.Index{
+			Key:    i,
+			Unique: true,
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *store) Find(models interface{}) error {
 	c := s.session.Clone()
 	defer c.Close()
 
-	return s.collection(models).With(c).Find(nil).All(models)
+	return s.collection().With(c).Find(nil).All(models)
 }
 
 func (s *store) FindOne(model Model) error {
@@ -46,7 +72,7 @@ func (s *store) FindOne(model Model) error {
 		return ErrBadId
 	}
 
-	return s.collection(model).With(c).FindId(id).One(model)
+	return s.collection().With(c).FindId(id).One(model)
 }
 
 func (s *store) Insert(model Model) error {
@@ -61,7 +87,7 @@ func (s *store) Insert(model Model) error {
 		return err
 	}
 
-	return s.collection(model).With(c).Insert(model)
+	return s.collection().With(c).Insert(model)
 }
 
 func (s *store) Update(model Model) error {
@@ -78,7 +104,7 @@ func (s *store) Update(model Model) error {
 		return err
 	}
 
-	return s.collection(model).With(c).UpdateId(id, model)
+	return s.collection().With(c).UpdateId(id, model)
 }
 
 func (s *store) Remove(model Model) error {
@@ -91,7 +117,7 @@ func (s *store) Remove(model Model) error {
 		return ErrBadId
 	}
 
-	return s.collection(model).With(c).RemoveId(id)
+	return s.collection().With(c).RemoveId(id)
 }
 
 func setId(model interface{}, id bson.ObjectId) {
@@ -100,10 +126,6 @@ func setId(model interface{}, id bson.ObjectId) {
 
 func getId(model interface{}) bson.ObjectId {
 	return utils.GetFieldValue(model, "Id").(bson.ObjectId)
-}
-
-func getName(model interface{}) string {
-	return strings.ToLower(utils.GetTypeName(model)) + "s"
 }
 
 func IdFromString(id string) bson.ObjectId {

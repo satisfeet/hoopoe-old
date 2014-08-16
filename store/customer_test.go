@@ -48,6 +48,11 @@ func (s *CustomerSuite) SetUpTest(c *check.C) {
 	c.Assert(err, check.IsNil)
 }
 
+func (s *CustomerSuite) TestIndex(c *check.C) {
+	err := s.store.Index()
+	c.Assert(err, check.IsNil)
+}
+
 func (s *CustomerSuite) TestFind(c *check.C) {
 	m := []model.Customer{}
 

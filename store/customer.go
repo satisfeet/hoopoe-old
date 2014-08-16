@@ -12,9 +12,29 @@ type Customer struct {
 	*store
 }
 
+var CustomerIndex = []string{
+	"address.street",
+	"address.city",
+	"company",
+}
+
+var CustomerUnique = []string{
+	"email",
+	"name",
+}
+
+var CustomerName = "customers"
+
 func NewCustomer(s *mgo.Session) *Customer {
+	info := storeInfo{
+		Name:   CustomerName,
+		Index:  CustomerIndex,
+		Unique: CustomerUnique,
+	}
+
 	return &Customer{
 		store: &store{
+			info:     info,
 			session:  s,
 			database: s.DB(""),
 		},
@@ -37,5 +57,5 @@ func (s *Customer) Search(keyword string, m *[]model.Customer) error {
 		q["$or"] = or
 	}
 
-	return s.collection(m).Find(q).All(m)
+	return s.collection().Find(q).All(m)
 }

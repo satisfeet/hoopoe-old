@@ -11,21 +11,32 @@ import (
 
 type Order struct {
 	*store
+	product  *Product
+	customer *Customer
 }
 
+var OrderName = "orders"
+
 func NewOrder(s *mgo.Session) *Order {
+	info := storeInfo{
+		Name: OrderName,
+	}
+
 	return &Order{
 		store: &store{
+			info:     info,
 			session:  s,
 			database: s.DB(""),
 		},
+		product:  NewProduct(s),
+		customer: NewCustomer(s),
 	}
 }
 
 func (s *Order) FindCustomer(o *model.Order) error {
 	o.Customer.Id = o.CustomerId
 
-	return s.FindOne(&o.Customer)
+	return s.customer.FindOne(&o.Customer)
 }
 
 func (s *Order) FindProducts(o *model.Order) error {
@@ -42,7 +53,7 @@ func (s *Order) FindProducts(o *model.Order) error {
 
 	p := []model.Product{}
 
-	if err := s.collection(p).Find(q).All(&p); err != nil {
+	if err := s.product.collection().Find(q).All(&p); err != nil {
 		return err
 	}
 	for i, p := range p {
@@ -57,7 +68,7 @@ func (s *Order) ReadInvoice(o *model.Order, w io.Writer) error {
 		return ErrBadId
 	}
 
-	f, err := s.files(o).OpenId(o.Id)
+	f, err := s.files().OpenId(o.Id)
 
 	if err != nil {
 		return err
@@ -75,7 +86,7 @@ func (s *Order) WriteInvoice(o *model.Order, r io.Reader) error {
 		return ErrBadId
 	}
 
-	f, err := s.files(o).Create("")
+	f, err := s.files().Create("")
 	f.SetId(o.Id)
 
 	if err != nil {
