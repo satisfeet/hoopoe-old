@@ -1,61 +1,79 @@
 package store
 
 import (
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"encoding/json"
 
-	"github.com/satisfeet/hoopoe/model"
+	"github.com/satisfeet/go-validation"
+
+	"github.com/satisfeet/hoopoe/store/common"
 	"github.com/satisfeet/hoopoe/utils"
 )
 
-type Customer struct {
-	*store
-}
+var customerName = "customers"
 
-var CustomerIndex = []string{
+var customerIndex = []string{
+	"company",
 	"address.street",
 	"address.city",
-	"company",
 }
 
-var CustomerUnique = []string{
+var customerUnique = []string{
 	"email",
 	"name",
 }
 
-var CustomerName = "customers"
+type Customer struct {
+	Id      interface{} `bson:"_id"`
+	Name    string      `validate:"required,min=5"`
+	Email   string      `validate:"required,email"`
+	Company string      `validate:"min=5,max=40"`
+	Address Address     `validate:"required"`
+}
 
-func NewCustomer(s *mgo.Session) *Customer {
-	info := storeInfo{
-		Name:   CustomerName,
-		Index:  CustomerIndex,
-		Unique: CustomerUnique,
-	}
+func (c Customer) Validate() error {
+	return validation.Validate(c)
+}
 
-	return &Customer{
-		store: &store{
-			info:     info,
-			session:  s,
-			database: s.DB(""),
-		},
+func (c Customer) MarshalJSON() ([]byte, error) {
+	return json.Marshal(utils.GetFieldValues(c))
+}
+
+type CustomerQuery struct {
+	*common.Query
+}
+
+func NewCustomerQuery() *CustomerQuery {
+	return &CustomerQuery{
+		Query: common.NewQuery(),
 	}
 }
 
-func (s *Customer) Search(keyword string, m *[]model.Customer) error {
-	q := bson.M{}
-
-	if len(keyword) > 0 {
-		or := []bson.M{}
-
-		for k, _ := range utils.GetStructInfo(m) {
-			m := bson.M{}
-			m[k] = bson.RegEx{keyword, "i"}
-
-			or = append(or, m)
-		}
-
-		q["$or"] = or
+// Applies a pseudo full text search on all fields on the index.
+func (q *CustomerQuery) Search(query string) {
+	if len(query) == 0 {
+		return
 	}
 
-	return s.collection().Find(q).All(m)
+	for _, f := range append(customerIndex, customerUnique...) {
+		o := common.NewQuery()
+		o.RegEx(f, query)
+
+		q.Or(o)
+	}
+}
+
+type CustomerStore struct {
+	*common.Store
+}
+
+func NewCustomerStore(s *common.Session) (*CustomerStore, error) {
+	cs := &CustomerStore{
+		Store: common.NewStore(common.Config{
+			Name:   customerName,
+			Index:  customerIndex,
+			Unique: customerUnique,
+		}, s),
+	}
+
+	return cs, cs.Index()
 }

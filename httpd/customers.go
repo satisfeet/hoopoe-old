@@ -3,85 +3,100 @@ package httpd
 import (
 	"net/http"
 
-	"gopkg.in/mgo.v2"
-
-	"github.com/satisfeet/go-context"
-
-	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/store/common"
 )
 
-type Customer struct {
-	*handler
-	store *store.Customer
+type CustomerHandler struct {
+	store *store.CustomerStore
 }
 
-func NewCustomer(s *mgo.Session) *Customer {
-	return &Customer{
-		store: store.NewCustomer(s),
+func NewCustomerHandler(s *common.Session) (*CustomerHandler, error) {
+	store, err := store.NewCustomerStore(s)
+
+	return &CustomerHandler{
+		store: store,
+	}, err
+}
+
+func (h *CustomerHandler) List(c *Context) {
+	m := []store.Customer{}
+
+	q := store.NewCustomerQuery()
+	q.Search(c.Query("search"))
+
+	if err := h.store.FindAll(q, &m); err != nil {
+		c.Error(err)
+
+		return
 	}
+
+	c.Respond(m, http.StatusOK)
 }
 
-func (h *Customer) List(c *context.Context) {
-	m := []model.Customer{}
+func (h *CustomerHandler) Show(c *Context) {
+	m := store.Customer{}
 
-	if err := h.store.Search(c.Query("search"), &m); err != nil {
-		h.error(c, err)
-	} else {
-		c.Respond(m, http.StatusOK)
+	q := store.NewCustomerQuery()
+	q.Id(c.Param("customer"))
+
+	if err := h.store.FindOne(q, &m); err != nil {
+		c.Error(err)
+
+		return
 	}
+
+	c.Respond(m, http.StatusOK)
 }
 
-func (h *Customer) Show(c *context.Context) {
-	m := model.Customer{}
-	m.Id = store.IdFromString(c.Param("customer"))
-
-	if err := h.store.FindOne(&m); err != nil {
-		h.error(c, err)
-	} else {
-		c.Respond(m, http.StatusOK)
-	}
-}
-
-func (h *Customer) Create(c *context.Context) {
-	m := model.Customer{}
+func (h *CustomerHandler) Create(c *Context) {
+	m := store.Customer{}
 
 	if err := c.Parse(&m); err != nil {
-		h.error(c, err)
+		c.Error(err)
 
 		return
 	}
 
 	if err := h.store.Insert(&m); err != nil {
-		h.error(c, err)
-	} else {
-		c.Respond(m, http.StatusOK)
-	}
-}
-
-func (h *Customer) Update(c *context.Context) {
-	m := model.Customer{}
-
-	if err := c.Parse(&m); err != nil {
-		h.error(c, err)
+		c.Error(err)
 
 		return
 	}
 
-	if err := h.store.Update(&m); err != nil {
-		h.error(c, err)
-	} else {
-		c.Respond(nil, http.StatusNoContent)
-	}
+	c.Respond(m, http.StatusOK)
 }
 
-func (h *Customer) Destroy(c *context.Context) {
-	m := model.Customer{}
-	m.Id = store.IdFromString(c.Param("customer"))
+func (h *CustomerHandler) Update(c *Context) {
+	m := store.Customer{}
 
-	if err := h.store.Remove(m); err != nil {
-		h.error(c, err)
-	} else {
-		c.Respond(nil, http.StatusNoContent)
+	q := store.NewCustomerQuery()
+	q.Id(c.Param("id"))
+
+	if err := c.Parse(&m); err != nil {
+		c.Error(err)
+
+		return
 	}
+
+	if err := h.store.Update(q, &m); err != nil {
+		c.Error(err)
+
+		return
+	}
+
+	c.Respond(nil, http.StatusNoContent)
+}
+
+func (h *CustomerHandler) Destroy(c *Context) {
+	q := store.NewCustomerQuery()
+	q.Id(c.Param("id"))
+
+	if err := h.store.Remove(q); err != nil {
+		c.Error(err)
+
+		return
+	}
+
+	c.Respond(nil, http.StatusNoContent)
 }

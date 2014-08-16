@@ -1,117 +1,80 @@
 package store
 
 import (
-	"io"
+	"encoding/json"
 	"time"
 
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/satisfeet/go-validation"
 
-	"github.com/satisfeet/hoopoe/model"
+	"github.com/satisfeet/hoopoe/store/common"
+	"github.com/satisfeet/hoopoe/utils"
 )
 
-type Order struct {
-	*store
-	product  *Product
-	customer *Customer
-}
+var orderName = "orders"
 
-var OrderUnique = []string{
+var orderUnique = []string{
 	"number",
 }
 
-var OrderName = "orders"
-
-func NewOrder(s *mgo.Session) *Order {
-	info := storeInfo{
-		Name: OrderName,
-	}
-
-	return &Order{
-		store: &store{
-			info:     info,
-			session:  s,
-			database: s.DB(""),
-		},
-		product:  NewProduct(s),
-		customer: NewCustomer(s),
-	}
+type Order struct {
+	Id       interface{} `bson:"_id"`
+	State    OrderState
+	Items    []OrderItem
+	Pricing  Pricing
+	Sequence int         `validate:"required,min=1"`
+	Customer interface{} `validate:"required"`
 }
 
-func (s *Order) Insert(o *model.Order) error {
-	c := s.session.Clone()
-	defer c.Close()
-
-	if !o.Id.Valid() {
-		o.Id = bson.NewObjectId()
-	}
-
-	if o.State.Created.IsZero() {
-		o.State.Created = time.Now()
-	}
-
-	for o.Number = 1; o.Number != 0; o.Number++ {
-		if err := o.Validate(); err != nil {
-			return err
-		}
-
-		if err := s.store.collection().With(c).Insert(o); err != nil {
-			if !mgo.IsDup(err) {
-				return err
-			}
-		} else {
-			break
-		}
-	}
-
-	return nil
+type OrderItem struct {
+	Product   interface{} `validate:"required"`
+	Quantity  int         `validate:"required,min=1"`
+	Pricing   Pricing
+	Variation Variation
 }
 
-func (s *Order) FindCustomer(o *model.Order) error {
-	o.Customer.Id = o.CustomerId
-
-	return s.customer.FindOne(&o.Customer)
+type OrderState struct {
+	Created time.Time
+	Cleared time.Time
+	Shipped time.Time
 }
 
-func (s *Order) FindProducts(o *model.Order) error {
-	q := bson.M{}
-	or := []bson.M{}
+func (o Order) Validate() error {
+	return validation.Validate(o)
+}
 
-	for _, i := range o.Items {
-		q := bson.M{}
-		q["_id"] = i.ProductId
+func (o Order) MarshalJSON() ([]byte, error) {
+	return json.Marshal(utils.GetFieldValues(o))
+}
 
-		or = append(or, q)
+func NewOrderQuery() *common.Query {
+	return common.NewQuery()
+}
+
+type OrderStore struct {
+	*common.Store
+}
+
+func NewOrderStore(s *common.Session) (*OrderStore, error) {
+	os := &OrderStore{
+		Store: common.NewStore(common.Config{
+			Name:   orderName,
+			Unique: orderUnique,
+		}, s),
 	}
-	q["$or"] = or
 
-	p := []model.Product{}
+	return os, os.Index()
+}
 
-	if err := s.product.collection().Find(q).All(&p); err != nil {
+func (s *OrderStore) Insert(o *Order) error {
+	i, err := s.Sequence().New()
+
+	if err != nil {
 		return err
 	}
-	for i, p := range p {
-		o.Items[i].Product = p
-	}
 
-	return nil
-}
+	o.Sequence = i
 
-func (s *Order) OpenInvoice(o *model.Order) (io.ReadCloser, error) {
-	if !o.Id.Valid() {
-		return nil, ErrBadId
-	}
+	o.State.Created = time.Now()
 
-	return s.files().OpenId(o.Id)
-}
-
-func (s *Order) CreateInvoice(o *model.Order) (io.WriteCloser, error) {
-	if !o.Id.Valid() {
-		return nil, ErrBadId
-	}
-
-	f, err := s.files().Create("")
-	f.SetId(o.Id)
-
-	return f, err
+	return s.Store.Insert(o)
 }
