@@ -7,13 +7,16 @@ import (
 	"testing"
 
 	"gopkg.in/check.v1"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/hoopoe/model"
+	"github.com/satisfeet/hoopoe/store"
 )
 
 var order = model.Order{
-	Id: bson.NewObjectId(),
+	Id:     bson.NewObjectId(),
+	Number: 1,
 	Items: []model.OrderItem{
 		model.OrderItem{
 			ProductId: product.Id,
@@ -55,7 +58,13 @@ func (s *OrderSuite) SetUpTest(c *check.C) {
 	s.ProductSuite.SetUpTest(c)
 	s.CustomerSuite.SetUpTest(c)
 
-	err := s.database.C("orders").Insert(order)
+	err := s.database.C("orders").EnsureIndex(mgo.Index{
+		Key:    store.OrderUnique,
+		Unique: true,
+	})
+	c.Assert(err, check.IsNil)
+
+	err = s.database.C("orders").Insert(order)
 	c.Assert(err, check.IsNil)
 
 	f, err := s.database.GridFS("orders").Create("")
@@ -187,7 +196,9 @@ func (s *OrderSuite) TearDownTest(c *check.C) {
 	s.ProductSuite.TearDownTest(c)
 	s.CustomerSuite.TearDownTest(c)
 
-	_, err := s.database.C("orders").RemoveAll(nil)
+	err := s.database.C("orders").DropIndex(store.OrderUnique...)
+	c.Assert(err, check.IsNil)
+	_, err = s.database.C("orders").RemoveAll(nil)
 	c.Assert(err, check.IsNil)
 	_, err = s.database.C("orders.files").RemoveAll(nil)
 	c.Assert(err, check.IsNil)

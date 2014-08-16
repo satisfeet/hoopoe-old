@@ -14,7 +14,8 @@ import (
 )
 
 var order = model.Order{
-	Id: bson.NewObjectId(),
+	Id:     bson.NewObjectId(),
+	Number: 1,
 	Items: []model.OrderItem{
 		model.OrderItem{
 			ProductId: product.Id,

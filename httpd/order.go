@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"fmt"
 	"net/http"
 
 	"gopkg.in/mgo.v2"
@@ -48,9 +49,12 @@ func (h *Order) Create(c *context.Context) {
 
 	if err := c.Parse(&m); err != nil {
 		h.error(c, err)
+
+		return
 	}
 
 	if err := h.store.Insert(&m); err != nil {
+		fmt.Printf("error: %v\n", err)
 		h.error(c, err)
 	} else {
 		c.Respond(m, http.StatusOK)

@@ -18,6 +18,7 @@ type Order struct {
 	Pricing    Pricing       `json:"pricing" validate:"nested"`
 	Customer   Customer      `json:"-" bson:"-"`
 	CustomerId bson.ObjectId `json:"customer" validate:"required"`
+	Number     int           `json:"number", validate:"required,min=1"`
 }
 
 func (o Order) Validate() error {
@@ -26,6 +27,9 @@ func (o Order) Validate() error {
 	}
 	if !o.CustomerId.Valid() {
 		return ErrInvalidOrder("CustomerId required")
+	}
+	if o.Number <= 0 {
+		return ErrInvalidOrder("Number must be bigger than 1")
 	}
 
 	return nil

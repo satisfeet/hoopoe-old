@@ -62,7 +62,13 @@ func (s *OrderSuite) SetUpTest(c *check.C) {
 	s.product.SetUpTest(c)
 	s.customer.SetUpTest(c)
 
-	err := s.database.C("orders").Insert(order)
+	err := s.database.C("orders").EnsureIndex(mgo.Index{
+		Key:    OrderUnique,
+		Unique: true,
+	})
+	c.Assert(err, check.IsNil)
+
+	err = s.database.C("orders").Insert(order)
 	c.Assert(err, check.IsNil)
 
 	f, err := s.database.GridFS("orders").Create("")
@@ -103,11 +109,39 @@ func (s *OrderSuite) TestFindOne(c *check.C) {
 	c.Check(m1, check.DeepEquals, order)
 }
 
-func (s *OrderSuite) TestUpdate(c *check.C) {
-	order.Pricing.Retail += 200
+func (s *OrderSuite) TestInsert(c *check.C) {
+	m1 := model.Order{
+		Id: bson.NewObjectId(),
+		Items: []model.OrderItem{
+			model.OrderItem{
+				ProductId: product.Id,
+				Pricing:   product.Pricing,
+				Quantity:  1,
+			},
+		},
+		Pricing:    product.Pricing,
+		CustomerId: customer.Id,
+	}
+	m2 := model.Order{
+		Id: bson.NewObjectId(),
+		Items: []model.OrderItem{
+			model.OrderItem{
+				ProductId: product.Id,
+				Pricing:   product.Pricing,
+				Quantity:  1,
+			},
+		},
+		Pricing:    product.Pricing,
+		CustomerId: customer.Id,
+	}
 
-	err := s.store.Update(&order)
+	err := s.store.Insert(&m1)
 	c.Assert(err, check.IsNil)
+	err = s.store.Insert(&m2)
+	c.Assert(err, check.IsNil)
+
+	c.Check(m1.Number, check.Equals, 1)
+	c.Check(m2.Number, check.Equals, 2)
 }
 
 func (s *OrderSuite) TestRemove(c *check.C) {
@@ -145,7 +179,10 @@ func (s *OrderSuite) TearDownTest(c *check.C) {
 	s.product.TearDownTest(c)
 	s.customer.TearDownTest(c)
 
-	_, err := s.database.C("orders").RemoveAll(nil)
+	err := s.database.C("orders").DropIndex(OrderUnique...)
+	c.Assert(err, check.IsNil)
+
+	_, err = s.database.C("orders").RemoveAll(nil)
 	c.Assert(err, check.IsNil)
 	_, err = s.database.C("orders.files").RemoveAll(nil)
 	c.Assert(err, check.IsNil)

@@ -15,6 +15,10 @@ type Order struct {
 	customer *Customer
 }
 
+var OrderUnique = []string{
+	"number",
+}
+
 var OrderName = "orders"
 
 func NewOrder(s *mgo.Session) *Order {
@@ -31,6 +35,31 @@ func NewOrder(s *mgo.Session) *Order {
 		product:  NewProduct(s),
 		customer: NewCustomer(s),
 	}
+}
+
+func (s *Order) Insert(o *model.Order) error {
+	c := s.session.Clone()
+	defer c.Close()
+
+	if !o.Id.Valid() {
+		o.Id = bson.NewObjectId()
+	}
+
+	for o.Number = 1; o.Number != 0; o.Number++ {
+		if err := o.Validate(); err != nil {
+			return err
+		}
+
+		if err := s.store.collection().With(c).Insert(o); err != nil {
+			if !mgo.IsDup(err) {
+				return err
+			}
+		} else {
+			break
+		}
+	}
+
+	return nil
 }
 
 func (s *Order) FindCustomer(o *model.Order) error {
