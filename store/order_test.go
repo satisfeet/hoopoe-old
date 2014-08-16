@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
+	"time"
 
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
@@ -21,6 +22,9 @@ var order = model.Order{
 			Pricing:   product.Pricing,
 			Quantity:  1,
 		},
+	},
+	State: model.OrderState{
+		Created: time.Date(2013, time.November, 10, 23, 0, 0, 0, time.Local),
 	},
 	Pricing:    product.Pricing,
 	CustomerId: customer.Id,

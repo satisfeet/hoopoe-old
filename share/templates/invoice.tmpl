@@ -1,5 +1,6 @@
 {{define "subject"}}
-Rechnung #0{{.Number}} vom 21.04.2014
+{{$date := .State.Created}}
+Rechnung #0{{.Number}} vom {{$date.Day}}. {{$date.Month}} {{$date.Year}}
 {{end}}
 
 {{define "content"}}

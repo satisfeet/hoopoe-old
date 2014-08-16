@@ -2,6 +2,7 @@ package store
 
 import (
 	"io"
+	"time"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -43,6 +44,10 @@ func (s *Order) Insert(o *model.Order) error {
 
 	if !o.Id.Valid() {
 		o.Id = bson.NewObjectId()
+	}
+
+	if o.State.Created.IsZero() {
+		o.State.Created = time.Now()
 	}
 
 	for o.Number = 1; o.Number != 0; o.Number++ {

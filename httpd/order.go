@@ -1,7 +1,6 @@
 package httpd
 
 import (
-	"fmt"
 	"net/http"
 
 	"gopkg.in/mgo.v2"
@@ -54,10 +53,45 @@ func (h *Order) Create(c *context.Context) {
 	}
 
 	if err := h.store.Insert(&m); err != nil {
-		fmt.Printf("error: %v\n", err)
 		h.error(c, err)
 	} else {
 		c.Respond(m, http.StatusOK)
+	}
+}
+
+func (h *Order) Patch(c *context.Context) {
+	p := model.OrderState{}
+	m := model.Order{}
+	m.Id = store.IdFromString(c.Param("order"))
+
+	if err := c.Parse(&p); err != nil {
+		h.error(c, err)
+
+		return
+	}
+
+	if p.Shipped.IsZero() && p.Cleared.IsZero() {
+		c.Error(nil, http.StatusBadRequest)
+
+		return
+	}
+	if err := h.store.FindOne(&m); err != nil {
+		h.error(c, err)
+
+		return
+	}
+
+	if !p.Shipped.IsZero() {
+		m.State.Shipped = p.Shipped
+	}
+	if !p.Cleared.IsZero() {
+		m.State.Cleared = p.Cleared
+	}
+
+	if err := h.store.Update(&m); err != nil {
+		h.error(c, err)
+	} else {
+		c.Respond(nil, http.StatusNoContent)
 	}
 }
 

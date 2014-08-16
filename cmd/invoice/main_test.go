@@ -24,6 +24,9 @@ var order = model.Order{
 			Quantity:  1,
 		},
 	},
+	State: model.OrderState{
+		Created: time.Now(),
+	},
 	Pricing:    pricing,
 	CustomerId: customer.Id,
 }

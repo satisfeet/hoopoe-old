@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/go-validation"
@@ -15,6 +17,7 @@ func (err ErrInvalidOrder) Error() string {
 type Order struct {
 	Id         bson.ObjectId `json:"id" bson:"_id"`
 	Items      []OrderItem   `json:"items" validate:"nested"`
+	State      OrderState    `json:"state"`
 	Pricing    Pricing       `json:"pricing" validate:"nested"`
 	Customer   Customer      `json:"-" bson:"-"`
 	CustomerId bson.ObjectId `json:"customer" validate:"required"`
@@ -58,4 +61,10 @@ func (oi OrderItem) Validate() error {
 	}
 
 	return nil
+}
+
+type OrderState struct {
+	Created time.Time `json:"created,omitempty"`
+	Cleared time.Time `json:"cleared,omitempty"`
+	Shipped time.Time `json:"shipped,omitempty"`
 }

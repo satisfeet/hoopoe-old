@@ -55,6 +55,8 @@ func Handler(s *mgo.Session) http.Handler {
 	r.HandleFunc("PUT", "/customers/:customer", c.Update)
 	r.HandleFunc("PUT", "/products/:product", p.Update)
 
+	r.HandleFunc("PATCH", "/orders/:order/state", o.Patch)
+
 	r.HandleFunc("DELETE", "/customers/:customer", c.Destroy)
 	r.HandleFunc("DELETE", "/products/:product", p.Destroy)
 	r.HandleFunc("DELETE", "/orders/:order", o.Destroy)

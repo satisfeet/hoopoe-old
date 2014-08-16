@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
@@ -16,13 +17,16 @@ import (
 
 var order = model.Order{
 	Id:     bson.NewObjectId(),
-	Number: 1,
+	Number: 4,
 	Items: []model.OrderItem{
 		model.OrderItem{
 			ProductId: product.Id,
 			Pricing:   product.Pricing,
 			Quantity:  1,
 		},
+	},
+	State: model.OrderState{
+		Created: time.Date(2013, time.November, 10, 23, 0, 0, 0, time.Local),
 	},
 	Pricing:    product.Pricing,
 	CustomerId: customer.Id,
@@ -91,6 +95,8 @@ func (s *OrderSuite) TestList(c *check.C) {
 	c.Check(res.Code, check.Equals, http.StatusOK)
 
 	c.Check(o, check.HasLen, 1)
+	o[0].State.Shipped = time.Time{}
+	o[0].State.Cleared = time.Time{}
 	c.Check(o[0], check.DeepEquals, order)
 }
 
@@ -156,6 +162,45 @@ func (s *OrderSuite) TestCreate(c *check.C) {
 
 	c.Check(res1.Code, check.Equals, http.StatusOK)
 	c.Check(res2.Code, check.Equals, http.StatusBadRequest)
+}
+
+func (s *OrderSuite) TestPatch(c *check.C) {
+	ctx1, res1 := ctx("PATCH", "/", nil)
+	ctx2, res2 := ctx("PATCH", "/", strings.NewReader(`{
+		"shipped": "`+time.Now().Format(time.RFC3339Nano)+`"
+	}`))
+	ctx3, res3 := ctx("PATCH", "/", nil)
+	ctx4, res4 := ctx("PATCH", "/", nil)
+	ctx5, res5 := ctx("PATCH", "/", strings.NewReader(`{
+		"shipped": "`+time.Now().Format(time.RFC3339Nano)+`"
+	}`))
+	ctx6, res6 := ctx("PATCH", "/", strings.NewReader(`{
+		"cleared": "`+time.Now().Format(time.RFC3339Nano)+`"
+	}`))
+
+	ctx1.Params = map[string]string{}
+	ctx2.Params = map[string]string{"order": bson.NewObjectId().Hex()}
+	ctx3.Params = map[string]string{"order": "1234"}
+	ctx4.Params = map[string]string{"order": order.Id.Hex()}
+	ctx5.Params = map[string]string{"order": order.Id.Hex()}
+	ctx6.Params = map[string]string{"order": order.Id.Hex()}
+
+	s.handler.Patch(ctx1)
+	s.handler.Patch(ctx2)
+	s.handler.Patch(ctx3)
+	s.handler.Patch(ctx4)
+	s.handler.Patch(ctx5)
+	s.handler.Patch(ctx6)
+
+	c.Check(res1.Code, check.Equals, http.StatusBadRequest)
+	c.Check(res2.Code, check.Equals, http.StatusNotFound)
+	c.Check(res3.Code, check.Equals, http.StatusBadRequest)
+	c.Check(res4.Code, check.Equals, http.StatusBadRequest)
+	c.Check(res5.Code, check.Equals, http.StatusNoContent)
+	c.Check(res6.Code, check.Equals, http.StatusNoContent)
+
+	c.Check(res5.Body.String(), check.Equals, "")
+	c.Check(res6.Body.String(), check.Equals, "")
 }
 
 func (s *OrderSuite) TestDestroy(c *check.C) {
