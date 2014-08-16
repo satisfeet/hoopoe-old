@@ -3,10 +3,12 @@ package httpd
 import (
 	"net/http"
 
+	"gopkg.in/mgo.v2"
+
 	"github.com/satisfeet/go-context"
+
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
-	"gopkg.in/mgo.v2"
 )
 
 type Order struct {
@@ -55,20 +57,6 @@ func (h *Order) Create(c *context.Context) {
 	}
 }
 
-func (h *Order) Update(c *context.Context) {
-	m := model.Order{}
-
-	if err := c.Parse(&m); err != nil {
-		h.error(c, err)
-	}
-
-	if err := h.store.Update(&m); err != nil {
-		h.error(c, err)
-	} else {
-		c.Respond(nil, http.StatusNoContent)
-	}
-}
-
 func (h *Order) Destroy(c *context.Context) {
 	m := model.Order{}
 	m.Id = store.IdFromString(c.Param("order"))
@@ -80,22 +68,11 @@ func (h *Order) Destroy(c *context.Context) {
 	}
 }
 
-func (h *Order) ReadInvoice(c *context.Context) {
+func (h *Order) ShowInvoice(c *context.Context) {
 	m := model.Order{}
 	m.Id = store.IdFromString(c.Param("order"))
 
 	if err := h.store.ReadInvoice(&m, c.Response); err != nil {
 		h.error(c, err)
-	}
-}
-
-func (h *Order) WriteInvoice(c *context.Context) {
-	m := model.Order{}
-	m.Id = store.IdFromString(c.Param("order"))
-
-	if err := h.store.WriteInvoice(&m, c.Request.Body); err != nil {
-		h.error(c, err)
-	} else {
-		c.Respond(nil, http.StatusNoContent)
 	}
 }

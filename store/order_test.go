@@ -17,19 +17,13 @@ var order = model.Order{
 	Id: bson.NewObjectId(),
 	Items: []model.OrderItem{
 		model.OrderItem{
-			ProductRef: &mgo.DBRef{
-				Id:         product.Id,
-				Collection: "products",
-			},
-			Pricing:  product.Pricing,
-			Quantity: 1,
+			ProductId: product.Id,
+			Pricing:   product.Pricing,
+			Quantity:  1,
 		},
 	},
-	Pricing: product.Pricing,
-	CustomerRef: &mgo.DBRef{
-		Id:         customer.Id,
-		Collection: "customers",
-	},
+	Pricing:    product.Pricing,
+	CustomerId: customer.Id,
 }
 
 func TestOrder(t *testing.T) {

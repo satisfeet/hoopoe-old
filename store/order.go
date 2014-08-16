@@ -23,7 +23,9 @@ func NewOrder(s *mgo.Session) *Order {
 }
 
 func (s *Order) FindCustomer(o *model.Order) error {
-	return s.database.FindRef(o.CustomerRef).One(&o.Customer)
+	o.Customer.Id = o.CustomerId
+
+	return s.FindOne(&o.Customer)
 }
 
 func (s *Order) FindProducts(o *model.Order) error {
@@ -32,7 +34,7 @@ func (s *Order) FindProducts(o *model.Order) error {
 
 	for _, i := range o.Items {
 		q := bson.M{}
-		q["_id"] = i.ProductRef.Id
+		q["_id"] = i.ProductId
 
 		or = append(or, q)
 	}
@@ -51,6 +53,10 @@ func (s *Order) FindProducts(o *model.Order) error {
 }
 
 func (s *Order) ReadInvoice(o *model.Order, w io.Writer) error {
+	if !o.Id.Valid() {
+		return ErrBadId
+	}
+
 	f, err := s.files(o).OpenId(o.Id)
 
 	if err != nil {
@@ -65,6 +71,10 @@ func (s *Order) ReadInvoice(o *model.Order, w io.Writer) error {
 }
 
 func (s *Order) WriteInvoice(o *model.Order, r io.Reader) error {
+	if !o.Id.Valid() {
+		return ErrBadId
+	}
+
 	f, err := s.files(o).Create("")
 	f.SetId(o.Id)
 

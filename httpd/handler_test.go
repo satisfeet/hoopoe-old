@@ -12,12 +12,8 @@ import (
 	"github.com/satisfeet/go-context"
 )
 
-var hs = &HandlerSuite{
-	url: "localhost/test",
-}
-
 func TestHandler(t *testing.T) {
-	check.Suite(hs)
+	check.Suite(&HandlerSuite{})
 	check.TestingT(t)
 }
 

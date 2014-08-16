@@ -20,12 +20,12 @@ var customer = model.Customer{
 	},
 }
 
-var cs = &CustomerSuite{
-	HandlerSuite: hs,
-}
-
 func TestCustomer(t *testing.T) {
-	check.Suite(hs)
+	check.Suite(&CustomerSuite{
+		HandlerSuite: &HandlerSuite{
+			url: "localhost/test",
+		},
+	})
 	check.TestingT(t)
 }
 

@@ -27,12 +27,12 @@ var product = model.Product{
 	Description: "These Summer Socks will make you really really happy.",
 }
 
-var ps = &ProductSuite{
-	HandlerSuite: hs,
-}
-
 func TestProduct(t *testing.T) {
-	check.Suite(ps)
+	check.Suite(&ProductSuite{
+		HandlerSuite: &HandlerSuite{
+			url: "localhost/test",
+		},
+	})
 	check.TestingT(t)
 }
 

@@ -34,6 +34,7 @@ func main() {
 }
 
 func Handler(s *mgo.Session) http.Handler {
+	o := httpd.NewOrder(s)
 	p := httpd.NewProduct(s)
 	c := httpd.NewCustomer(s)
 
@@ -41,18 +42,22 @@ func Handler(s *mgo.Session) http.Handler {
 
 	r.HandleFunc("GET", "/customers", c.List)
 	r.HandleFunc("GET", "/products", p.List)
+	r.HandleFunc("GET", "/orders", o.List)
 
 	r.HandleFunc("POST", "/customers", c.Create)
 	r.HandleFunc("POST", "/products", p.Create)
+	r.HandleFunc("POST", "/orders", o.Create)
 
 	r.HandleFunc("GET", "/customers/:customer", c.Show)
 	r.HandleFunc("GET", "/products/:product", p.Show)
+	r.HandleFunc("GET", "/orders/:order", o.Show)
 
 	r.HandleFunc("PUT", "/customers/:customer", c.Update)
 	r.HandleFunc("PUT", "/products/:product", p.Update)
 
 	r.HandleFunc("DELETE", "/customers/:customer", c.Destroy)
 	r.HandleFunc("DELETE", "/products/:product", p.Destroy)
+	r.HandleFunc("DELETE", "/orders/:order", o.Destroy)
 
 	r.HandleFunc("POST", "/products/:product/images", p.CreateImage)
 	r.HandleFunc("GET", "/products/:product/images/:image", p.ShowImage)

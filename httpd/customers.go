@@ -3,10 +3,12 @@ package httpd
 import (
 	"net/http"
 
+	"gopkg.in/mgo.v2"
+
 	"github.com/satisfeet/go-context"
+
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
-	"gopkg.in/mgo.v2"
 )
 
 type Customer struct {

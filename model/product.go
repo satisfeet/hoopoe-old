@@ -28,6 +28,6 @@ func (p Product) MarshalJSON() ([]byte, error) {
 }
 
 type Variation struct {
-	Size  string `validate:"required,len=5"`
-	Color string `validate:"required,min=3"`
+	Size  string `json:"size" validate:"required,len=5"`
+	Color string `json:"color" validate:"required,min=3"`
 }

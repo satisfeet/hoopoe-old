@@ -9,6 +9,7 @@ import (
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-validation"
 
+	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
 
@@ -25,7 +26,7 @@ func (h *handler) error(c *context.Context, err error) {
 	}
 
 	switch err.(type) {
-	case *json.UnmarshalTypeError, validation.Error:
+	case *json.UnmarshalTypeError, validation.Error, model.ErrInvalidOrder:
 		s = http.StatusBadRequest
 	}
 

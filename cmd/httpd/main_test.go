@@ -41,18 +41,22 @@ func (s *Suite) TestHandler(c *check.C) {
 	res2 := httptest.NewRecorder()
 	res3 := httptest.NewRecorder()
 	res4 := httptest.NewRecorder()
+	res5 := httptest.NewRecorder()
 
 	req1, _ := http.NewRequest("GET", "/", nil)
 	req2, _ := http.NewRequest("GET", "/not-found", nil)
 	req3, _ := http.NewRequest("GET", "/products", nil)
 	req4, _ := http.NewRequest("GET", "/customers", nil)
+	req5, _ := http.NewRequest("GET", "/orders", nil)
 
 	req2.SetBasicAuth(s.user, s.pass)
 	req3.SetBasicAuth(s.user, s.pass)
 	req4.SetBasicAuth(s.user, s.pass)
+	req5.SetBasicAuth(s.user, s.pass)
 
 	h.ServeHTTP(res1, req1)
 	h.ServeHTTP(res2, req2)
 	h.ServeHTTP(res3, req3)
 	h.ServeHTTP(res4, req4)
+	h.ServeHTTP(res5, req5)
 }

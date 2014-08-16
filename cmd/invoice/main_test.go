@@ -17,20 +17,14 @@ var order = model.Order{
 	Id: bson.NewObjectId(),
 	Items: []model.OrderItem{
 		model.OrderItem{
-			ProductRef: &mgo.DBRef{
-				Id:         product.Id,
-				Collection: "products",
-			},
+			ProductId: product.Id,
 			Pricing:   pricing,
 			Variation: product.Variations[0],
 			Quantity:  1,
 		},
 	},
-	Pricing: pricing,
-	CustomerRef: &mgo.DBRef{
-		Id:         customer.Id,
-		Collection: "customers",
-	},
+	Pricing:    pricing,
+	CustomerId: customer.Id,
 }
 
 var pricing = model.Pricing{

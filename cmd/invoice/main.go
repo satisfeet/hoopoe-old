@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 
 	"gopkg.in/mgo.v2"
@@ -26,7 +25,7 @@ func main() {
 	m, err := mgo.Dial(mongodb)
 
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	defer m.Close()
@@ -34,17 +33,17 @@ func main() {
 	s := store.NewOrder(m)
 
 	if err := s.FindOne(&o); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	if err := s.FindCustomer(&o); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	if err := s.FindProducts(&o); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	if err := writeInvoiceToFile(o, output); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
 

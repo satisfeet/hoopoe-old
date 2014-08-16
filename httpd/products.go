@@ -7,6 +7,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/satisfeet/go-context"
+
 	"github.com/satisfeet/hoopoe/model"
 	"github.com/satisfeet/hoopoe/store"
 )
