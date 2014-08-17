@@ -97,39 +97,21 @@ func (s *Order) FindProducts(o *model.Order) error {
 	return nil
 }
 
-func (s *Order) ReadInvoice(o *model.Order, w io.Writer) error {
+func (s *Order) OpenInvoice(o *model.Order) (io.ReadCloser, error) {
 	if !o.Id.Valid() {
-		return ErrBadId
+		return nil, ErrBadId
 	}
 
-	f, err := s.files().OpenId(o.Id)
-
-	if err != nil {
-		return err
-	}
-
-	if _, err := io.Copy(w, f); err != nil {
-		return err
-	}
-
-	return f.Close()
+	return s.files().OpenId(o.Id)
 }
 
-func (s *Order) WriteInvoice(o *model.Order, r io.Reader) error {
+func (s *Order) CreateInvoice(o *model.Order) (io.WriteCloser, error) {
 	if !o.Id.Valid() {
-		return ErrBadId
+		return nil, ErrBadId
 	}
 
 	f, err := s.files().Create("")
 	f.SetId(o.Id)
 
-	if err != nil {
-		return err
-	}
-
-	if _, err := io.Copy(f, r); err != nil {
-		return err
-	}
-
-	return f.Close()
+	return f, err
 }

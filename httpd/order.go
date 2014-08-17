@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"io"
 	"net/http"
 
 	"gopkg.in/mgo.v2"
@@ -110,7 +111,16 @@ func (h *Order) ShowInvoice(c *context.Context) {
 	m := model.Order{}
 	m.Id = store.IdFromString(c.Param("order"))
 
-	if err := h.store.ReadInvoice(&m, c.Response); err != nil {
+	rc, err := h.store.OpenInvoice(&m)
+
+	if err != nil {
+		h.error(c, err)
+
+		return
+	}
+	defer rc.Close()
+
+	if _, err := io.Copy(c.Response, rc); err != nil {
 		h.error(c, err)
 	}
 }

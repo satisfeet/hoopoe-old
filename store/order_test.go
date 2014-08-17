@@ -1,9 +1,7 @@
 package store
 
 import (
-	"bytes"
 	"io/ioutil"
-	"strings"
 	"testing"
 	"time"
 
@@ -153,20 +151,25 @@ func (s *OrderSuite) TestRemove(c *check.C) {
 	c.Assert(err, check.IsNil)
 }
 
-func (s *OrderSuite) TestReadInvoice(c *check.C) {
-	buf := &bytes.Buffer{}
-
-	err := s.store.ReadInvoice(&order, buf)
+func (s *OrderSuite) TestOpenInvoice(c *check.C) {
+	rc, err := s.store.OpenInvoice(&order)
 	c.Assert(err, check.IsNil)
+	defer rc.Close()
 
-	c.Check(buf.String(), check.Equals, "Hello")
+	b, err := ioutil.ReadAll(rc)
+	c.Assert(err, check.IsNil)
+	c.Assert(b, check.DeepEquals, []byte("Hello"))
 }
 
-func (s *OrderSuite) TestWriteInvoice(c *check.C) {
+func (s *OrderSuite) TestCreateInvoice(c *check.C) {
 	err := s.database.GridFS("orders").RemoveId(order.Id)
 	c.Assert(err, check.IsNil)
 
-	err = s.store.WriteInvoice(&order, strings.NewReader("Hello"))
+	wc, err := s.store.CreateInvoice(&order)
+	c.Assert(err, check.IsNil)
+	_, err = wc.Write([]byte("Hello"))
+	c.Assert(err, check.IsNil)
+	err = wc.Close()
 	c.Assert(err, check.IsNil)
 
 	f, err := s.database.GridFS("orders").OpenId(order.Id)
