@@ -16,12 +16,12 @@ var productUnique = []string{
 }
 
 type Product struct {
-	Id          interface{}   `bson:"_id"`
-	Name        string        `validate:"required,min=10,max=28"`
-	Images      []interface{} `validate:"min=1"`
-	Pricing     Pricing       `validate:"required"`
-	Variations  []Variation   `validate:"required"`
-	Description string        `validate:"required,min=40"`
+	Id          interface{} `bson:"_id"`
+	Name        string      `validate:"required,min=10,max=28"`
+	Images      []File      `validate:"min=1"`
+	Pricing     Pricing     `validate:"required"`
+	Variations  []Variation `validate:"required"`
+	Description string      `validate:"required,min=40"`
 }
 
 func (p Product) Validate() error {

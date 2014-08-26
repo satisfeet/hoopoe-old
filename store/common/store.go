@@ -60,6 +60,11 @@ func (s *Store) Sequence() *mongo.Sequence {
 	return s.mongo.Sequence
 }
 
+// Exposes the filesystem manager from mongo package.
+func (s *Store) FileSystem() *mongo.FileSystem {
+	return s.mongo.FileSystem
+}
+
 // The query interface is an helper to accept types with embedded Query in store
 // actions.
 type query interface {

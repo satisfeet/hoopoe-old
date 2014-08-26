@@ -24,6 +24,17 @@ func NewQuery() *Query {
 	}
 }
 
+// Returns id and error if invalid id was set.
+func (q *Query) id() (interface{}, error) {
+	if id, ok := q.query["_id"].(bson.ObjectId); ok {
+		if id.Valid() {
+			return id, nil
+		}
+	}
+
+	return nil, ErrBadId
+}
+
 // Applies an equals id condition if id is valid object id. Does cast from
 // string to object id when possible if not it sets an error.
 func (q *Query) Id(id interface{}) {

@@ -4,17 +4,25 @@ import "gopkg.in/mgo.v2"
 
 // The Store type exposes common operation for interaction with mongodb.
 type Store struct {
-	config   Config
-	database *mgo.Database
-	Sequence *Sequence
+	config     Config
+	session    *Session
+	Sequence   *Sequence
+	FileSystem *FileSystem
 }
 
 // Returns an initialized mongo Store.
 func NewStore(c Config, s *Session) *Store {
 	return &Store{
-		config:   c,
-		database: s.database,
-		Sequence: NewSequence(c, s),
+		config:  c,
+		session: s,
+		Sequence: &Sequence{
+			config:  c,
+			session: s,
+		},
+		FileSystem: &FileSystem{
+			config:  c,
+			session: s,
+		},
 	}
 }
 
@@ -67,5 +75,5 @@ func (s *Store) Remove(q *Query) error {
 
 // Returns mgo collection defined per config.
 func (s *Store) collection() *mgo.Collection {
-	return s.database.C(s.config.Name)
+	return s.session.database.C(s.config.Name)
 }
