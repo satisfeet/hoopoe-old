@@ -47,6 +47,8 @@ func Handler(s *common.Session) http.Handler {
 	r.Handle("GET", "/products/:product", httpd.HandlerFunc(p.Show))
 	r.Handle("PUT", "/products/:product", httpd.HandlerFunc(p.Update))
 	r.Handle("DELETE", "/products/:product", httpd.HandlerFunc(p.Destroy))
+	r.Handle("GET", "/products/:product/image", httpd.HandlerFunc(p.Image.Show))
+	r.Handle("PUT", "/products/:product/image", httpd.HandlerFunc(p.Image.Update))
 
 	o, _ := httpd.NewOrderHandler(s)
 	r.Handle("GET", "/orders", httpd.HandlerFunc(o.List))

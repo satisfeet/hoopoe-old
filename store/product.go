@@ -18,7 +18,6 @@ var productUnique = []string{
 type Product struct {
 	Id          interface{} `bson:"_id"`
 	Name        string      `validate:"required,min=10,max=28"`
-	Images      []File      `validate:"min=1"`
 	Pricing     Pricing     `validate:"required"`
 	Variations  []Variation `validate:"required"`
 	Description string      `validate:"required,min=40"`
@@ -38,6 +37,8 @@ func NewProductQuery() *common.Query {
 
 type ProductStore struct {
 	*common.Store
+
+	Image *ImageStore
 }
 
 func NewProductStore(s *common.Session) (*ProductStore, error) {
@@ -46,6 +47,7 @@ func NewProductStore(s *common.Session) (*ProductStore, error) {
 			Name:   productName,
 			Unique: productUnique,
 		}, s),
+		Image: NewImageStore(s),
 	}
 
 	return ps, ps.Index()

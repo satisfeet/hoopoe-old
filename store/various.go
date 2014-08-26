@@ -1,37 +1,6 @@
 package store
 
-import (
-	"encoding/json"
-	"fmt"
-	"io"
-)
-
-// The File type represents some large binary data in storage.
-type File struct {
-	id interface{}
-
-	io.ReadWriteCloser
-}
-
-// Getter for id attribute.
-func (f *File) Id() interface{} {
-	return f.id
-}
-
-// Setter for id attribute.
-func (f *File) SetId(id interface{}) {
-	f.id = id
-}
-
-// Implements BSONGetter interface to only save id to database.
-func (f *File) GetBSON() interface{} {
-	return f.id
-}
-
-// Implements Marshaler interface to only return id as json.
-func (f *File) MarshalJSON() ([]byte, error) {
-	return json.Marshal(f.id)
-}
+import "fmt"
 
 // The Address type represents a postal address placed in Germany.
 type Address struct {
