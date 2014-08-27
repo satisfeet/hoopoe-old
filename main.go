@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/satisfeet/go-handler"
-	"github.com/satisfeet/go-router"
 
 	"github.com/satisfeet/hoopoe/httpd"
 	"github.com/satisfeet/hoopoe/store/common"
@@ -32,29 +31,29 @@ func main() {
 }
 
 func Handler(s *common.Session) http.Handler {
-	r := router.NewRouter()
+	r := httpd.NewRouter()
 
 	c, _ := httpd.NewCustomerHandler(s)
-	r.Handle("GET", "/customers", httpd.HandlerFunc(c.List))
-	r.Handle("POST", "/customers", httpd.HandlerFunc(c.Create))
-	r.Handle("GET", "/customers/:customer", httpd.HandlerFunc(c.Show))
-	r.Handle("PUT", "/customers/:customer", httpd.HandlerFunc(c.Update))
-	r.Handle("DELETE", "/customers/:customer", httpd.HandlerFunc(c.Destroy))
+	r.HandleFunc("GET", "/customers", c.List)
+	r.HandleFunc("POST", "/customers", c.Create)
+	r.HandleFunc("GET", "/customers/:customer", c.Show)
+	r.HandleFunc("PUT", "/customers/:customer", c.Update)
+	r.HandleFunc("DELETE", "/customers/:customer", c.Destroy)
 
 	p, _ := httpd.NewProductHandler(s)
-	r.Handle("GET", "/products", httpd.HandlerFunc(p.List))
-	r.Handle("POST", "/products", httpd.HandlerFunc(p.Create))
-	r.Handle("GET", "/products/:product", httpd.HandlerFunc(p.Show))
-	r.Handle("PUT", "/products/:product", httpd.HandlerFunc(p.Update))
-	r.Handle("DELETE", "/products/:product", httpd.HandlerFunc(p.Destroy))
-	r.Handle("GET", "/products/:product/image", httpd.HandlerFunc(p.Image.Show))
-	r.Handle("PUT", "/products/:product/image", httpd.HandlerFunc(p.Image.Update))
+	r.HandleFunc("GET", "/products", p.List)
+	r.HandleFunc("POST", "/products", p.Create)
+	r.HandleFunc("GET", "/products/:product", p.Show)
+	r.HandleFunc("PUT", "/products/:product", p.Update)
+	r.HandleFunc("DELETE", "/products/:product", p.Destroy)
+	r.HandleFunc("GET", "/products/:product/image", p.Image.Show)
+	r.HandleFunc("PUT", "/products/:product/image", p.Image.Update)
 
 	o, _ := httpd.NewOrderHandler(s)
-	r.Handle("GET", "/orders", httpd.HandlerFunc(o.List))
-	r.Handle("POST", "/orders", httpd.HandlerFunc(o.Create))
-	r.Handle("GET", "/orders/:order", httpd.HandlerFunc(o.Show))
-	r.Handle("DELETE", "/orders/:order", httpd.HandlerFunc(o.Destroy))
+	r.HandleFunc("GET", "/orders", o.List)
+	r.HandleFunc("POST", "/orders", o.Create)
+	r.HandleFunc("GET", "/orders/:order", o.Show)
+	r.HandleFunc("DELETE", "/orders/:order", o.Destroy)
 
 	return handler.Logger(handler.Auth(auth, r))
 }
