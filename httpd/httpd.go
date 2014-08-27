@@ -7,11 +7,9 @@ import (
 	"gopkg.in/mgo.v2"
 
 	"github.com/julienschmidt/httprouter"
-
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-handler"
 	"github.com/satisfeet/go-validation"
-
 	"github.com/satisfeet/hoopoe/store/mongo"
 )
 

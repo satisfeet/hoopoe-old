@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/satisfeet/go-handler"
-
 	"github.com/satisfeet/hoopoe/httpd"
 	"github.com/satisfeet/hoopoe/store/common"
 )

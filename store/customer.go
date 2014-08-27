@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/satisfeet/go-validation"
-
 	"github.com/satisfeet/hoopoe/store/common"
 	"github.com/satisfeet/hoopoe/utils"
 )
