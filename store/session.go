@@ -1,4 +1,4 @@
-package common
+package store
 
 import (
 	"database/sql"
@@ -6,22 +6,20 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-const DRIVER = "mysql"
+const Driver = "mysql"
 
 type Session struct {
 	database *sql.DB
 }
 
-func (s *Session) Dial(url string) error {
-	db, err := sql.Open(DRIVER, url)
+func Open(url string) (*Session, error) {
+	db, err := sql.Open(Driver, url)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	s.database = db
-
-	return nil
+	return &Session{db}, nil
 }
 
 func (s *Session) Close() error {

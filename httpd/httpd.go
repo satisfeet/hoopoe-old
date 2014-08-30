@@ -4,13 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"gopkg.in/mgo.v2"
-
 	"github.com/julienschmidt/httprouter"
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-handler"
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/store/mongo"
 )
 
 type Context struct {
@@ -19,13 +16,6 @@ type Context struct {
 
 func (c *Context) Error(err error) {
 	s := http.StatusInternalServerError
-
-	switch err {
-	case mgo.ErrNotFound:
-		s = http.StatusNotFound
-	case mongo.ErrBadId:
-		s = http.StatusBadRequest
-	}
 
 	switch err.(type) {
 	case *json.UnmarshalTypeError, validation.Error:

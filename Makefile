@@ -1,7 +1,11 @@
 SHELL := /bin/bash
 
+MYSQL = root@/satisfeet
+HOST  = 127.0.0.1:3000
+AUTH  = bodokaiser:secret
+
 start:
-	@gin -p 3000 -a 4000 run \
-		--host :4000 \
-		--auth bodokaiser:secret \
-		--mongo localhost/satisfeet
+	HOOPOE_MYSQL=$(MYSQL) \
+	HOOPOE_HOST=$(HOST) \
+	HOOPOE_AUTH=$(AUTH) \
+	go run main.go
