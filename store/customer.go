@@ -34,12 +34,7 @@ func NewCustomerStore(s *Session) *CustomerStore {
 }
 
 func (s *CustomerStore) Find(m *[]Customer) error {
-	return s.sqlx().Select(m, `
-		SELECT cu.id, cu.name, cu.email, ad.street, ad.code, ci.name
-		FROM customer AS cu
-		LEFT JOIN address AS ad ON cu.address_id = ad.id
-		LEFT JOIN city AS ci ON ad.city_id = ci.id
-	`)
+	return s.sqlx().Select(m, `SELECT * FROM customer_address_city`)
 }
 
 func (s *CustomerStore) sqlx() *sqlx.DB {
