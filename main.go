@@ -32,8 +32,12 @@ func Handler(s *store.Session) http.Handler {
 	c := &httpd.CustomerHandler{
 		Store: store.NewCustomerStore(s),
 	}
+	p := &httpd.ProductHandler{
+		Store: store.NewProductStore(s),
+	}
 
 	r.HandleFunc("GET", "/customers", c.List)
+	r.HandleFunc("GET", "/products", p.List)
 
 	return handler.Logger(handler.Auth(Auth, r))
 }
