@@ -1,26 +1,29 @@
 package common
 
-import "github.com/satisfeet/hoopoe/store/mongo"
+import (
+	"database/sql"
 
-// The Session type manages multiple database sessions which can be controlled
-// through an unified interface.
+	_ "github.com/go-sql-driver/mysql"
+)
+
+const DRIVER = "mysql"
+
 type Session struct {
-	mongo *mongo.Session
+	database *sql.DB
 }
 
-// Returns an initialized Session.
-func NewSession() *Session {
-	return &Session{
-		mongo: &mongo.Session{},
-	}
-}
-
-// Connects to all defined databases.
 func (s *Session) Dial(url string) error {
-	return s.mongo.Dial(url)
+	db, err := sql.Open(DRIVER, url)
+
+	if err != nil {
+		return err
+	}
+
+	s.database = db
+
+	return nil
 }
 
-// Disconnects from all defined databases.
 func (s *Session) Close() error {
-	return s.mongo.Close()
+	return s.database.Close()
 }

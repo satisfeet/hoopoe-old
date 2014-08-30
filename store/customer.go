@@ -8,25 +8,10 @@ import (
 	"github.com/satisfeet/hoopoe/utils"
 )
 
-var customerName = "customers"
-
-var customerIndex = []string{
-	"company",
-	"address.street",
-	"address.city",
-}
-
-var customerUnique = []string{
-	"email",
-	"name",
-}
-
 type Customer struct {
-	Id      interface{} `bson:"_id"`
-	Name    string      `validate:"required,min=5"`
-	Email   string      `validate:"required,email"`
-	Company string      `validate:"min=5,max=40"`
-	Address Address     `validate:"required"`
+	Id    int64
+	Name  string `validate:"required,min=5"`
+	Email string `validate:"required,email"`
 }
 
 func (c Customer) Validate() error {
@@ -38,41 +23,18 @@ func (c Customer) MarshalJSON() ([]byte, error) {
 }
 
 type CustomerQuery struct {
-	*common.Query
-}
-
-func NewCustomerQuery() *CustomerQuery {
-	return &CustomerQuery{
-		Query: common.NewQuery(),
-	}
-}
-
-// Applies a pseudo full text search on all fields on the index.
-func (q *CustomerQuery) Search(query string) {
-	if len(query) == 0 {
-		return
-	}
-
-	for _, f := range append(customerIndex, customerUnique...) {
-		o := common.NewQuery()
-		o.RegEx(f, query)
-
-		q.Or(o)
-	}
 }
 
 type CustomerStore struct {
 	*common.Store
 }
 
-func NewCustomerStore(s *common.Session) (*CustomerStore, error) {
-	cs := &CustomerStore{
-		Store: common.NewStore(common.Config{
-			Name:   customerName,
-			Index:  customerIndex,
-			Unique: customerUnique,
-		}, s),
+func NewCustomerStore(s *common.Session) *CustomerStore {
+	return &CustomerStore{
+		Store: common.NewStore(s),
 	}
+}
 
-	return cs, cs.Index()
+func (s *CustomerStore) Find() error {
+
 }
