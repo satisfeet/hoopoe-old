@@ -29,8 +29,12 @@ func (s *Session) Close() error {
 	return s.database.Close()
 }
 
-func (s *Session) Query(query string, models interface{}) error {
+func (s *Session) Select(query string, models interface{}) error {
 	return s.sqlx().Select(models, query)
+}
+
+func (s *Session) SelectOne(query string, model interface{}) error {
+	return s.sqlx().Get(model, query)
 }
 
 func (s *Session) sqlx() *sqlx.DB {

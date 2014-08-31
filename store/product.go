@@ -37,5 +37,5 @@ func NewProductStore(s *common.Session) *ProductStore {
 }
 
 func (s *ProductStore) Find(m *[]Product) error {
-	return s.session.Query(`SELECT * FROM product_variation_category`, m)
+	return s.session.Select(`SELECT * FROM product_variation_category`, m)
 }
