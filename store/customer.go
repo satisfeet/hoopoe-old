@@ -2,7 +2,6 @@ package store
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/satisfeet/go-validation"
 	"github.com/satisfeet/hoopoe/store/common"
@@ -25,55 +24,29 @@ func (c Customer) MarshalJSON() ([]byte, error) {
 }
 
 type CustomerQuery struct {
-	table string
-	where map[string]string
+	*common.Query
 }
 
 func NewCustomerQuery() *CustomerQuery {
 	return &CustomerQuery{
-		table: `customer_address_city`,
-		where: make(map[string]string),
+		Query: common.NewQuery("customer_address_city"),
 	}
-}
-
-func (q *CustomerQuery) Where(field, value string) {
-	q.where[field] = value
-}
-
-func (q *CustomerQuery) String() string {
-	sql := fmt.Sprintf("SELECT * FROM %s", q.table)
-
-	if l := len(q.where); l > 0 {
-		sql += " WHERE "
-
-		for k, v := range q.where {
-			sql += fmt.Sprintf("%s = %s", k, v)
-
-			if l--; l != 0 {
-				sql += " AND "
-			}
-		}
-	}
-
-	fmt.Printf("SQL: %s\n", sql)
-
-	return sql
 }
 
 type CustomerStore struct {
-	session *common.Session
+	*common.Store
 }
 
 func NewCustomerStore(s *common.Session) *CustomerStore {
 	return &CustomerStore{
-		session: s,
+		Store: common.NewStore(s),
 	}
 }
 
 func (s *CustomerStore) Find(q *CustomerQuery, m *[]Customer) error {
-	return s.session.Select(q.String(), m)
+	return s.Store.Find(q, m)
 }
 
 func (s *CustomerStore) FindOne(q *CustomerQuery, m *Customer) error {
-	return s.session.SelectOne(q.String(), m)
+	return s.Store.FindOne(q, m)
 }

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 )
 
 const Driver = "mysql"
@@ -27,16 +26,4 @@ func (s *Session) Dial(url string) error {
 
 func (s *Session) Close() error {
 	return s.database.Close()
-}
-
-func (s *Session) Select(query string, models interface{}) error {
-	return s.sqlx().Select(models, query)
-}
-
-func (s *Session) SelectOne(query string, model interface{}) error {
-	return s.sqlx().Get(model, query)
-}
-
-func (s *Session) sqlx() *sqlx.DB {
-	return sqlx.NewDb(s.database, Driver)
 }

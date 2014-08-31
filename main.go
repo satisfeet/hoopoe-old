@@ -37,9 +37,10 @@ func Handler(s *common.Session) http.Handler {
 		Store: store.NewProductStore(s),
 	}
 
-	r.HandleFunc("GET", "/customers", c.List)
 	r.HandleFunc("GET", "/products", p.List)
+	r.HandleFunc("GET", "/customers", c.List)
 
+	r.HandleFunc("GET", "/products/:product", p.Show)
 	r.HandleFunc("GET", "/customers/:customer", c.Show)
 
 	return handler.Logger(handler.Auth(Auth, r))

@@ -13,7 +13,7 @@ type Product struct {
 	Title       string
 	Subtitle    string
 	Description string
-	Pricing     Pricing `db:"price"`
+	Price       Pricing
 	Categories  Categories
 	Variations  Variations
 }
@@ -26,16 +26,22 @@ func (p Product) MarshalJSON() ([]byte, error) {
 	return json.Marshal(utils.GetFieldValues(p))
 }
 
+type ProductQuery struct {
+	*common.Query
+}
+
+func NewProductQuery() *ProductQuery {
+	return &ProductQuery{
+		Query: common.NewQuery("product_variation_category"),
+	}
+}
+
 type ProductStore struct {
-	session *common.Session
+	*common.Store
 }
 
 func NewProductStore(s *common.Session) *ProductStore {
 	return &ProductStore{
-		session: s,
+		Store: common.NewStore(s),
 	}
-}
-
-func (s *ProductStore) Find(m *[]Product) error {
-	return s.session.Select(`SELECT * FROM product_variation_category`, m)
 }

@@ -15,6 +15,18 @@ type FieldInfo struct {
 // Tag name to lookup.
 const TagName = "store"
 
+// Returns new initialized type.
+func GetNewType(model interface{}) interface{} {
+	t := reflect.Indirect(reflect.ValueOf(model)).Type()
+
+	switch t.Kind() {
+	case reflect.Array, reflect.Slice:
+		t = t.Elem()
+	}
+
+	return reflect.New(t).Interface()
+}
+
 // Returns the type name
 func GetTypeName(model interface{}) string {
 	t := reflect.Indirect(reflect.ValueOf(model)).Type()
@@ -41,6 +53,17 @@ func SetFieldValue(model interface{}, name string, value interface{}) {
 	if f := v.FieldByName(name); f.CanSet() {
 		f.Set(reflect.ValueOf(value))
 	}
+}
+
+// Returns the interface value pointing to a field.
+func GetFieldPointer(model interface{}, name string) interface{} {
+	v := reflect.Indirect(reflect.ValueOf(model))
+
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	return v.FieldByName(name).Addr().Interface()
 }
 
 // Returns a structs non-zero field values as map with lower case keys.
@@ -116,4 +139,12 @@ func GetStructInfo(model interface{}) map[string]FieldInfo {
 	default:
 		return getTypeInfo(t)
 	}
+}
+
+// Appends the given model to the given models slice.
+func AppendSlice(models interface{}, model interface{}) {
+	e := reflect.Indirect(reflect.ValueOf(model))
+
+	s := reflect.ValueOf(models).Elem()
+	s.Set(reflect.Append(reflect.Indirect(s), e))
 }
