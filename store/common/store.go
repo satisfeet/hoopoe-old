@@ -17,12 +17,8 @@ func NewStore(s *Session) *Store {
 	}
 }
 
-func (s *Store) db() *sql.DB {
-	return s.session.database
-}
-
-func (s *Store) Find(q query, models interface{}) error {
-	rows, err := s.db().Query(q.String(), q.Params()...)
+func (s *Store) Select(query string, models interface{}, params ...interface{}) error {
+	rows, err := s.db().Query(query, params...)
 
 	if err != nil {
 		return err
@@ -47,10 +43,8 @@ func (s *Store) Find(q query, models interface{}) error {
 	return rows.Err()
 }
 
-func (s *Store) FindOne(q query, model interface{}) error {
-	q.Limit(1)
-
-	rows, err := s.db().Query(q.String(), q.Params()...)
+func (s *Store) SelectOne(query string, model interface{}, params ...interface{}) error {
+	rows, err := s.db().Query(query, params...)
 
 	if err != nil {
 		return err
@@ -62,13 +56,17 @@ func (s *Store) FindOne(q query, model interface{}) error {
 		return err
 	}
 
-	for rows.Next() {
+	if rows.Next() {
 		if err := rows.Scan(toScan(k, model)...); err != nil {
 			return err
 		}
 	}
 
 	return rows.Err()
+}
+
+func (s *Store) db() *sql.DB {
+	return s.session.database
 }
 
 func toScan(keys []string, model interface{}) []interface{} {

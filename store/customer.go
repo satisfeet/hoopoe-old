@@ -23,30 +23,27 @@ func (c Customer) MarshalJSON() ([]byte, error) {
 	return json.Marshal(utils.GetFieldValues(c))
 }
 
-type CustomerQuery struct {
-	*common.Query
-}
-
-func NewCustomerQuery() *CustomerQuery {
-	return &CustomerQuery{
-		Query: common.NewQuery("customer_address_city"),
-	}
-}
-
 type CustomerStore struct {
-	*common.Store
+	store *common.Store
 }
 
 func NewCustomerStore(s *common.Session) *CustomerStore {
 	return &CustomerStore{
-		Store: common.NewStore(s),
+		store: common.NewStore(s),
 	}
 }
 
-func (s *CustomerStore) Find(q *CustomerQuery, m *[]Customer) error {
-	return s.Store.Find(q, m)
+func (s *CustomerStore) Find(m *[]Customer) error {
+	return s.store.Select(`
+		SELECT *
+		FROM customer_address_city
+	`, m)
 }
 
-func (s *CustomerStore) FindOne(q *CustomerQuery, m *Customer) error {
-	return s.Store.FindOne(q, m)
+func (s *CustomerStore) FindId(id string, m *Customer) error {
+	return s.store.SelectOne(`
+		SELECT *
+		FROM customer_address_city
+		WHERE id=?
+	`, m, id)
 }

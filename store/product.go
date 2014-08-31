@@ -26,22 +26,27 @@ func (p Product) MarshalJSON() ([]byte, error) {
 	return json.Marshal(utils.GetFieldValues(p))
 }
 
-type ProductQuery struct {
-	*common.Query
-}
-
-func NewProductQuery() *ProductQuery {
-	return &ProductQuery{
-		Query: common.NewQuery("product_variation_category"),
-	}
-}
-
 type ProductStore struct {
-	*common.Store
+	store *common.Store
 }
 
 func NewProductStore(s *common.Session) *ProductStore {
 	return &ProductStore{
-		Store: common.NewStore(s),
+		store: common.NewStore(s),
 	}
+}
+
+func (s *ProductStore) Find(m *[]Product) error {
+	return s.store.Select(`
+		SELECT *
+		FROM product_variation_category
+	`, m)
+}
+
+func (s *ProductStore) FindId(id string, m *Product) error {
+	return s.store.Select(`
+		SELECT *
+		FROM product_variation_category
+		WHERE id=?
+	`, m, id)
 }

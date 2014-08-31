@@ -13,9 +13,7 @@ type CustomerHandler struct {
 func (h *CustomerHandler) List(c *Context) {
 	m := []store.Customer{}
 
-	q := store.NewCustomerQuery()
-
-	if err := h.Store.Find(q, &m); err != nil {
+	if err := h.Store.Find(&m); err != nil {
 		c.Error(err)
 
 		return
@@ -27,10 +25,7 @@ func (h *CustomerHandler) List(c *Context) {
 func (h *CustomerHandler) Show(c *Context) {
 	m := store.Customer{}
 
-	q := store.NewCustomerQuery()
-	q.Where("id", c.Param("customer"))
-
-	if err := h.Store.FindOne(q, &m); err != nil {
+	if err := h.Store.FindId(c.Param("customer"), &m); err != nil {
 		c.Error(err)
 
 		return

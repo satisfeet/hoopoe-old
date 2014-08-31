@@ -13,9 +13,7 @@ type ProductHandler struct {
 func (h *ProductHandler) List(c *Context) {
 	m := []store.Product{}
 
-	q := store.NewProductQuery()
-
-	if err := h.Store.Find(q, &m); err != nil {
+	if err := h.Store.Find(&m); err != nil {
 		c.Error(err)
 
 		return
@@ -27,10 +25,7 @@ func (h *ProductHandler) List(c *Context) {
 func (h *ProductHandler) Show(c *Context) {
 	m := store.Product{}
 
-	q := store.NewProductQuery()
-	q.Where("id", c.Param("product"))
-
-	if err := h.Store.FindOne(q, &m); err != nil {
+	if err := h.Store.FindId(c.Param("product"), &m); err != nil {
 		c.Error(err)
 
 		return
