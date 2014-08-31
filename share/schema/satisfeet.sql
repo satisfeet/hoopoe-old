@@ -28,6 +28,7 @@ CREATE TABLE `address` (
   `code` int(5) DEFAULT NULL,
   `city_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `street_code_city` (`street`,`code`,`city_id`),
   KEY `address-city` (`city_id`),
   CONSTRAINT `address-city` FOREIGN KEY (`city_id`) REFERENCES `city` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8;
@@ -39,7 +40,7 @@ CREATE TABLE `address` (
 
 LOCK TABLES `address` WRITE;
 /*!40000 ALTER TABLE `address` DISABLE KEYS */;
-INSERT INTO `address` VALUES (1,'Geiserichstraße 3',12105,1),(2,'Hohlstraße 8',35781,2),(3,'Alboinplatz 1',12105,1),(4,'Hedemannstraße 21',10969,1),(5,'Homeyerstraße 24',13156,1),(6,'Wartburgstraße 18',10825,1),(7,'Gieshüglerstraße 46',97218,3),(8,'Hammerstreinstraße 5',14199,1),(9,'Tschaikowskistraße 13',13156,1),(10,'Forster Straße 3',10999,1),(11,'Goethestraße 3a',76547,4),(12,'Krähwinkeler Weg 38',42799,5),(13,'Kirchheimerstraße 46',97271,6),(14,'Tempelhofer Damm 230',12099,1),(15,'Elbestraße 1',12045,1),(16,NULL,NULL,1);
+INSERT INTO `address` VALUES (16,NULL,NULL,1),(3,'Alboinplatz 1',12105,1),(15,'Elbestraße 1',12045,1),(10,'Forster Straße 3',10999,1),(1,'Geiserichstraße 3',12105,1),(7,'Gieshüglerstraße 46',97218,3),(11,'Goethestraße 3a',76547,4),(8,'Hammerstreinstraße 5',14199,1),(4,'Hedemannstraße 21',10969,1),(2,'Hohlstraße 8',35781,2),(5,'Homeyerstraße 24',13156,1),(13,'Kirchheimerstraße 46',97271,6),(12,'Krähwinkeler Weg 38',42799,5),(14,'Tempelhofer Damm 230',12099,1),(9,'Tschaikowskistraße 13',13156,1),(6,'Wartburgstraße 18',10825,1);
 /*!40000 ALTER TABLE `address` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -80,7 +81,7 @@ CREATE TABLE `city` (
   `name` varchar(45) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -430,4 +431,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-08-31 14:57:30
+-- Dump completed on 2014-08-31 16:51:04

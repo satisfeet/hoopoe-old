@@ -44,5 +44,7 @@ func Handler(db *sql.DB) http.Handler {
 	r.HandleFunc("GET", "/products/:product", p.Show)
 	r.HandleFunc("GET", "/customers/:customer", c.Show)
 
+	r.HandleFunc("POST", "/customers", c.Create)
+
 	return handler.Logger(handler.Auth(Auth, r))
 }

@@ -33,3 +33,21 @@ func (h *CustomerHandler) Show(c *Context) {
 
 	c.Respond(m, http.StatusOK)
 }
+
+func (h *CustomerHandler) Create(c *Context) {
+	m := store.Customer{}
+
+	if err := c.Parse(&m); err != nil {
+		c.Error(err)
+
+		return
+	}
+
+	if err := h.Store.Insert(&m); err != nil {
+		c.Error(err)
+
+		return
+	}
+
+	c.Respond(m, http.StatusOK)
+}
