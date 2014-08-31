@@ -47,3 +47,20 @@ func (s *CustomerStore) FindId(id string, m *Customer) error {
 		WHERE id=?
 	`, m, id)
 }
+
+func (s *CustomerStore) Search(query string, m *[]Customer) error {
+	if len(query) == 0 {
+		return s.Find(m)
+	}
+
+	query = "'%" + query + "%'"
+
+	return s.store.Select(`
+		SELECT *
+		FROM customer_address_city
+		WHERE name LIKE `+query+`
+		OR email LIKE `+query+`
+		OR city LIKE `+query+`
+		OR street LIKE `+query+`
+	`, m)
+}

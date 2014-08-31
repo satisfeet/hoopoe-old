@@ -13,7 +13,7 @@ type CustomerHandler struct {
 func (h *CustomerHandler) List(c *Context) {
 	m := []store.Customer{}
 
-	if err := h.Store.Find(&m); err != nil {
+	if err := h.Store.Search(c.Query("search"), &m); err != nil {
 		c.Error(err)
 
 		return
