@@ -235,8 +235,8 @@ CREATE TABLE `payment_variation` (
   PRIMARY KEY (`payment_id`,`variation_id`),
   KEY `discount_id` (`discount_id`),
   KEY `variation_id` (`variation_id`),
-  CONSTRAINT `payment_product-payment` FOREIGN KEY (`payment_id`) REFERENCES `payment` (`id`),
   CONSTRAINT `payment_product-discount` FOREIGN KEY (`discount_id`) REFERENCES `discount` (`id`),
+  CONSTRAINT `payment_product-payment` FOREIGN KEY (`payment_id`) REFERENCES `payment` (`id`),
   CONSTRAINT `payment_product-variation` FOREIGN KEY (`variation_id`) REFERENCES `variation` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -292,8 +292,8 @@ CREATE TABLE `product_category` (
   PRIMARY KEY (`product_id`,`category_id`),
   KEY `category_id` (`category_id`),
   KEY `product_id` (`product_id`),
-  CONSTRAINT `product_category-variation` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`),
-  CONSTRAINT `product_category-product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`)
+  CONSTRAINT `product_category-product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`),
+  CONSTRAINT `product_category-variation` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -306,6 +306,25 @@ LOCK TABLES `product_category` WRITE;
 INSERT INTO `product_category` VALUES (1,1),(2,1),(3,1),(4,1),(5,1),(6,1);
 /*!40000 ALTER TABLE `product_category` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Temporary table structure for view `product_variation_category`
+--
+
+DROP TABLE IF EXISTS `product_variation_category`;
+/*!50001 DROP VIEW IF EXISTS `product_variation_category`*/;
+SET @saved_cs_client     = @@character_set_client;
+SET character_set_client = utf8;
+/*!50001 CREATE TABLE `product_variation_category` (
+  `id` tinyint NOT NULL,
+  `title` tinyint NOT NULL,
+  `subtitle` tinyint NOT NULL,
+  `description` tinyint NOT NULL,
+  `price` tinyint NOT NULL,
+  `variations` tinyint NOT NULL,
+  `categories` tinyint NOT NULL
+) ENGINE=MyISAM */;
+SET character_set_client = @saved_cs_client;
 
 --
 -- Table structure for table `size`
@@ -348,8 +367,8 @@ CREATE TABLE `variation` (
   KEY `color_id` (`color_id`),
   KEY `size_id` (`size_id`),
   KEY `product_id` (`product_id`),
-  CONSTRAINT `variation-product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`),
   CONSTRAINT `variation-color` FOREIGN KEY (`color_id`) REFERENCES `color` (`id`),
+  CONSTRAINT `variation-product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`),
   CONSTRAINT `variation-size` FOREIGN KEY (`size_id`) REFERENCES `size` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -382,6 +401,25 @@ UNLOCK TABLES;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `product_variation_category`
+--
+
+/*!50001 DROP TABLE IF EXISTS `product_variation_category`*/;
+/*!50001 DROP VIEW IF EXISTS `product_variation_category`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8 */;
+/*!50001 SET character_set_results     = utf8 */;
+/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `product_variation_category` AS select `pr`.`id` AS `id`,`pr`.`title` AS `title`,`pr`.`subtitle` AS `subtitle`,`pr`.`description` AS `description`,`pr`.`price` AS `price`,group_concat(concat(`co`.`name`,':',`si`.`name`) separator ',') AS `variations`,group_concat(distinct `ca`.`name` separator ',') AS `categories` from (((((`product` `pr` left join `product_category` `pc` on((`pc`.`product_id` = `pr`.`id`))) left join `category` `ca` on((`pc`.`category_id` = `ca`.`id`))) left join `variation` `va` on((`va`.`product_id` = `pr`.`id`))) left join `color` `co` on((`va`.`color_id` = `co`.`id`))) left join `size` `si` on((`va`.`size_id` = `si`.`id`))) group by `pr`.`id` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -392,4 +430,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-08-30 14:41:37
+-- Dump completed on 2014-08-31  8:36:14
