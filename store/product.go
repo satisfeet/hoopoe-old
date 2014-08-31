@@ -1,10 +1,10 @@
 package store
 
 import (
+	"database/sql"
 	"encoding/json"
 
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/store/common"
 	"github.com/satisfeet/hoopoe/utils"
 )
 
@@ -27,26 +27,42 @@ func (p Product) MarshalJSON() ([]byte, error) {
 }
 
 type ProductStore struct {
-	store *common.Store
+	db *sql.DB
 }
 
-func NewProductStore(s *common.Session) *ProductStore {
+func NewProductStore(db *sql.DB) *ProductStore {
 	return &ProductStore{
-		store: common.NewStore(s),
+		db: db,
 	}
 }
 
 func (s *ProductStore) Find(m *[]Product) error {
-	return s.store.Select(`
+	rows, err := s.db.Query(`
 		SELECT *
 		FROM product_variation_category
-	`, m)
+	`)
+
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	return scanToSlice(rows, m)
 }
 
-func (s *ProductStore) FindId(id string, m *Product) error {
-	return s.store.Select(`
+func (s *ProductStore) FindId(id interface{}, m *Product) error {
+	rows, err := s.db.Query(`
 		SELECT *
 		FROM product_variation_category
 		WHERE id=?
-	`, m, id)
+	`, id)
+
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	return scanToSlice(rows, m)
 }

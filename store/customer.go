@@ -1,10 +1,10 @@
 package store
 
 import (
+	"database/sql"
 	"encoding/json"
 
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/store/common"
 	"github.com/satisfeet/hoopoe/utils"
 )
 
@@ -24,28 +24,44 @@ func (c Customer) MarshalJSON() ([]byte, error) {
 }
 
 type CustomerStore struct {
-	store *common.Store
+	db *sql.DB
 }
 
-func NewCustomerStore(s *common.Session) *CustomerStore {
+func NewCustomerStore(db *sql.DB) *CustomerStore {
 	return &CustomerStore{
-		store: common.NewStore(s),
+		db: db,
 	}
 }
 
 func (s *CustomerStore) Find(m *[]Customer) error {
-	return s.store.Select(`
+	rows, err := s.db.Query(`
 		SELECT *
 		FROM customer_address_city
-	`, m)
+	`)
+
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	return scanToSlice(rows, m)
 }
 
-func (s *CustomerStore) FindId(id string, m *Customer) error {
-	return s.store.SelectOne(`
+func (s *CustomerStore) FindId(id interface{}, m *Customer) error {
+	rows, err := s.db.Query(`
 		SELECT *
 		FROM customer_address_city
 		WHERE id=?
-	`, m, id)
+	`, id)
+
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	return scanToStruct(rows, m)
 }
 
 func (s *CustomerStore) Search(query string, m *[]Customer) error {
@@ -55,12 +71,20 @@ func (s *CustomerStore) Search(query string, m *[]Customer) error {
 
 	query = "'%" + query + "%'"
 
-	return s.store.Select(`
+	rows, err := s.db.Query(`
 		SELECT *
 		FROM customer_address_city
-		WHERE name LIKE `+query+`
-		OR email LIKE `+query+`
-		OR city LIKE `+query+`
-		OR street LIKE `+query+`
-	`, m)
+		WHERE name LIKE ?
+		OR email LIKE ?
+		OR city LIKE ?
+		OR street LIKE ?
+	`, query, query, query, query)
+
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	return scanToSlice(rows, m)
 }
