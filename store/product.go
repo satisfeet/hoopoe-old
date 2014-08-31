@@ -13,7 +13,9 @@ type Product struct {
 	Title       string
 	Subtitle    string
 	Description string
-	*Pricing
+	Pricing
+	Categories Categories
+	Variations Variations
 }
 
 func (p Product) Validate() error {
@@ -35,10 +37,7 @@ func NewProductStore(s *Session) *ProductStore {
 }
 
 func (s *ProductStore) Find(m *[]Product) error {
-	return s.sqlx().Select(m, `
-		SELECT pr.id, pr.title, pr.subtitle, pr.description, pr.price
-		FROM product AS pr
-	`)
+	return s.sqlx().Select(m, `SELECT * FROM product_variation_category`)
 }
 
 func (s *ProductStore) sqlx() *sqlx.DB {
