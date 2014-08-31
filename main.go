@@ -8,6 +8,7 @@ import (
 	"github.com/satisfeet/go-handler"
 	"github.com/satisfeet/hoopoe/httpd"
 	"github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/store/common"
 )
 
 var Url = os.Getenv("HOOPOE_MYSQL")
@@ -26,7 +27,7 @@ func main() {
 	}
 }
 
-func Handler(s *store.Session) http.Handler {
+func Handler(s *common.Session) http.Handler {
 	r := httpd.NewRouter()
 
 	c := &httpd.CustomerHandler{

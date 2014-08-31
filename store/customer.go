@@ -3,8 +3,8 @@ package store
 import (
 	"encoding/json"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/satisfeet/go-validation"
+	"github.com/satisfeet/hoopoe/store/common"
 	"github.com/satisfeet/hoopoe/utils"
 )
 
@@ -24,19 +24,15 @@ func (c Customer) MarshalJSON() ([]byte, error) {
 }
 
 type CustomerStore struct {
-	session *Session
+	session *common.Session
 }
 
-func NewCustomerStore(s *Session) *CustomerStore {
+func NewCustomerStore(s *common.Session) *CustomerStore {
 	return &CustomerStore{
 		session: s,
 	}
 }
 
 func (s *CustomerStore) Find(m *[]Customer) error {
-	return s.sqlx().Select(m, `SELECT * FROM customer_address_city`)
-}
-
-func (s *CustomerStore) sqlx() *sqlx.DB {
-	return sqlx.NewDb(s.session.database, Driver)
+	return s.session.Query(`SELECT * FROM customer_address_city`, m)
 }

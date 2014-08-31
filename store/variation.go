@@ -2,14 +2,11 @@ package store
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
+
 	"strings"
 
 	"github.com/satisfeet/hoopoe/utils"
 )
-
-var ErrBadVariationType = errors.New("bad variation type")
 
 type Variation struct {
 	Size  string
@@ -35,9 +32,7 @@ func (v *Variations) Scan(src interface{}) error {
 		}
 
 		return nil
-	default:
-		fmt.Printf("variation: %v\n", t)
 	}
 
-	return ErrBadVariationType
+	return ErrBadScanType
 }

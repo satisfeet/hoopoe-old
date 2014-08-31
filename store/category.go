@@ -1,12 +1,6 @@
 package store
 
-import (
-	"errors"
-	"strings"
-)
-
-var ErrBadCategoryType = errors.New("bad category type")
-var ErrBadCategoryFormat = errors.New("bad category format")
+import "strings"
 
 type Categories []string
 
@@ -18,5 +12,5 @@ func (c *Categories) Scan(src interface{}) error {
 		return nil
 	}
 
-	return ErrBadCategoryType
+	return ErrBadScanType
 }
