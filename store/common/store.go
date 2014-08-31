@@ -24,6 +24,8 @@ func (s *Store) Select(query string, models interface{}, params ...interface{}) 
 		return err
 	}
 
+	defer rows.Close()
+
 	k, err := rows.Columns()
 
 	if err != nil {
@@ -49,6 +51,8 @@ func (s *Store) SelectOne(query string, model interface{}, params ...interface{}
 	if err != nil {
 		return err
 	}
+
+	defer rows.Close()
 
 	k, err := rows.Columns()
 
