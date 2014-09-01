@@ -9,7 +9,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/satisfeet/go-handler"
 	"github.com/satisfeet/hoopoe/httpd"
-	"github.com/satisfeet/hoopoe/store"
 )
 
 var Url = os.Getenv("HOOPOE_MYSQL")
@@ -31,12 +30,8 @@ func main() {
 func Handler(db *sql.DB) http.Handler {
 	r := httpd.NewRouter()
 
-	c := &httpd.CustomerHandler{
-		Store: store.NewCustomerStore(db),
-	}
-	p := &httpd.ProductHandler{
-		Store: store.NewProductStore(db),
-	}
+	c := httpd.NewCustomerHandler(db)
+	p := httpd.NewProductHandler(db)
 
 	r.HandleFunc("GET", "/products", p.List)
 	r.HandleFunc("GET", "/customers", c.List)
