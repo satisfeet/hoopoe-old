@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/satisfeet/go-validation"
+	"github.com/satisfeet/hoopoe/store/common"
 	"github.com/satisfeet/hoopoe/utils"
 )
 
@@ -20,68 +21,34 @@ func (c Customer) MarshalJSON() ([]byte, error) {
 }
 
 type CustomerStore struct {
-	db *sql.DB
+	db    *sql.DB
+	store *common.Store
 }
 
 func NewCustomerStore(db *sql.DB) *CustomerStore {
 	return &CustomerStore{
-		db: db,
+		db:    db,
+		store: common.NewStore(db),
 	}
 }
 
 func (s *CustomerStore) Find(m *[]Customer) error {
-	rows, err := s.db.Query(`
+	sql := `
 		SELECT id, name, email, street, code, city
 		FROM customer_address_city
-	`)
+	`
 
-	if err != nil {
-		return err
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		c := Customer{}
-
-		var email, street, city sql.NullString
-		var code sql.NullInt64
-
-		if err := rows.Scan(&c.Id, &c.Name, &email, &street, &code, &city); err != nil {
-			return err
-		}
-
-		c.Email = email.String
-		c.Address.Street = street.String
-		c.Address.City = city.String
-		c.Address.Code = int(code.Int64)
-
-		*m = append(*m, c)
-	}
-
-	return rows.Err()
+	return s.store.Query(sql).All(m)
 }
 
 func (s *CustomerStore) FindId(id interface{}, m *Customer) error {
-	row := s.db.QueryRow(`
+	sql := `
 		SELECT id, name, email, street, code, city
 		FROM customer_address_city
 		WHERE id=?
-	`, id)
+	`
 
-	c := Customer{}
-
-	var email, street, city sql.NullString
-	var code sql.NullInt64
-
-	err := row.Scan(&c.Id, &c.Name, &email, &street, &code, &city)
-
-	c.Email = email.String
-	c.Address.Street = street.String
-	c.Address.City = city.String
-	c.Address.Code = int(code.Int64)
-
-	return err
+	return s.store.Query(sql, id).One(m)
 }
 
 func (s *CustomerStore) Search(query string, m *[]Customer) error {
@@ -89,24 +56,22 @@ func (s *CustomerStore) Search(query string, m *[]Customer) error {
 		return s.Find(m)
 	}
 
-	query = "'%" + query + "%'"
-
-	rows, err := s.db.Query(`
+	sql := `
 		SELECT id, name, email, street, code, city
 		FROM customer_address_city
 		WHERE name LIKE ?
 		OR email LIKE ?
 		OR city LIKE ?
 		OR street LIKE ?
-	`, query, query, query, query)
+	`
 
-	if err != nil {
-		return err
+	p := make([]interface{}, 4)
+
+	for i, _ := range p {
+		p[i] = "'%" + query + "%'"
 	}
 
-	defer rows.Close()
-
-	return scanToSlice(rows, m)
+	return s.store.Query(sql, p...).All(m)
 }
 
 func (s *CustomerStore) Insert(m *Customer) error {

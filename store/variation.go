@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"encoding/json"
 
 	"strings"
@@ -21,7 +22,7 @@ type Variations []Variation
 
 func (v *Variations) Scan(src interface{}) error {
 	switch t := src.(type) {
-	case []byte:
+	case sql.RawBytes:
 		for _, s := range strings.Split(string(t), ",") {
 			a := strings.Split(s, ":")
 
