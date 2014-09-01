@@ -120,67 +120,31 @@ func (s *CustomerStore) Insert(m *Customer) error {
 		return err
 	}
 
-	stmt, err := tx.Prepare(`
+	id, err := execPrepare(tx, `
 		INSERT INTO city (name)
 		VALUES (?)
 		ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)
-	`)
+	`, m.Address.City)
 
 	if err != nil {
 		return err
 	}
 
-	res, err := stmt.Exec(m.Address.City)
-
-	if err != nil {
-		return err
-	}
-
-	id, err := res.LastInsertId()
-
-	if err != nil {
-		return err
-	}
-
-	stmt, err = tx.Prepare(`
+	id, err = execPrepare(tx, `
 		INSERT INTO address (street, code, city_id)
 		VALUES (?, ?, ?)
 		ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)
-	`)
+	`, m.Address.Street, m.Address.Code, id)
 
 	if err != nil {
 		return err
 	}
 
-	res, err = stmt.Exec(m.Address.Street, m.Address.Code, id)
-
-	if err != nil {
-		return err
-	}
-
-	id, err = res.LastInsertId()
-
-	if err != nil {
-		return err
-	}
-
-	stmt, err = tx.Prepare(`
+	id, err = execPrepare(tx, `
 		INSERT INTO customer (name, email, address_id)
 		VALUES (?, ?, ?)
 		ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)
-	`)
-
-	if err != nil {
-		return err
-	}
-
-	res, err = stmt.Exec(m.Name, m.Email, id)
-
-	if err != nil {
-		return err
-	}
-
-	m.Id, err = res.LastInsertId()
+	`, m.Name, m.Email, id)
 
 	if err != nil {
 		return err

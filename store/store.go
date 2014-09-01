@@ -51,3 +51,19 @@ func scan(r *sql.Rows, model interface{}) error {
 
 	return r.Scan(p...)
 }
+
+func execPrepare(tx *sql.Tx, sql string, params ...interface{}) (int64, error) {
+	stmt, err := tx.Prepare(sql)
+
+	if err != nil {
+		return 0, err
+	}
+
+	res, err := stmt.Exec(params...)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return res.LastInsertId()
+}

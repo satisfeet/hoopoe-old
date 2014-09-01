@@ -38,7 +38,7 @@ func NewProductStore(db *sql.DB) *ProductStore {
 
 func (s *ProductStore) Find(m *[]Product) error {
 	rows, err := s.db.Query(`
-		SELECT *
+		SELECT id, title, subtitle, description, price, variations, categories
 		FROM product_variation_category
 	`)
 
@@ -53,7 +53,7 @@ func (s *ProductStore) Find(m *[]Product) error {
 
 func (s *ProductStore) FindId(id interface{}, m *Product) error {
 	rows, err := s.db.Query(`
-		SELECT *
+		SELECT id, title, subtitle, description, price, variations, categories
 		FROM product_variation_category
 		WHERE id=?
 	`, id)
