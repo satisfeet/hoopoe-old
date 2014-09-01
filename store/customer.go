@@ -120,7 +120,7 @@ func (s *CustomerStore) Insert(m *Customer) error {
 		return err
 	}
 
-	id, err := execPrepare(tx, `
+	id, err := execPrepareId(tx, `
 		INSERT INTO city (name)
 		VALUES (?)
 		ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)
@@ -130,7 +130,7 @@ func (s *CustomerStore) Insert(m *Customer) error {
 		return err
 	}
 
-	id, err = execPrepare(tx, `
+	id, err = execPrepareId(tx, `
 		INSERT INTO address (street, code, city_id)
 		VALUES (?, ?, ?)
 		ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)
@@ -140,7 +140,7 @@ func (s *CustomerStore) Insert(m *Customer) error {
 		return err
 	}
 
-	id, err = execPrepare(tx, `
+	id, err = execPrepareId(tx, `
 		INSERT INTO customer (name, email, address_id)
 		VALUES (?, ?, ?)
 		ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)
@@ -148,6 +148,29 @@ func (s *CustomerStore) Insert(m *Customer) error {
 
 	if err != nil {
 		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s *CustomerStore) RemoveId(id interface{}) error {
+	tx, err := s.db.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	n, err := execPrepareAffected(tx, `
+		DELETE FROM customer
+		WHERE id = ?
+	`, id)
+
+	if err != nil {
+		return err
+	}
+
+	if n == 0 {
+		return ErrNotFound
 	}
 
 	return tx.Commit()

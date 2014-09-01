@@ -51,3 +51,13 @@ func (h *CustomerHandler) Create(c *Context) {
 
 	c.Respond(m, http.StatusOK)
 }
+
+func (h *CustomerHandler) Destroy(c *Context) {
+	if err := h.Store.RemoveId(c.Param("customer")); err != nil {
+		c.Error(err)
+
+		return
+	}
+
+	c.Respond(nil, http.StatusNoContent)
+}

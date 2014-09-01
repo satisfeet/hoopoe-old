@@ -8,6 +8,7 @@ import (
 	"github.com/satisfeet/hoopoe/utils"
 )
 
+var ErrNotFound = errors.New("not found")
 var ErrBadScanType = errors.New("bad scan type")
 
 func scanToSlice(r *sql.Rows, models interface{}) error {
@@ -52,7 +53,19 @@ func scan(r *sql.Rows, model interface{}) error {
 	return r.Scan(p...)
 }
 
-func execPrepare(tx *sql.Tx, sql string, params ...interface{}) (int64, error) {
+func execPrepare(tx *sql.Tx, sql string, params ...interface{}) error {
+	stmt, err := tx.Prepare(sql)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(params...)
+
+	return err
+}
+
+func execPrepareId(tx *sql.Tx, sql string, params ...interface{}) (int64, error) {
 	stmt, err := tx.Prepare(sql)
 
 	if err != nil {
@@ -66,4 +79,20 @@ func execPrepare(tx *sql.Tx, sql string, params ...interface{}) (int64, error) {
 	}
 
 	return res.LastInsertId()
+}
+
+func execPrepareAffected(tx *sql.Tx, sql string, params ...interface{}) (int64, error) {
+	stmt, err := tx.Prepare(sql)
+
+	if err != nil {
+		return 0, err
+	}
+
+	res, err := stmt.Exec(params...)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return res.RowsAffected()
 }

@@ -46,5 +46,7 @@ func Handler(db *sql.DB) http.Handler {
 
 	r.HandleFunc("POST", "/customers", c.Create)
 
+	r.HandleFunc("DELETE", "/customers/:customer", c.Destroy)
+
 	return handler.Logger(handler.Auth(Auth, r))
 }
