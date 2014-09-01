@@ -153,6 +153,76 @@ func (s *CustomerStore) Insert(m *Customer) error {
 	return tx.Commit()
 }
 
+func (s *CustomerStore) UpdateId(id interface{}, m *Customer) error {
+	if err := validation.Validate(m); err != nil {
+		return err
+	}
+
+	tx, err := s.db.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	row := tx.QueryRow(`
+		SELECT COUNT(id)
+		FROM customer
+		WHERE id = ?
+	`, id)
+
+	var n int64
+
+	if err := row.Scan(&n); err != nil {
+		tx.Rollback()
+
+		return err
+	}
+
+	if n == 0 {
+		tx.Rollback()
+
+		return ErrNotFound
+	}
+
+	err = execPrepare(tx, `
+		UPDATE customer
+		SET name = ?, email = ?
+		WHERE id = ?
+	`, m.Name, m.Email, id)
+
+	if err != nil {
+		tx.Rollback()
+
+		return err
+	}
+
+	cid, err := execPrepareId(tx, `
+		INSERT INTO city (name)
+		VALUES (?)
+		ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)
+	`, m.Address.City)
+
+	if err != nil {
+		tx.Rollback()
+
+		return err
+	}
+
+	err = execPrepare(tx, `
+		UPDATE address
+		SET street = ?, code = ?, city_id = ?
+		WHERE id=(SELECT address_id FROM customer WHERE id = ?)
+	`, m.Address.Street, m.Address.Code, cid, id)
+
+	if err != nil {
+		tx.Rollback()
+
+		return err
+	}
+
+	return tx.Commit()
+}
+
 func (s *CustomerStore) RemoveId(id interface{}) error {
 	tx, err := s.db.Begin()
 

@@ -36,10 +36,12 @@ func Handler(db *sql.DB) http.Handler {
 	r.HandleFunc("GET", "/products", p.List)
 	r.HandleFunc("GET", "/customers", c.List)
 
+	r.HandleFunc("POST", "/customers", c.Create)
+
 	r.HandleFunc("GET", "/products/:product", p.Show)
 	r.HandleFunc("GET", "/customers/:customer", c.Show)
 
-	r.HandleFunc("POST", "/customers", c.Create)
+	r.HandleFunc("PUT", "/customers/:customer", c.Update)
 
 	r.HandleFunc("DELETE", "/customers/:customer", c.Destroy)
 

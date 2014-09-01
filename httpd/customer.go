@@ -59,6 +59,24 @@ func (h *CustomerHandler) Create(c *Context) {
 	c.Respond(m, http.StatusOK)
 }
 
+func (h *CustomerHandler) Update(c *Context) {
+	m := store.Customer{}
+
+	if err := c.Parse(&m); err != nil {
+		c.Error(err)
+
+		return
+	}
+
+	if err := h.store.UpdateId(c.Param("customer"), &m); err != nil {
+		c.Error(err)
+
+		return
+	}
+
+	c.Respond(nil, http.StatusNoContent)
+}
+
 func (h *CustomerHandler) Destroy(c *Context) {
 	if err := h.store.RemoveId(c.Param("customer")); err != nil {
 		c.Error(err)
