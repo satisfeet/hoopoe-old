@@ -15,10 +15,6 @@ type Customer struct {
 	Address Address
 }
 
-func (c Customer) Validate() error {
-	return validation.Validate(c)
-}
-
 func (c Customer) MarshalJSON() ([]byte, error) {
 	return json.Marshal(utils.GetFieldValues(c))
 }
@@ -96,7 +92,7 @@ func (s *CustomerStore) Search(query string, m *[]Customer) error {
 	query = "'%" + query + "%'"
 
 	rows, err := s.db.Query(`
-		SELECT *
+		SELECT id, name, email, street, code, city
 		FROM customer_address_city
 		WHERE name LIKE ?
 		OR email LIKE ?
@@ -114,6 +110,10 @@ func (s *CustomerStore) Search(query string, m *[]Customer) error {
 }
 
 func (s *CustomerStore) Insert(m *Customer) error {
+	if err := validation.Validate(m); err != nil {
+		return err
+	}
+
 	tx, err := s.db.Begin()
 
 	if err != nil {
