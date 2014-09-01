@@ -31,7 +31,7 @@ CREATE TABLE `address` (
   UNIQUE KEY `street_code_city` (`street`,`code`,`city_id`),
   KEY `address-city` (`city_id`),
   CONSTRAINT `address-city` FOREIGN KEY (`city_id`) REFERENCES `city` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -81,7 +81,7 @@ CREATE TABLE `city` (
   `name` varchar(45) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -135,7 +135,7 @@ CREATE TABLE `customer` (
   UNIQUE KEY `email` (`email`),
   KEY `address_id` (`address_id`),
   CONSTRAINT `customer-address` FOREIGN KEY (`address_id`) REFERENCES `address` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -147,6 +147,27 @@ LOCK TABLES `customer` WRITE;
 INSERT INTO `customer` VALUES (1,'Bodo Kaiser','i@bodokaiser.io',1),(2,'Wolfgang Kaiser','wmkaiser2@t-online.de',2),(3,'Maximillian Krautwurm','max.krautwurm@gmx.de',3),(4,'Haci Erdal','haci-59@hotmail.de',4),(5,'Urte Cassens',NULL,5),(6,'Torsten Schlingelhof','info@schlingelhof.com',6),(7,'Sabine Kaiser','longvitykaiser@gmail.com',1),(8,'Beatrice Kaiser',NULL,1),(9,'Pascal Schlunek','st.pauliftw@web.de',7),(10,'Burkhard Schneider','ba-schneider@t-online.de',8),(11,'Andreas Schmidt','andreas.schmidt@private-asset.eu',9),(12,'Darius Hajiani','darius@hangload.com',10),(13,'Till Schiewer','till@schiewer.de',16),(14,'Veselina Petkova','vp@zweieinsdrei.de',16),(15,'Pascal Oser','strikedraven@yahoo.de',11),(16,'Gerald Schmidthaus','gerald@das-schmidthaus.de',12),(17,'Fabian Lang','fabi.lang@live.de',16),(18,'Lydia Henneberger',NULL,13),(19,'Jasmin Lewandowski','jasmin.lew@gmail.com',16),(20,'Christopher Schmidt','omm3@gmx.de',14),(21,'Christian Nitschke','hallo@urbix-berlin.de',15);
 /*!40000 ALTER TABLE `customer` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8 */ ;
+/*!50003 SET character_set_results = utf8 */ ;
+/*!50003 SET collation_connection  = utf8_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = '' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER address_delete
+AFTER DELETE ON customer
+FOR EACH ROW
+BEGIN
+DELETE FROM address
+	WHERE address.id = OLD.address_id;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Temporary table structure for view `customer_address_city`
@@ -431,4 +452,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-08-31 16:51:04
+-- Dump completed on 2014-09-01 10:00:20
