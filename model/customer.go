@@ -1,11 +1,11 @@
-package store
+package model
 
 import (
 	"database/sql"
 	"encoding/json"
 
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/store/common"
+	"github.com/satisfeet/hoopoe/model/store"
 	"github.com/satisfeet/hoopoe/utils"
 )
 
@@ -64,12 +64,12 @@ var sqlDeleteCustomer = `
 `
 
 type CustomerStore struct {
-	store *common.Store
+	store *store.Store
 }
 
 func NewCustomerStore(db *sql.DB) *CustomerStore {
 	return &CustomerStore{
-		store: common.NewStore(db),
+		store: store.NewStore(db),
 	}
 }
 
@@ -140,7 +140,7 @@ func (s *CustomerStore) RemoveId(id interface{}) error {
 	return tx.Commit()
 }
 
-func existsCustomer(tx *common.Tx, id interface{}) error {
+func existsCustomer(tx *store.Tx, id interface{}) error {
 	var n int64
 
 	if err := tx.QueryRow(sqlSelectCustomerCount, id).Scan(&n); err != nil {
@@ -158,7 +158,7 @@ func existsCustomer(tx *common.Tx, id interface{}) error {
 	return nil
 }
 
-func insertCustomer(e common.Execer, m *Customer) error {
+func insertCustomer(e store.Execer, m *Customer) error {
 	id, err := insertAddress(e, m.Address)
 	if err != nil {
 		return err
@@ -171,7 +171,7 @@ func insertCustomer(e common.Execer, m *Customer) error {
 	return err
 }
 
-func updateCustomer(e common.Execer, m *Customer, id interface{}) error {
+func updateCustomer(e store.Execer, m *Customer, id interface{}) error {
 	_, err := e.Exec(sqlUpdateCustomer, m.Name, m.Email, id)
 	if err != nil {
 		return err

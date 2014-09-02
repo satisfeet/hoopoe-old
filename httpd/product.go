@@ -4,21 +4,21 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/model"
 )
 
 type ProductHandler struct {
-	store *store.ProductStore
+	store *model.ProductStore
 }
 
 func NewProductHandler(db *sql.DB) *ProductHandler {
 	return &ProductHandler{
-		store: store.NewProductStore(db),
+		store: model.NewProductStore(db),
 	}
 }
 
 func (h *ProductHandler) List(c *Context) {
-	m := []store.Product{}
+	m := []model.Product{}
 
 	if err := h.store.Find(&m); err != nil {
 		c.Error(err)
@@ -30,7 +30,7 @@ func (h *ProductHandler) List(c *Context) {
 }
 
 func (h *ProductHandler) Show(c *Context) {
-	m := store.Product{}
+	m := model.Product{}
 
 	if err := h.store.FindId(c.Param("product"), &m); err != nil {
 		c.Error(err)

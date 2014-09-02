@@ -1,11 +1,11 @@
-package store
+package model
 
 import (
 	"database/sql"
 	"encoding/json"
 
 	"github.com/satisfeet/go-validation"
-	"github.com/satisfeet/hoopoe/store/common"
+	"github.com/satisfeet/hoopoe/model/store"
 	"github.com/satisfeet/hoopoe/utils"
 )
 
@@ -39,12 +39,12 @@ var sqlSelectProductId = `
 `
 
 type ProductStore struct {
-	store *common.Store
+	store *store.Store
 }
 
 func NewProductStore(db *sql.DB) *ProductStore {
 	return &ProductStore{
-		store: common.NewStore(db),
+		store: store.NewStore(db),
 	}
 }
 

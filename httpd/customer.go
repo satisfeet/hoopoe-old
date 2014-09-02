@@ -4,21 +4,21 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/satisfeet/hoopoe/store"
+	"github.com/satisfeet/hoopoe/model"
 )
 
 type CustomerHandler struct {
-	store *store.CustomerStore
+	store *model.CustomerStore
 }
 
 func NewCustomerHandler(db *sql.DB) *CustomerHandler {
 	return &CustomerHandler{
-		store: store.NewCustomerStore(db),
+		store: model.NewCustomerStore(db),
 	}
 }
 
 func (h *CustomerHandler) List(c *Context) {
-	m := []store.Customer{}
+	m := []model.Customer{}
 
 	if err := h.store.Search(c.Query("search"), &m); err != nil {
 		c.Error(err)
@@ -30,7 +30,7 @@ func (h *CustomerHandler) List(c *Context) {
 }
 
 func (h *CustomerHandler) Show(c *Context) {
-	m := store.Customer{}
+	m := model.Customer{}
 
 	if err := h.store.FindId(c.Param("customer"), &m); err != nil {
 		c.Error(err)
@@ -42,7 +42,7 @@ func (h *CustomerHandler) Show(c *Context) {
 }
 
 func (h *CustomerHandler) Create(c *Context) {
-	m := store.Customer{}
+	m := model.Customer{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err)
@@ -60,7 +60,7 @@ func (h *CustomerHandler) Create(c *Context) {
 }
 
 func (h *CustomerHandler) Update(c *Context) {
-	m := store.Customer{}
+	m := model.Customer{}
 
 	if err := c.Parse(&m); err != nil {
 		c.Error(err)
