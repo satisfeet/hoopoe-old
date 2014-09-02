@@ -27,6 +27,17 @@ func (p Product) MarshalJSON() ([]byte, error) {
 	return json.Marshal(utils.GetFieldValues(p))
 }
 
+var sqlSelectProduct = `
+	SELECT id, title, subtitle, description, price AS retail, variations, categories
+	FROM product_variation_category
+`
+
+var sqlSelectProductId = `
+	SELECT id, title, subtitle, description, price AS retail, variations, categories
+	FROM product_variation_category
+	WHERE id=?
+`
+
 type ProductStore struct {
 	db    *sql.DB
 	store *common.Store
@@ -40,20 +51,9 @@ func NewProductStore(db *sql.DB) *ProductStore {
 }
 
 func (s *ProductStore) Find(m *[]Product) error {
-	sql := `
-		SELECT id, title, subtitle, description, price AS retail, variations, categories
-		FROM product_variation_category
-	`
-
-	return s.store.Query(sql).All(m)
+	return s.store.Query(sqlSelectProduct).All(m)
 }
 
 func (s *ProductStore) FindId(id interface{}, m *Product) error {
-	sql := `
-		SELECT id, title, subtitle, description, price AS retail, variations, categories
-		FROM product_variation_category
-		WHERE id=?
-	`
-
-	return s.store.Query(sql, id).One(m)
+	return s.store.Query(sqlSelectProductId, id).One(m)
 }
