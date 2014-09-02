@@ -39,6 +39,17 @@ func GetTypeName(model interface{}) string {
 	return t.Name()
 }
 
+func GetStructType(model interface{}) interface{} {
+	v := reflect.Indirect(reflect.ValueOf(model))
+
+	switch v.Type().Kind() {
+	case reflect.Array, reflect.Slice:
+		v = v.Elem()
+	}
+
+	return v.Interface()
+}
+
 // Returns the interface value of a field.
 func GetFieldValue(model interface{}, name string) interface{} {
 	v := reflect.Indirect(reflect.ValueOf(model))
@@ -55,6 +66,11 @@ func SetFieldValue(model interface{}, name string, value interface{}) {
 	}
 }
 
+func SetValue(source interface{}, target interface{}) {
+	v := reflect.Indirect(reflect.ValueOf(source))
+	v.Set(reflect.ValueOf(target))
+}
+
 // Returns the interface value pointing to a field.
 func GetFieldPointer(model interface{}, name string) interface{} {
 	v := reflect.Indirect(reflect.ValueOf(model))
@@ -64,6 +80,28 @@ func GetFieldPointer(model interface{}, name string) interface{} {
 	}
 
 	return v.FieldByName(name).Addr().Interface()
+}
+
+func GetNestedFieldPointer(model interface{}, name string) interface{} {
+	v := reflect.Indirect(reflect.ValueOf(model))
+
+	if f := v.FieldByName(name); f.IsValid() {
+		return f.Addr().Interface()
+	}
+
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+
+		if f.Type().Kind() == reflect.Struct {
+			ptr := GetNestedFieldPointer(f.Addr().Interface(), name)
+
+			if ptr != nil {
+				return ptr
+			}
+		}
+	}
+
+	return nil
 }
 
 // Returns a structs non-zero field values as map with lower case keys.

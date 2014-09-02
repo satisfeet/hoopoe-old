@@ -1,7 +1,6 @@
 package model
 
 import (
-	"database/sql"
 	"encoding/json"
 	"strings"
 
@@ -22,8 +21,8 @@ type Variations []Variation
 
 func (v *Variations) Scan(src interface{}) error {
 	switch t := src.(type) {
-	case sql.RawBytes:
-		for _, s := range strings.Split(string(t), ",") {
+	case string:
+		for _, s := range strings.Split(t, ",") {
 			a := strings.Split(s, ":")
 
 			*v = append(*v, Variation{

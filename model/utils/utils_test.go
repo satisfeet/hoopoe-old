@@ -55,6 +55,20 @@ func (s *Suite) TestGetFieldValues(c *check.C) {
 	})
 }
 
+func (s *Suite) TestGetNestedFieldPointer(c *check.C) {
+	p1 := GetNestedFieldPointer(&people[1], "Name")
+	p2 := GetNestedFieldPointer(&people[1], "City")
+
+	v1, ok1 := p1.(*string)
+	v2, ok2 := p2.(*string)
+
+	c.Assert(ok1, check.Equals, true)
+	c.Assert(ok2, check.Equals, true)
+
+	c.Check(v1, check.Equals, &people[1].Name)
+	c.Check(v2, check.Equals, &people[1].Address.City)
+}
+
 func (s *Suite) TestGetStructInfo(c *check.C) {
 	result := GetStructInfo(people[0])
 
