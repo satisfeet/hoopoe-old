@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/satisfeet/hoopoe/model/store"
 	"github.com/satisfeet/hoopoe/model/utils"
 )
 
@@ -34,5 +35,5 @@ func (v *Variations) Scan(src interface{}) error {
 		return nil
 	}
 
-	return ErrBadScanType
+	return store.ErrBadScanType
 }

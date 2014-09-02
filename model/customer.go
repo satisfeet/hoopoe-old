@@ -134,7 +134,7 @@ func (s *CustomerStore) RemoveId(id interface{}) error {
 		return err
 	}
 	if res.Rows == 0 {
-		return ErrNotFound
+		return store.ErrNotFound
 	}
 
 	return tx.Commit()
@@ -152,7 +152,7 @@ func existsCustomer(tx *store.Tx, id interface{}) error {
 	if n == 0 {
 		tx.Rollback()
 
-		return ErrNotFound
+		return store.ErrNotFound
 	}
 
 	return nil

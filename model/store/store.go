@@ -1,10 +1,16 @@
 package store
 
-import "database/sql"
+import (
+	"database/sql"
+	"errors"
+)
 
 type Store struct {
 	*sql.DB
 }
+
+var ErrNotFound = errors.New("not found")
+var ErrBadScanType = errors.New("bad scan type")
 
 func NewStore(db *sql.DB) *Store {
 	return &Store{
