@@ -1,5 +1,7 @@
 package store
 
+import "github.com/satisfeet/hoopoe/store/common"
+
 type Address struct {
 	Street string
 	City   string
@@ -23,3 +25,31 @@ var sqlUpdateAddress = `
 	SET street = ?, code = ?, city_id = ?
 	WHERE id=(SELECT address_id FROM customer WHERE id = ?)
 `
+
+func insertCity(e common.Execer, city string) (int64, error) {
+	res, err := e.Exec(sqlInsertCity, city)
+
+	return res.Id, err
+}
+
+func insertAddress(e common.Execer, m Address) (int64, error) {
+	id, err := insertCity(e, m.City)
+	if err != nil {
+		return 0, err
+	}
+
+	res, err := e.Exec(sqlInsertAddress, m.Street, m.Code, id)
+
+	return res.Id, err
+}
+
+func updateAddress(e common.Execer, m Address, cid interface{}) error {
+	id, err := insertCity(e, m.City)
+	if err != nil {
+		return err
+	}
+
+	_, err = e.Exec(sqlUpdateAddress, m.Street, m.Code, id, cid)
+
+	return err
+}

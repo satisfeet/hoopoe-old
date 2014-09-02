@@ -12,6 +12,10 @@ type Result struct {
 	Rows int64
 }
 
+type Execer interface {
+	Exec(query string, params ...interface{}) (Result, error)
+}
+
 func (tx *Tx) Exec(query string, params ...interface{}) (Result, error) {
 	r := Result{}
 

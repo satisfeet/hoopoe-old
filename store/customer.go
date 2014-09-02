@@ -104,18 +104,7 @@ func (s *CustomerStore) Insert(m *Customer) error {
 
 	tx := s.store.Begin()
 
-	res, err := tx.Exec(sqlInsertCity, m.Address.City)
-	if err != nil {
-		return err
-	}
-
-	res, err = tx.Exec(sqlInsertAddress, m.Address.Street, m.Address.Code, res.Id)
-	if err != nil {
-		return err
-	}
-
-	res, err = tx.Exec(sqlInsertCustomer, m.Name, m.Email, res.Id)
-	if err != nil {
+	if err := insertCustomer(tx, m); err != nil {
 		return err
 	}
 
@@ -129,30 +118,10 @@ func (s *CustomerStore) UpdateId(id interface{}, m *Customer) error {
 
 	tx := s.store.Begin()
 
-	var n int64
-	if err := tx.Tx.QueryRow(sqlSelectCustomerCount, id).Scan(&n); err != nil {
-		tx.Rollback()
-
+	if err := existsCustomer(tx, id); err != nil {
 		return err
 	}
-	if n == 0 {
-		tx.Rollback()
-
-		return ErrNotFound
-	}
-
-	_, err := tx.Exec(sqlUpdateCustomer, m.Name, m.Email, id)
-	if err != nil {
-		return err
-	}
-
-	res, err := tx.Exec(sqlInsertCity, m.Address.City)
-	if err != nil {
-		return err
-	}
-
-	res, err = tx.Exec(sqlUpdateAddress, m.Address.Street, m.Address.Code, res.Id, id)
-	if err != nil {
+	if err := updateCustomer(tx, m, id); err != nil {
 		return err
 	}
 
@@ -171,4 +140,44 @@ func (s *CustomerStore) RemoveId(id interface{}) error {
 	}
 
 	return tx.Commit()
+}
+
+func existsCustomer(tx *common.Tx, id interface{}) error {
+	var n int64
+
+	if err := tx.QueryRow(sqlSelectCustomerCount, id).Scan(&n); err != nil {
+		tx.Rollback()
+
+		return err
+	}
+
+	if n == 0 {
+		tx.Rollback()
+
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func insertCustomer(e common.Execer, m *Customer) error {
+	id, err := insertAddress(e, m.Address)
+	if err != nil {
+		return err
+	}
+
+	res, err := e.Exec(sqlInsertCustomer, m.Name, m.Email, id)
+
+	m.Id = res.Id
+
+	return err
+}
+
+func updateCustomer(e common.Execer, m *Customer, id interface{}) error {
+	_, err := e.Exec(sqlUpdateCustomer, m.Name, m.Email, id)
+	if err != nil {
+		return err
+	}
+
+	return updateAddress(e, m.Address, m.Id)
 }
