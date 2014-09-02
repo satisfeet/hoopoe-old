@@ -20,3 +20,12 @@ func (s *Store) Query(query string, params ...interface{}) *Query {
 		rows: rows,
 	}
 }
+
+func (s *Store) Begin() *Tx {
+	tx, err := s.db.Begin()
+
+	return &Tx{
+		Tx:  tx,
+		err: err,
+	}
+}

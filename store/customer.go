@@ -102,22 +102,19 @@ func (s *CustomerStore) Insert(m *Customer) error {
 		return err
 	}
 
-	tx, err := s.db.Begin()
+	tx := s.store.Begin()
+
+	res, err := tx.Exec(sqlInsertCity, m.Address.City)
 	if err != nil {
 		return err
 	}
 
-	id, err := execPrepareId(tx, sqlInsertCity, m.Address.City)
+	res, err = tx.Exec(sqlInsertAddress, m.Address.Street, m.Address.Code, res.Id)
 	if err != nil {
 		return err
 	}
 
-	id, err = execPrepareId(tx, sqlInsertAddress, m.Address.Street, m.Address.Code, id)
-	if err != nil {
-		return err
-	}
-
-	id, err = execPrepareId(tx, sqlInsertCustomer, m.Name, m.Email, id)
+	res, err = tx.Exec(sqlInsertCustomer, m.Name, m.Email, res.Id)
 	if err != nil {
 		return err
 	}
@@ -130,13 +127,10 @@ func (s *CustomerStore) UpdateId(id interface{}, m *Customer) error {
 		return err
 	}
 
-	tx, err := s.db.Begin()
-	if err != nil {
-		return err
-	}
+	tx := s.store.Begin()
 
 	var n int64
-	if err := tx.QueryRow(sqlSelectCustomerCount, id).Scan(&n); err != nil {
+	if err := tx.Tx.QueryRow(sqlSelectCustomerCount, id).Scan(&n); err != nil {
 		tx.Rollback()
 
 		return err
@@ -147,24 +141,18 @@ func (s *CustomerStore) UpdateId(id interface{}, m *Customer) error {
 		return ErrNotFound
 	}
 
-	err = execPrepare(tx, sqlUpdateCustomer, m.Name, m.Email, id)
+	_, err := tx.Exec(sqlUpdateCustomer, m.Name, m.Email, id)
 	if err != nil {
-		tx.Rollback()
-
 		return err
 	}
 
-	cid, err := execPrepareId(tx, sqlInsertCity, m.Address.City)
+	res, err := tx.Exec(sqlInsertCity, m.Address.City)
 	if err != nil {
-		tx.Rollback()
-
 		return err
 	}
 
-	err = execPrepare(tx, sqlUpdateAddress, m.Address.Street, m.Address.Code, cid, id)
+	res, err = tx.Exec(sqlUpdateAddress, m.Address.Street, m.Address.Code, res.Id, id)
 	if err != nil {
-		tx.Rollback()
-
 		return err
 	}
 
@@ -172,16 +160,13 @@ func (s *CustomerStore) UpdateId(id interface{}, m *Customer) error {
 }
 
 func (s *CustomerStore) RemoveId(id interface{}) error {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return err
-	}
+	tx := s.store.Begin()
 
-	n, err := execPrepareAffected(tx, sqlDeleteCustomer, id)
+	res, err := tx.Exec(sqlDeleteCustomer, id)
 	if err != nil {
 		return err
 	}
-	if n == 0 {
+	if res.Rows == 0 {
 		return ErrNotFound
 	}
 
