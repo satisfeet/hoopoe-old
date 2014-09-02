@@ -3,10 +3,9 @@ package model
 import (
 	"database/sql"
 	"encoding/json"
-
 	"strings"
 
-	"github.com/satisfeet/hoopoe/utils"
+	"github.com/satisfeet/hoopoe/model/utils"
 )
 
 type Variation struct {

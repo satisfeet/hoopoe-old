@@ -6,7 +6,7 @@ import (
 
 	"github.com/satisfeet/go-validation"
 	"github.com/satisfeet/hoopoe/model/store"
-	"github.com/satisfeet/hoopoe/utils"
+	"github.com/satisfeet/hoopoe/model/utils"
 )
 
 type Customer struct {

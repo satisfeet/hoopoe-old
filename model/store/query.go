@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/satisfeet/hoopoe/utils"
+	"github.com/satisfeet/hoopoe/model/utils"
 )
 
 type Query struct {
