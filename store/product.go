@@ -39,13 +39,11 @@ var sqlSelectProductId = `
 `
 
 type ProductStore struct {
-	db    *sql.DB
 	store *common.Store
 }
 
 func NewProductStore(db *sql.DB) *ProductStore {
 	return &ProductStore{
-		db:    db,
 		store: common.NewStore(db),
 	}
 }

@@ -64,13 +64,11 @@ var sqlDeleteCustomer = `
 `
 
 type CustomerStore struct {
-	db    *sql.DB
 	store *common.Store
 }
 
 func NewCustomerStore(db *sql.DB) *CustomerStore {
 	return &CustomerStore{
-		db:    db,
 		store: common.NewStore(db),
 	}
 }
