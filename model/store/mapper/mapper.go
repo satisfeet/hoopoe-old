@@ -53,7 +53,7 @@ func (m *Mapper) MapSource(r Source) error {
 	var s interface{}
 
 	if m.model == nil {
-		s = utils.GetNewType(m.models)
+		s = reflect.New(utils.MustSliceTypeOf(m.models)).Interface()
 	} else {
 		s = m.model
 	}
@@ -61,7 +61,7 @@ func (m *Mapper) MapSource(r Source) error {
 	for i := 0; i < len(r); i++ {
 		k, v := m.columns[i], r[i]
 
-		ptr := utils.GetNestedFieldPointer(s, strings.Title(k))
+		ptr := utils.MustFieldByName(s, strings.Title(k)).Addr().Interface()
 
 		if err := m.mappers[strings.Title(k)](string(v), ptr); err != nil {
 			return errors.New(k + ": " + err.Error())
