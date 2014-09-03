@@ -69,10 +69,3 @@ func MustFieldByName(source interface{}, name string) reflect.Value {
 
 	return v
 }
-
-func AppendSlice(slice interface{}, elem interface{}) {
-	e := reflect.Indirect(reflect.ValueOf(elem))
-
-	s := reflect.ValueOf(slice).Elem()
-	s.Set(reflect.Append(reflect.Indirect(s), e))
-}

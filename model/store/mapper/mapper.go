@@ -69,7 +69,10 @@ func (m *Mapper) MapSource(r Source) error {
 	}
 
 	if m.model == nil {
-		utils.AppendSlice(m.models, s)
+		e := reflect.Indirect(reflect.ValueOf(s))
+
+		s := reflect.ValueOf(m.models).Elem()
+		s.Set(reflect.Append(reflect.Indirect(s), e))
 	}
 
 	return nil
