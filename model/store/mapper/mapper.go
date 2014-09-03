@@ -4,13 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"reflect"
-	"strings"
 
 	"github.com/satisfeet/hoopoe/model/utils"
 )
 
 type Mapper struct {
-	keys    []string
+	row     *row
 	model   interface{}
 	models  interface{}
 	mappers map[string]MapperFunc
@@ -20,7 +19,7 @@ var ErrBadSrc = errors.New("bad source type")
 
 func NewMapper(target interface{}, keys []string) *Mapper {
 	m := &Mapper{
-		keys:    keys,
+		row:     newRow(keys),
 		mappers: make(map[string]MapperFunc),
 	}
 	mappersFrom(reflect.Indirect(reflect.ValueOf(target)).Type(), m.mappers)
@@ -36,11 +35,7 @@ func NewMapper(target interface{}, keys []string) *Mapper {
 	return m
 }
 
-func (m *Mapper) NewSource() Source {
-	return make(Source, len(m.keys))
-}
-
-func (m *Mapper) MapSource(r Source) error {
+func (m *Mapper) Scan() error {
 	var s interface{}
 
 	if m.model == nil {
@@ -49,12 +44,10 @@ func (m *Mapper) MapSource(r Source) error {
 		s = m.model
 	}
 
-	for i := 0; i < len(r); i++ {
-		k, v := m.keys[i], r[i]
+	for k, v := range m.row.fields {
+		ptr := utils.MustFieldByName(s, k).Addr().Interface()
 
-		ptr := utils.MustFieldByName(s, strings.Title(k)).Addr().Interface()
-
-		if err := m.mappers[strings.Title(k)](string(v), ptr); err != nil {
+		if err := m.mappers[k](string(*v), ptr); err != nil {
 			return errors.New(k + ": " + err.Error())
 		}
 	}
@@ -67,6 +60,10 @@ func (m *Mapper) MapSource(r Source) error {
 	}
 
 	return nil
+}
+
+func (m *Mapper) Params() []interface{} {
+	return m.row.Params()
 }
 
 func mappersFrom(t reflect.Type, m map[string]MapperFunc) {

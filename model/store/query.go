@@ -49,11 +49,9 @@ func (q *Query) One(target interface{}) error {
 }
 
 func scan(r *sql.Rows, m *mapper.Mapper) error {
-	src := m.NewSource()
-
-	if err := r.Scan(src.Params()...); err != nil {
+	if err := r.Scan(m.Params()...); err != nil {
 		return err
 	}
 
-	return m.MapSource(src)
+	return m.Scan()
 }

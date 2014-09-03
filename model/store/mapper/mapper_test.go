@@ -2,9 +2,9 @@ package mapper
 
 import (
 	"database/sql"
+	"reflect"
 	"testing"
 
-	"github.com/satisfeet/hoopoe/model/utils"
 	"gopkg.in/check.v1"
 )
 
@@ -45,14 +45,12 @@ func (s *MapperSuite) SetUpTest(c *check.C) {
 }
 
 func (s *MapperSuite) TestSlice(c *check.C) {
-	m := NewMapper(&s.people)
-	m.SetColumns(s.columns)
+	m := NewMapper(&s.people, s.columns)
 
 	for i := 0; i < 3; i++ {
-		src := m.NewSource()
-		s.scan(src.Params()...)
+		s.scan(m.Params()...)
 
-		err := m.MapSource(src)
+		err := m.Scan()
 		c.Assert(err, check.IsNil)
 	}
 
@@ -60,12 +58,12 @@ func (s *MapperSuite) TestSlice(c *check.C) {
 }
 
 func (s *MapperSuite) TestStruct(c *check.C) {
-	m := NewMapper(&s.person)
-	m.SetColumns(s.columns)
+	m := NewMapper(&s.person, s.columns)
 
-	src := m.NewSource()
-	s.scan(src.Params()...)
-	m.MapSource(src)
+	s.scan(m.Params()...)
+
+	err := m.Scan()
+	c.Assert(err, check.IsNil)
 
 	c.Check(s.person, check.DeepEquals, s.result)
 }
@@ -83,8 +81,8 @@ type address struct {
 }
 
 func (s *MapperSuite) scan(params ...interface{}) {
-	utils.SetValue(params[0], sql.RawBytes("Joe"))
-	utils.SetValue(params[1], sql.RawBytes("Good,Nice"))
-	utils.SetValue(params[2], sql.RawBytes("Some City"))
-	utils.SetValue(params[3], sql.RawBytes("12345"))
+	reflect.ValueOf(params[0]).Elem().Set(reflect.ValueOf(sql.RawBytes("Joe")))
+	reflect.ValueOf(params[1]).Elem().Set(reflect.ValueOf(sql.RawBytes("Good,Nice")))
+	reflect.ValueOf(params[2]).Elem().Set(reflect.ValueOf(sql.RawBytes("Some City")))
+	reflect.ValueOf(params[3]).Elem().Set(reflect.ValueOf(sql.RawBytes("12345")))
 }
