@@ -9,21 +9,20 @@ import (
 	"github.com/satisfeet/hoopoe/model/utils"
 )
 
-var KeyFunc = strings.ToLower
-
 type Mapper struct {
+	keys    []string
 	model   interface{}
 	models  interface{}
-	columns []string
 	mappers map[string]MapperFunc
-	keyFunc func(string) string
 }
 
 var ErrBadSrc = errors.New("bad source type")
 
-func NewMapper(target interface{}) *Mapper {
-	m := &Mapper{keyFunc: KeyFunc}
-	m.mappers = make(map[string]MapperFunc)
+func NewMapper(target interface{}, keys []string) *Mapper {
+	m := &Mapper{
+		keys:    keys,
+		mappers: make(map[string]MapperFunc),
+	}
 	mappersFrom(reflect.Indirect(reflect.ValueOf(target)).Type(), m.mappers)
 
 	v := reflect.Indirect(reflect.ValueOf(target))
@@ -37,16 +36,8 @@ func NewMapper(target interface{}) *Mapper {
 	return m
 }
 
-func (m *Mapper) SetColumns(c []string) {
-	m.columns = c
-}
-
-func (m *Mapper) SetKeyFunc(fn func(string) string) {
-	m.keyFunc = fn
-}
-
 func (m *Mapper) NewSource() Source {
-	return make(Source, len(m.columns))
+	return make(Source, len(m.keys))
 }
 
 func (m *Mapper) MapSource(r Source) error {
@@ -59,7 +50,7 @@ func (m *Mapper) MapSource(r Source) error {
 	}
 
 	for i := 0; i < len(r); i++ {
-		k, v := m.columns[i], r[i]
+		k, v := m.keys[i], r[i]
 
 		ptr := utils.MustFieldByName(s, strings.Title(k)).Addr().Interface()
 

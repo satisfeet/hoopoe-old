@@ -19,8 +19,7 @@ func (q *Query) All(target interface{}) error {
 		return q.err
 	}
 
-	m := mapper.NewMapper(target)
-	m.SetColumns(q.keys)
+	m := mapper.NewMapper(target, q.keys)
 
 	for q.rows.Next() {
 		if err := scan(q.rows, m); err != nil {
@@ -38,8 +37,7 @@ func (q *Query) One(target interface{}) error {
 		return q.err
 	}
 
-	m := mapper.NewMapper(target)
-	m.SetColumns(q.keys)
+	m := mapper.NewMapper(target, q.keys)
 
 	if q.rows.Next() {
 		if err := scan(q.rows, m); err != nil {
