@@ -1,20 +1,14 @@
 package model
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/satisfeet/hoopoe/model/store"
-	"github.com/satisfeet/hoopoe/model/utils"
 )
 
 type Variation struct {
 	Size  string
 	Color string
-}
-
-func (v Variation) MarshalJSON() ([]byte, error) {
-	return json.Marshal(utils.GetFieldValues(v))
 }
 
 type Variations []Variation

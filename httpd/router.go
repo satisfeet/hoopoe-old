@@ -1,28 +1,15 @@
 package httpd
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/satisfeet/go-context"
 	"github.com/satisfeet/go-handler"
-	"github.com/satisfeet/go-validation"
 )
 
-type Context struct {
-	*context.Context
-}
-
-func (c *Context) Error(err error) {
-	s := http.StatusInternalServerError
-
-	switch err.(type) {
-	case *json.UnmarshalTypeError, validation.Error:
-		s = http.StatusBadRequest
-	}
-
-	c.Context.Error(err, s)
+type Handler interface {
+	ServeHTTP(*Context)
 }
 
 type Router struct {
@@ -63,10 +50,6 @@ func (r *Router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		h(writer, request, p)
 	}
-}
-
-type Handler interface {
-	ServeHTTP(*Context)
 }
 
 type HandlerFunc func(*Context)

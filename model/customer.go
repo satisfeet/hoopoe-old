@@ -2,11 +2,9 @@ package model
 
 import (
 	"database/sql"
-	"encoding/json"
 
 	"github.com/satisfeet/go-validation"
 	"github.com/satisfeet/hoopoe/model/store"
-	"github.com/satisfeet/hoopoe/model/utils"
 )
 
 type Customer struct {
@@ -14,10 +12,6 @@ type Customer struct {
 	Name    string `validate:"required,min=5"`
 	Email   string `validate:"required,email"`
 	Address Address
-}
-
-func (c Customer) MarshalJSON() ([]byte, error) {
-	return json.Marshal(utils.GetFieldValues(c))
 }
 
 var sqlSelectCustomer = `

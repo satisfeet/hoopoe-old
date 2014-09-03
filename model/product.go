@@ -2,11 +2,8 @@ package model
 
 import (
 	"database/sql"
-	"encoding/json"
 
-	"github.com/satisfeet/go-validation"
 	"github.com/satisfeet/hoopoe/model/store"
-	"github.com/satisfeet/hoopoe/model/utils"
 )
 
 type Product struct {
@@ -17,14 +14,6 @@ type Product struct {
 	Categories  []string
 	Variations  Variations
 	Pricing     Pricing
-}
-
-func (p Product) Validate() error {
-	return validation.Validate(p)
-}
-
-func (p Product) MarshalJSON() ([]byte, error) {
-	return json.Marshal(utils.GetFieldValues(p))
 }
 
 var sqlSelectProduct = `
