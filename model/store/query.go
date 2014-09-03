@@ -8,31 +8,22 @@ import (
 
 type Query struct {
 	err  error
+	keys []string
 	rows *sql.Rows
 }
 
-func (q *Query) All(models interface{}) error {
+func (q *Query) All(target interface{}) error {
 	defer q.rows.Close()
 
 	if q.err != nil {
 		return q.err
 	}
 
-	col, err := q.rows.Columns()
-	if err != nil {
-		return err
-	}
-
-	m := mapper.NewMapper(models)
-	m.SetColumns(col)
+	m := mapper.NewMapper(target)
+	m.SetColumns(q.keys)
 
 	for q.rows.Next() {
-		src := m.NewSource()
-
-		if err := q.rows.Scan(src.Params()...); err != nil {
-			return err
-		}
-		if err := m.MapSource(src); err != nil {
+		if err := scan(q.rows, m); err != nil {
 			return err
 		}
 	}
@@ -40,31 +31,31 @@ func (q *Query) All(models interface{}) error {
 	return q.rows.Err()
 }
 
-func (q *Query) One(model interface{}) error {
+func (q *Query) One(target interface{}) error {
 	defer q.rows.Close()
 
 	if q.err != nil {
 		return q.err
 	}
 
-	col, err := q.rows.Columns()
-	if err != nil {
-		return err
-	}
-
-	m := mapper.NewMapper(model)
-	m.SetColumns(col)
+	m := mapper.NewMapper(target)
+	m.SetColumns(q.keys)
 
 	if q.rows.Next() {
-		src := m.NewSource()
-
-		if err := q.rows.Scan(src.Params()...); err != nil {
-			return err
-		}
-		if err := m.MapSource(src); err != nil {
+		if err := scan(q.rows, m); err != nil {
 			return err
 		}
 	}
 
 	return q.rows.Err()
+}
+
+func scan(r *sql.Rows, m *mapper.Mapper) error {
+	src := m.NewSource()
+
+	if err := r.Scan(src.Params()...); err != nil {
+		return err
+	}
+
+	return m.MapSource(src)
 }

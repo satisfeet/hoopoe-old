@@ -19,11 +19,19 @@ func NewStore(db *sql.DB) *Store {
 }
 
 func (s *Store) Query(query string, params ...interface{}) *Query {
+	var err error
+	var keys []string
+
 	rows, err := s.DB.Query(query, params...)
+
+	if err == nil {
+		keys, err = rows.Columns()
+	}
 
 	return &Query{
 		err:  err,
 		rows: rows,
+		keys: keys,
 	}
 }
 
